@@ -72,7 +72,7 @@ that feature's parity table with a reason.
 | 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ○ | ○ |
 | 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ○ | ○ |
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ○ | ○ |
-| 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ◐ | ○ | ○ |
+| 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ○ | ○ |
 | 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ○ | ○ |
 | 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ○ | ○ |
 | 08 | [Invalidation & filters](08-invalidation-filters.md) | `queryClient.test.tsx`, `utils.test.tsx` | ● | ○ | ○ |

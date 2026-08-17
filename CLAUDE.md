@@ -106,16 +106,26 @@ Do not silently violate these. Changing one means updating
   `pending`+`paused` (cold start, offline), which are the states Android
   actually hits.
 
-## Blocking constraint
+## Observer model (settled by spike, 2026-08-18)
 
-**`docs/roadmap/05-deduplication-observers.md` requires a spike before any cache
-implementation begins.** Observer ref-counting for `gcTime` on a `Flow` surface
-is unresolved — `SharingStarted.WhileSubscribed` introduces a second, independent
-timeout, and getting the interaction wrong either leaks entries forever or evicts
-data still on screen. Every other feature depends on eviction semantics.
+`kwery-core` uses **approach C′**, measured rather than assumed. See the "Spike
+findings" section of `docs/roadmap/05-deduplication-observers.md` for the data.
 
-Do not start `kwery-core`'s cache until that spike resolves and its
-recommendation is recorded in the roadmap file.
+- Observers are ref-counted on `Flow` collection (`onStart` / `onCompletion`).
+- When the count reaches zero, a **5-second grace window** runs before the entry
+  goes inactive and the `gcTime` timer starts.
+- **A reattach landing inside the grace window is a continuation, not a mount**,
+  so it skips the refetch-on-mount staleness check.
+
+That last rule is the non-obvious one and must not be dropped. Without it,
+rotation with the default `staleTime = 0` fires a redundant request every time —
+the grace period alone does not prevent it, because refetch-on-mount is driven by
+staleness, not by observer accounting. It is invisible under the ViewModel
+`WhileSubscribed` pattern and shows up in `rememberQuery`, which collects
+directly.
+
+`staleTime` still defaults to `0`, preserving parity. Do not "fix" rotation by
+changing that default.
 
 ## Conventions
 

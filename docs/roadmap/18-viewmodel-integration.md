@@ -50,18 +50,27 @@ nobody can reason about:
 - `SharingStarted.Lazily`: Kwery never sees a detach at all, so `gcTime` never
   starts and the entry leaks for the ViewModel's lifetime.
 
-The resolution must be documented precisely and, where possible, made
-unnecessary — this is the concrete Kotlin problem that the [05](05-deduplication-observers.md)
-spike exists to answer.
+**Resolved by the [05](05-deduplication-observers.md) spike.** Measured results:
+
+- **Rotation under `WhileSubscribed`: zero extra requests.** The upstream stays
+  alive, so the cache never sees a detach. The ViewModel pattern was already
+  safe — the rotation bug lives in *direct* collection (`rememberQuery`), and is
+  fixed there by grace-aware reattach suppression.
+- **`Lazily` leaks, confirmed:** entry still cached 10 minutes after the last
+  collector stopped, never evicted. Deliverable 3 below stands.
+- **Stacking is negligible:** 310 s to eviction with `WhileSubscribed` versus
+  305 s without. No custom `SharingStarted` needed.
 
 ## Planned deliverables
 
 1. **A documented, tested recipe** for the canonical ViewModel pattern above,
    stating exactly what happens on rotation, backstack, process death, and
    configuration change — with observed request counts, not prose reassurance.
-2. **`SharingStarted.WhileQueryObserved`** (candidate) — a `SharingStarted`
-   implementation aligned with Kwery's own observer accounting, so consumers
-   stack one timeout instead of two.
+2. ~~**`SharingStarted.WhileQueryObserved`**~~ — **dropped.** The
+   [05](05-deduplication-observers.md) spike measured the stacking directly:
+   `WhileSubscribed(5s)` + 5 s grace + 5 min `gcTime` evicts 310 000 ms after
+   the screen closes, against 305 000 ms without the grace layer. A 1.6 %
+   difference does not justify a third concept. Plain `WhileSubscribed` is fine.
 3. **A guard against `Lazily`.** Detect a query observed by a never-completing
    collector and log a warning naming the key, rather than leaking silently.
 4. **`SavedStateHandle` interaction guidance.** Query *keys* belong in saved
@@ -76,7 +85,7 @@ Not applicable — no TanStack equivalent. Tracking the deliverables instead:
 | Deliverable | Status |
 |---|---|
 | Canonical ViewModel recipe, tested | planned |
-| `WhileQueryObserved` sharing strategy | planned |
+| ~~`WhileQueryObserved` sharing strategy~~ | dropped — see above |
 | `Lazily` leak warning | planned |
 | `SavedStateHandle` guidance | planned |
 | Sample app screen using ViewModel (no Compose state holder) | planned |
@@ -84,10 +93,9 @@ Not applicable — no TanStack equivalent. Tracking the deliverables instead:
 
 ## Open questions
 
-- **OQ-1.** Is `WhileQueryObserved` worth shipping, or does it just add a third
-  concept? Depends on the [05](05-deduplication-observers.md) spike: if the
-  internal grace period makes `WhileSubscribed(5_000)` harmless, plain
-  documentation is enough and this should be dropped.
+- **OQ-1.** ~~Is `WhileQueryObserved` worth shipping?~~ **Closed: no.** The spike
+  measured the stacking cost at 5 s on a 5-minute `gcTime`. Documentation is
+  enough.
 - **OQ-2.** Should `kwery-lifecycle` exist as its own artifact, or do these
   helpers belong in `kwery-android`? Leaning: fold into `kwery-android`; another
   artifact for two utilities is not worth the release surface.
