@@ -1,0 +1,6 @@
+public final class dev/kwery/compose/RememberQueryKt {
+	public static final fun getLocalQueryClient ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun rememberQuery (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Ldev/kwery/QueryState;
+	public static final fun rememberQuerySelecting (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/State;
+}
+

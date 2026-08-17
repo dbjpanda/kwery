@@ -49,7 +49,7 @@ core rather than as an extension.**
 ```
 kwery-core         pure Kotlin/JVM — cache, observers, retries, mutations       [BUILT]
 kwery-android      lifecycle FocusManager, validated-connectivity OnlineManager  [BUILT]
-kwery-compose      rememberQuery / rememberMutation / rememberInfiniteQuery
+kwery-compose      rememberQuery / rememberMutation / rememberInfiniteQuery      [BUILT]
 kwery-persist      persistence contracts + dehydrate/hydrate
 kwery-persist-datastore   DataStore-backed persister
 kwery-persist-room        Room/SQLite-backed persister (larger caches)
@@ -99,7 +99,7 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ○ | ○ |
+| 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ◐ | ○ |
 | 18 | [ViewModel integration](18-viewmodel-integration.md) | — (Kwery-specific) | ● | ○ | ○ |
 | 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `queriesObserver.test.tsx` | ● | ○ | ○ |
 | 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ○ | ○ |
