@@ -54,51 +54,64 @@ kwery-test         virtual-clock test harness for consumers
 
 ## Feature index
 
-Status: `planned` · `in progress` · `done` · `deferred` · `divergent`
+Every feature passes **three gates in order**: spec written → tests green →
+documentation published. See [`CLAUDE.md`](../../CLAUDE.md) for the rules.
+
+Gate status: ○ not started · ◐ in progress · ● done · — not applicable
+
+The "Port tests from" column names the file in
+`.reference/tanstack-query/packages/query-core/src/__tests__/` whose cases
+should be ported for gate 2. Cases deliberately not ported must be recorded in
+that feature's parity table with a reason.
 
 ### Tier 1 — v1 core (irreducible)
 
-| # | Feature | TanStack source | Status |
-|---|---|---|---|
-| 01 | [Query keys](01-query-keys.md) | `guides/query-keys.md` | planned |
-| 02 | [Query functions](02-query-functions.md) | `guides/query-functions.md`, `guides/default-query-function.md` | planned |
-| 03 | [Query state & status axes](03-query-state.md) | `guides/queries.md`, `guides/disabling-queries.md` | planned |
-| 04 | [Caching lifecycle](04-caching-lifecycle.md) | `guides/caching.md`, `guides/important-defaults.md` | planned |
-| 05 | [Deduplication & observers](05-deduplication-observers.md) | `reference/QueryObserver.md`, `guides/render-optimizations.md` | planned |
-| 06 | [Retries & backoff](06-retries.md) | `guides/query-retries.md` | planned |
-| 07 | [Refetch triggers](07-refetch-triggers.md) | `guides/window-focus-refetching.md`, `guides/polling.md` | planned |
-| 08 | [Invalidation & filters](08-invalidation-filters.md) | `guides/query-invalidation.md`, `guides/filters.md` | planned |
-| 09 | [Manual cache access](09-manual-cache.md) | `guides/initial-query-data.md`, `guides/placeholder-query-data.md` | planned |
-| 10 | [Cancellation](10-cancellation.md) | `guides/query-cancellation.md` | planned |
+| # | Feature | Port tests from | Spec | Tests | Docs |
+|---|---|---|:--:|:--:|:--:|
+| 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ○ | ○ |
+| 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ○ | ○ |
+| 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ○ | ○ |
+| 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ○ | ○ |
+| 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ◐ | ○ | ○ |
+| 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ○ | ○ |
+| 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ○ | ○ |
+| 08 | [Invalidation & filters](08-invalidation-filters.md) | `queryClient.test.tsx`, `utils.test.tsx` | ● | ○ | ○ |
+| 09 | [Manual cache access](09-manual-cache.md) | `queryClient.test.tsx`, `queryObserver.test.tsx` | ● | ○ | ○ |
+| 10 | [Cancellation](10-cancellation.md) | `query.test.tsx` | ● | ○ | ○ |
 
 ### Tier 2 — v1 headline features
 
-| # | Feature | TanStack source | Status |
-|---|---|---|---|
-| 11 | [Mutations](11-mutations.md) | `guides/mutations.md`, `reference/mutationOptions.md` | planned |
-| 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `guides/optimistic-updates.md`, `guides/updates-from-mutation-responses.md` | planned |
-| 13 | [Network mode & offline pause](13-network-mode.md) | `guides/network-mode.md` | planned |
-| 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `reference/QueryClient.md#resumepausedmutations` | planned |
-| 15 | [Persistence & hydration](15-persistence.md) | `plugins/persistQueryClient.md`, `reference/hydration.md` | planned |
-| 16 | [Infinite & paginated queries](16-infinite-queries.md) | `guides/infinite-queries.md`, `guides/paginated-queries.md` | planned |
+| # | Feature | Port tests from | Spec | Tests | Docs |
+|---|---|---|:--:|:--:|:--:|
+| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ○ | ○ |
+| 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ○ | ○ |
+| 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ○ | ○ |
+| 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ○ | ○ |
+| 15 | [Persistence & hydration](15-persistence.md) | `hydration.test.tsx` | ● | ○ | ○ |
+| 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ○ | ○ |
 
 ### Tier 3 — v1 integration surfaces
 
-| # | Feature | TanStack source | Status |
-|---|---|---|---|
-| 17 | [Compose bindings](17-compose-bindings.md) | `reference/useQuery.md` | planned |
-| 18 | [ViewModel integration](18-viewmodel-integration.md) | — (Kwery-specific) | planned |
-| 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `guides/dependent-queries.md`, `guides/parallel-queries.md` | planned |
-| 20 | [Prefetching](20-prefetching.md) | `guides/prefetching.md` | planned |
-| 21 | [Testing support](21-testing.md) | `guides/testing.md` | planned |
+| # | Feature | Port tests from | Spec | Tests | Docs |
+|---|---|---|:--:|:--:|:--:|
+| 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ○ | ○ |
+| 18 | [ViewModel integration](18-viewmodel-integration.md) | — (Kwery-specific) | ● | ○ | ○ |
+| 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `queriesObserver.test.tsx` | ● | ○ | ○ |
+| 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ○ | ○ |
+| 21 | [Testing support](21-testing.md) | — (Kwery-specific) | ● | ○ | ○ |
 
 ### Tier 4 — post-v1
 
-| # | Feature | TanStack source | Status |
-|---|---|---|---|
-| 22 | [Devtools](22-devtools.md) | `framework/react/devtools.md` | deferred |
-| 23 | [Cross-process cache sync](23-cross-process-sync.md) | `plugins/broadcastQueryClient.md` | deferred |
-| 24 | [Streamed queries](24-streamed-queries.md) | `reference/streamedQuery.md` | deferred |
+| # | Feature | Port tests from | Spec | Tests | Docs |
+|---|---|---|:--:|:--:|:--:|
+| 22 | [Devtools](22-devtools.md) | — | ◐ | ○ | ○ |
+| 23 | [Cross-process cache sync](23-cross-process-sync.md) | — | ◐ | ○ | ○ |
+| 24 | [Streamed queries](24-streamed-queries.md) | `streamedQuery.test.tsx` | ◐ | ○ | ○ |
+
+Tier 4 specs are marked ◐ deliberately: each carries a **v1 obligation** — a
+constraint the core must satisfy now so the deferred feature stays buildable
+later — and those obligations are in scope for v1 even though the features are
+not.
 
 ## Deliberate non-goals
 
@@ -145,5 +158,29 @@ Each feature file follows the same shape:
 5. **Open questions** — unresolved decisions blocking implementation.
 6. **Definition of done** — the tests that must pass for the feature to ship.
 
-A feature moves to `done` only when its definition of done is met and its
-parity table has no unexplained gaps.
+## The three gates
+
+A feature is complete only when all three have been passed, in order.
+
+**Gate 1 — Spec.** This file. Passed when the design is written and every open
+question is either resolved or explicitly deferred with a reason.
+
+**Gate 2 — Tests.** Passed when every box in the file's "Definition of done" is
+ticked and the suite is green. Start by reading the test names in the
+corresponding TanStack file (see the "Port tests from" column) — they are a
+behavioural checklist covering edge cases no design document anticipates. Port
+each relevant case; record any deliberate omission in the parity table.
+
+Gate 2 is also where the spec gets corrected. Implementation routinely proves a
+design assumption wrong; when it does, **fix this file first**, then continue. A
+roadmap file that no longer matches the code is worse than no roadmap.
+
+**Gate 3 — Documentation.** Passed when `docs/<feature>.md` exists as
+user-facing documentation with examples that compile.
+
+Gate 3 comes after gate 2 without exception. Documentation describes behaviour
+that has been proven, not behaviour that was intended — writing it earlier
+produces confident documentation of bugs.
+
+Update the status table above as each gate is passed. It is the single source of
+truth for project state.
