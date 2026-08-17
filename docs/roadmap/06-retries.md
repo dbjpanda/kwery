@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | gate 2 in progress — policy and backoff implemented and tested |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/query-retries.md`](../../.reference/tanstack-query/docs/framework/react/guides/query-retries.md) |
 | **Blocks** | 13 Network mode |
@@ -34,7 +34,7 @@ sealed interface RetryPolicy {
     data object Forever : RetryPolicy
     fun interface Decide : RetryPolicy {
         /** [failureCount] starts at 0 for the first retry decision. */
-        fun shouldRetry(failureCount: Int, error: Throwable): Boolean
+        fun decide(failureCount: Int, error: Throwable): Boolean
     }
 
     companion object {
@@ -47,10 +47,9 @@ fun interface RetryDelay {
     fun delayFor(attemptIndex: Int, error: Throwable): Duration
 
     companion object {
-        /** min(1s * 2^attempt, 30s) — matches TanStack. */
-        val Exponential = RetryDelay { attempt, _ ->
-            minOf(1.seconds * (1L shl attempt), 30.seconds)
-        }
+        /** min(1s * 2^attempt, 30s) — matches TanStack. Clamped above
+         *  attempt 31, where the shift would wrap to a 0 ms delay. */
+        val Exponential: RetryDelay = /* see Retry.kt */
     }
 }
 ```
@@ -106,7 +105,8 @@ val Default: RetryDelay = RetryDelay.equalJitter(Exponential)
 | Retries pause when offline | yes | see [13](13-network-mode.md) | planned |
 | Cancellation never retried | implicit | **enforced in engine** | divergent (better) |
 | Built-in non-retryable predicate | no | `exceptWhen { … }` | divergent (addition) |
-| Jitter | no | **on by default** (equal jitter) | divergent (better) |
+| Jitter | no | **on by default** (equal jitter) | done |
+| Backoff overflow safety | n/a | clamped above attempt 31 | done |
 | Deterministic retry timing in tests | no | injectable `Random` | divergent (better) |
 
 ## Deliberate divergences
@@ -114,8 +114,11 @@ val Default: RetryDelay = RetryDelay.equalJitter(Exponential)
 1. **Cancellation handling is engine-level.** Not delegated to user predicates.
 2. **`exceptWhen` sugar.** Removes boilerplate every consumer would otherwise
    write, without changing defaults.
-3. **Jitter available.** Off by default to preserve parity; documented as
-   recommended for production.
+3. **Jitter on by default.** Equal jitter over the exponential base. See OQ-1;
+   `RetryDelay.Exponential` remains available for exact TanStack timing.
+4. **Backoff saturates instead of overflowing.** `RetryPolicy.Forever` can drive
+   the attempt index arbitrarily high, and `1000L shl 63` wraps to **0 ms** —
+   an unbounded hot retry loop. The implementation clamps above attempt 31.
 
 ## Open questions
 
@@ -147,12 +150,18 @@ val Default: RetryDelay = RetryDelay.equalJitter(Exponential)
 
 ## Definition of done
 
-- [ ] `RetryPolicy`, `RetryDelay`, `exceptWhen` implemented.
+- [x] `RetryPolicy`, `RetryDelay`, `exceptWhen` implemented.
 - [ ] Test: exactly 3 retries by default, then `status = Error`.
-- [ ] Test: delays are 1 s, 2 s, 4 s… capped at 30 s, verified on virtual clock.
+- [x] Test: delays are 1 s, 2 s, 4 s, 8 s, 16 s, capped at 30 s.
+- [x] Test: no shift overflow at extreme attempt indices. **Verified by
+      mutation**: without the guard, attempt 63 yields a **0 s** delay, which
+      under `RetryPolicy.Forever` is an unbounded hot retry loop.
 - [ ] Test: `failureCount` increments and `failureReason` is populated while
       `error` stays null until the final attempt.
 - [ ] Test: `CancellationException` neither retries nor increments
       `failureCount` — under `Forever`, which would otherwise loop forever.
 - [ ] Test: mutations default to no retries.
-- [ ] Test: jitter stays within `[0, computed]` with an injected random source.
+- [x] Test: equal jitter stays within `[base/2, base]`, never returns zero,
+      actually spreads, and is deterministic for a seeded `Random`.
+- [x] Test: `RetryDelay.Default` is jittered — guards the decision itself
+      against being reverted to plain `Exponential` for "parity".

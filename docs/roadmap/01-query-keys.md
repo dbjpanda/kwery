@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | gate 2 in progress — blocked only on an R8 test needing kwery-android |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/query-keys.md`](../../.reference/tanstack-query/docs/framework/react/guides/query-keys.md), [`guides/filters.md`](../../.reference/tanstack-query/docs/framework/react/guides/filters.md) |
 | **Blocks** | 04 Caching lifecycle, 08 Invalidation, 15 Persistence |

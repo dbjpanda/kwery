@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | gate 2 in progress — StaleTime and TimeSource implemented and tested |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/caching.md`](../../.reference/tanstack-query/docs/framework/react/guides/caching.md), [`guides/important-defaults.md`](../../.reference/tanstack-query/docs/framework/react/guides/important-defaults.md) |
 | **Blocks** | 05 Observers, 15 Persistence |
@@ -52,14 +52,16 @@ The lifecycle from `guides/caching.md`:
 ## Kwery design
 
 ```kotlin
-@JvmInline
-value class StaleTime private constructor(private val raw: Long) {
+sealed interface StaleTime {
+    data class After(val duration: Duration) : StaleTime
+    /** Never stale by time; still yields to invalidation. */
+    data object Infinite : StaleTime
+    /** Never refetches, and ignores invalidation entirely. */
+    data object Static : StaleTime
+
     companion object {
-        fun of(duration: Duration) = StaleTime(duration.inWholeMilliseconds)
-        /** Never stale by time; still yields to invalidation. */
-        val Infinite = StaleTime(-1)
-        /** Never refetches, and ignores invalidation entirely. */
-        val Static = StaleTime(-2)
+        val Zero: StaleTime = After(Duration.ZERO)
+        fun of(duration: Duration): StaleTime = After(duration)
     }
 }
 
@@ -72,10 +74,30 @@ data class QueryOptions<T>(
 )
 ```
 
-Modelling `staleTime` as a value class rather than a `Duration` is what makes
+Modelling `staleTime` as its own type rather than a `Duration` is what makes
 `Infinite` and `Static` expressible without sentinel magic numbers leaking into
 user code. `Duration.INFINITE` could stand in for `Infinite`, but there is no
 honest `Duration` that means "also ignore invalidation".
+
+**Correction from implementation:** this originally specified a `@JvmInline
+value class` wrapping a `Long` with `-1`/`-2` sentinels. A sealed interface is
+better and the value class's justification did not survive contact: the
+allocation it avoided happens once per `QueryOptions`, not per cache lookup, so
+there was nothing on a hot path to optimise. The sealed form gives an exhaustive
+`when`, no sentinel encoding to get wrong, and readable `toString()` in test
+failures.
+
+### Wall-clock robustness
+
+Staleness compares epoch millis, and wall-clock time can move **backwards** — an
+NTP correction, or the user changing the device clock. That puts `dataUpdatedAt`
+in the future, and a naive `now - dataUpdatedAt >= staleTime` then reports the
+data fresh until the clock catches up, potentially for hours, with no way to
+recover.
+
+A negative elapsed time is therefore treated as **elapsed**. Refetching earlier
+than necessary is a cost; serving stale data indefinitely is a bug. TanStack has
+the same exposure and no such guard.
 
 ### Time is injected
 
@@ -119,7 +141,8 @@ where the hard part lives.
 | gc timer cancelled on reattach | yes | yes | planned |
 | Per-query and global defaults | yes | yes | planned |
 | Max `gcTime` ~24 days (`setTimeout` limit) | JS limitation | **no limit** — coroutine delay is `Long` | divergent (better) |
-| Injectable clock | no (`timeoutManager` in v5) | `TimeSource`, first-class | divergent (better) |
+| Injectable clock | no (`timeoutManager` in v5) | `TimeSource`, first-class | done |
+| Backwards clock jump handled | no | treated as stale | divergent (better) |
 
 ## Deliberate divergences
 
@@ -129,8 +152,12 @@ where the hard part lives.
 2. **`TimeSource` is public API.** TanStack added `timeoutManager` late; Kwery
    treats an injectable clock as a first-class testing affordance from day one
    and documents it for consumers testing their own repositories.
-3. **`StaleTime` value class.** Prevents the `Infinity`/`'static'` distinction
-   from being a stringly-typed special case.
+3. **`StaleTime` sealed interface.** Prevents the `Infinity`/`'static'`
+   distinction from being a stringly-typed special case, with an exhaustive
+   `when` and no sentinel encoding.
+4. **Backwards clock jumps are treated as stale.** TanStack has the same
+   wall-clock exposure and no guard; without one, an NTP correction can pin data
+   as "fresh" for hours with no way to recover.
 
 ## Open questions
 
@@ -162,11 +189,13 @@ where the hard part lives.
 
 ## Definition of done
 
-- [ ] `StaleTime`, `QueryOptions`, `TimeSource` implemented.
+- [x] `StaleTime` and `TimeSource` implemented, with the backwards-clock guard
+      verified by mutation. `QueryOptions` lands with the cache.
 - [ ] The five-step lifecycle from `guides/caching.md` reproduced as a single
       integration test against a virtual clock.
-- [ ] Test: `Infinite` yields to `invalidateQueries`; `Static` does not.
-- [ ] Test: `Static` blocks `refetchOnMount = "always"`.
+- [x] Test: `Infinite` yields to invalidation; `Static` does not (`allowsInvalidation`).
+- [x] Test: `Static` blocks automatic refetch (`allowsAutomaticRefetch`).
+      End-to-end `refetchOnMount = "always"` coverage lands with the cache.
 - [ ] Test: gc timer cancelled and restarted correctly across detach/reattach.
 - [ ] Test: `gcTime = Duration.INFINITE` never evicts and does not overflow.
 - [ ] Whole suite runs with zero real `delay()` calls.

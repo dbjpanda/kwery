@@ -179,3 +179,109 @@ public final class dev/kwery/QueryUiState$Loading : dev/kwery/QueryUiState {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class dev/kwery/RetryDelay {
+	public static final field Companion Ldev/kwery/RetryDelay$Companion;
+	public abstract fun delayFor-3nIYWDw (ILjava/lang/Throwable;)J
+}
+
+public final class dev/kwery/RetryDelay$Companion {
+	public final fun constant-LRDsOJo (J)Ldev/kwery/RetryDelay;
+	public final fun equalJitter (Ldev/kwery/RetryDelay;Lkotlin/random/Random;)Ldev/kwery/RetryDelay;
+	public static synthetic fun equalJitter$default (Ldev/kwery/RetryDelay$Companion;Ldev/kwery/RetryDelay;Lkotlin/random/Random;ILjava/lang/Object;)Ldev/kwery/RetryDelay;
+	public final fun getDefault ()Ldev/kwery/RetryDelay;
+	public final fun getExponential ()Ldev/kwery/RetryDelay;
+	public final fun getMaxBackoff-UwyO8pc ()J
+}
+
+public final class dev/kwery/RetryKt {
+	public static final fun exceptWhen (Ldev/kwery/RetryPolicy;Lkotlin/jvm/functions/Function1;)Ldev/kwery/RetryPolicy;
+	public static final fun shouldRetry (Ldev/kwery/RetryPolicy;ILjava/lang/Throwable;)Z
+}
+
+public abstract interface class dev/kwery/RetryPolicy {
+	public static final field Companion Ldev/kwery/RetryPolicy$Companion;
+}
+
+public final class dev/kwery/RetryPolicy$Companion {
+	public final fun getDefault ()Ldev/kwery/RetryPolicy;
+	public final fun getForMutations ()Ldev/kwery/RetryPolicy;
+}
+
+public abstract interface class dev/kwery/RetryPolicy$Decide : dev/kwery/RetryPolicy {
+	public abstract fun decide (ILjava/lang/Throwable;)Z
+}
+
+public final class dev/kwery/RetryPolicy$Forever : dev/kwery/RetryPolicy {
+	public static final field INSTANCE Ldev/kwery/RetryPolicy$Forever;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/RetryPolicy$Never : dev/kwery/RetryPolicy {
+	public static final field INSTANCE Ldev/kwery/RetryPolicy$Never;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/RetryPolicy$Times : dev/kwery/RetryPolicy {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Ldev/kwery/RetryPolicy$Times;
+	public static synthetic fun copy$default (Ldev/kwery/RetryPolicy$Times;IILjava/lang/Object;)Ldev/kwery/RetryPolicy$Times;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/kwery/StaleTime {
+	public static final field Companion Ldev/kwery/StaleTime$Companion;
+}
+
+public final class dev/kwery/StaleTime$After : dev/kwery/StaleTime {
+	public synthetic fun <init> (JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-UwyO8pc ()J
+	public final fun copy-LRDsOJo (J)Ldev/kwery/StaleTime$After;
+	public static synthetic fun copy-LRDsOJo$default (Ldev/kwery/StaleTime$After;JILjava/lang/Object;)Ldev/kwery/StaleTime$After;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDuration-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/StaleTime$Companion {
+	public final fun getZero ()Ldev/kwery/StaleTime;
+	public final fun of-LRDsOJo (J)Ldev/kwery/StaleTime;
+}
+
+public final class dev/kwery/StaleTime$Infinite : dev/kwery/StaleTime {
+	public static final field INSTANCE Ldev/kwery/StaleTime$Infinite;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/StaleTime$Static : dev/kwery/StaleTime {
+	public static final field INSTANCE Ldev/kwery/StaleTime$Static;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/StaleTimeKt {
+	public static final fun getAllowsAutomaticRefetch (Ldev/kwery/StaleTime;)Z
+	public static final fun getAllowsInvalidation (Ldev/kwery/StaleTime;)Z
+	public static final fun isStale (Ldev/kwery/StaleTime;Ljava/lang/Long;J)Z
+}
+
+public abstract interface class dev/kwery/TimeSource {
+	public static final field Companion Ldev/kwery/TimeSource$Companion;
+	public abstract fun nowMillis ()J
+}
+
+public final class dev/kwery/TimeSource$Companion {
+	public final fun getSystem ()Ldev/kwery/TimeSource;
+}
+

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | gate 2 in progress — value types done; behavioural tests need the cache |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/queries.md), [`guides/disabling-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/disabling-queries.md) |
 | **Blocks** | everything |
