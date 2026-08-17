@@ -5,9 +5,12 @@ management with caching, deduplication, stale-while-revalidate, mutations,
 offline support, and a persisted cache that survives process death.
 
 This folder tracks **feature parity with TanStack Query v5**, one file per
-feature area. The reference implementation's documentation is vendored at
-`.reference/tanstack-query/docs/` so parity can be checked offline and
-re-checked when TanStack ships changes.
+feature area.
+
+Every parity claim cites TanStack's own documentation or test suite. That
+material is **not committed** — fetch it once with
+`./scripts/vendor-reference.sh`, which pins the revision. The
+`.reference/...` links below only resolve after you have run it.
 
 ## Positioning
 
@@ -62,8 +65,8 @@ documentation published. See [`CLAUDE.md`](../../CLAUDE.md) for the rules.
 Gate status: ○ not started · ◐ in progress · ● done · — not applicable
 
 The "Port tests from" column names the file in
-`.reference/tanstack-query/packages/query-core/src/__tests__/` whose cases
-should be ported for gate 2. Cases deliberately not ported must be recorded in
+`.reference/tanstack-query/packages/query-core/src/__tests__/` (fetch with
+`./scripts/vendor-reference.sh`) whose cases should be ported for gate 2. Cases deliberately not ported must be recorded in
 that feature's parity table with a reason.
 
 ### Tier 1 — v1 core (irreducible)

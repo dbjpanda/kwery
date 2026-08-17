@@ -12,9 +12,7 @@ local.properties
 # OS
 .DS_Store
 
-# Note: .reference/ is deliberately committed. It vendors the TanStack Query
-# documentation at a pinned revision so parity claims in docs/roadmap/ are
-# checkable offline and diffable when TanStack ships changes.
-# See .reference/README.md.
-
+# Vendored TanStack Query docs and query-core tests. Not committed — fetch them
+# at the pinned revision with ./scripts/vendor-reference.sh, which is where that
+# revision is recorded. Required before gate-2 (test) work; see CONTRIBUTING.md.
 .reference/

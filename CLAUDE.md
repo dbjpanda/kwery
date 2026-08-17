@@ -35,10 +35,15 @@ Rules:
 
 ## Reference material
 
-`.reference/tanstack-query/` vendors TanStack Query at a pinned revision
-(`dce04b5`, 2026-08-17). It is committed deliberately. Consult it rather than
-working from memory — TanStack's behaviour has subtleties that are easy to
-misremember, and a wrong parity claim is worse than an admitted gap.
+`.reference/tanstack-query/` holds TanStack Query at a pinned revision
+(`dce04b5`, 2026-08-17). It is **gitignored, not committed** — fetch it with
+`./scripts/vendor-reference.sh`, which is where the pinned revision is recorded.
+If `.reference/` is missing, run that script before doing anything that makes a
+parity claim.
+
+Consult it rather than working from memory: TanStack's behaviour has subtleties
+that are easy to misremember, and a wrong parity claim is worse than an admitted
+gap.
 
 - `docs/` — 494 markdown files. The framework-agnostic behaviour is in
   `docs/framework/react/guides/`; core API in `docs/reference/`.
@@ -68,7 +73,9 @@ Suspense, SSR) — see the roadmap's non-goals.
 
 ```
 CLAUDE.md               this file
-.reference/             vendored TanStack docs + tests (committed, pinned)
+CONTRIBUTING.md         contributor setup, the three gates, test standards
+scripts/                vendor-reference.sh — fetches .reference/ at its pin
+.reference/             TanStack docs + tests (GITIGNORED; fetch with the script)
 docs/roadmap/           gate 1 — one file per feature, 24 features, 4 tiers
 docs/                   gate 3 — user-facing documentation
 kwery-core/             pure Kotlin/JVM: cache, observers, retries, mutations
@@ -186,5 +193,6 @@ messages that do not name the real cause.
 
 - One feature gate per commit where practical. A gate-2 commit contains tests
   and the implementation that makes them pass; a gate-3 commit contains docs.
-- Re-vendoring `.reference/` lands as its **own** commit, so the upstream delta
-  is reviewable separately from Kwery changes.
+- Bumping the pinned revision in `scripts/vendor-reference.sh` lands as its
+  **own** commit, so the upstream behavioural delta is reviewable separately
+  from Kwery changes.

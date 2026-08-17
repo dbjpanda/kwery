@@ -78,10 +78,11 @@ Four decisions the whole library rests on:
   `getQueryData`/`setQueryData`/`select` type-safe and making TanStack's most
   common bug — a query function reading a variable absent from the key — fail to
   compile.
-- **Parity by measurement, not by memory.** TanStack Query's docs *and*
-  `query-core` test suite are vendored at a pinned revision under
-  `.reference/`. Every parity claim cites it, and behaviour is ported from their
-  tests rather than from recollection.
+- **Parity by measurement, not by memory.** Every parity claim cites TanStack
+  Query's own docs or `query-core` test suite at a pinned revision, and
+  behaviour is ported from their tests rather than from recollection. That
+  material is fetched locally by contributors rather than committed — see
+  [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Full rationale, including 16 deliberate divergences and why each exists, is in
 [docs/roadmap/README.md](docs/roadmap/README.md).
@@ -89,16 +90,18 @@ Full rationale, including 16 deliberate divergences and why each exists, is in
 ## Building
 
 ```sh
+./scripts/vendor-reference.sh   # once, before test work
 ./gradlew build
 ```
 
-Requires JDK 17 to build; the published artifacts target JVM 11.
+Requires JDK 17 to build; the published artifacts target JVM 11. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Contributing
 
 Kwery uses a three-gate workflow — spec, then tests, then documentation, in that
-order and never out of it. See [CLAUDE.md](CLAUDE.md) for the rules and
-[docs/roadmap/README.md](docs/roadmap/README.md) for current status.
+order and never out of it. See [CONTRIBUTING.md](CONTRIBUTING.md) to get set up,
+and [docs/roadmap/README.md](docs/roadmap/README.md) for current status.
 
 ## Licence
 
