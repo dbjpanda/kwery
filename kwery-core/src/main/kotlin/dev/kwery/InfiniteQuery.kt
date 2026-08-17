@@ -1,5 +1,7 @@
 package dev.kwery
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
@@ -120,6 +122,9 @@ public class InfiniteQuery<P : Any, T> internal constructor(
     private val key: QueryKey<InfiniteData<P, T>>,
     private val options: InfiniteQueryOptions<P, T>,
     private val queryOptions: QueryOptions,
+    /** Applied to each page fetch individually. See [fetchPageWithRetry]. */
+    private val pageRetry: RetryPolicy,
+    private val pageRetryDelay: RetryDelay,
     private val fetchPage: suspend (pageParam: P) -> T,
 ) {
     private val directionLock = Mutex()
@@ -180,14 +185,45 @@ public class InfiniteQuery<P : Any, T> internal constructor(
         }
     }
 
+    /**
+     * Fetch one page, retrying **that page only**.
+     *
+     * Retry has to live here rather than around the whole fetch. A refetch
+     * walks every page inside a single cache fetch, so an entry-level retry
+     * would restart the walk from page one each time a later page failed —
+     * re-fetching everything before it, repeatedly. TanStack has a regression
+     * test for exactly this (#8046), described there as "an infinite loop where
+     * the retryer every time restarts from page 1 once it reaches the page
+     * where it errors".
+     *
+     * The entry is therefore configured with [RetryPolicy.Never] and the user's
+     * retry policy is applied here instead, which is what "retry this query"
+     * actually means for a paged one.
+     */
+    private suspend fun fetchPageWithRetry(pageParam: P): T {
+        var failureCount = 0
+        while (true) {
+            try {
+                return fetchPage(pageParam)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Throwable) {
+                if (!pageRetry.shouldRetry(failureCount, error)) throw error
+                val wait = pageRetryDelay.delayFor(failureCount, error)
+                failureCount++
+                delay(wait)
+            }
+        }
+    }
+
     private suspend fun loadFirstPage(): InfiniteData<P, T> {
         val param = options.initialPageParam
-        return InfiniteData(listOf(fetchPage(param)), listOf(param))
+        return InfiniteData(listOf(fetchPageWithRetry(param)), listOf(param))
     }
 
     private suspend fun appendNextPage(current: InfiniteData<P, T>): InfiniteData<P, T> {
         val param = nextParam(current) ?: return current
-        val page = fetchPage(param)
+        val page = fetchPageWithRetry(param)
         return trim(
             InfiniteData(current.pages + page, current.pageParams + param),
             evictFrom = Evict.Front,
@@ -196,7 +232,7 @@ public class InfiniteQuery<P : Any, T> internal constructor(
 
     private suspend fun prependPreviousPage(current: InfiniteData<P, T>): InfiniteData<P, T> {
         val param = previousParam(current) ?: return current
-        val page = fetchPage(param)
+        val page = fetchPageWithRetry(param)
         return trim(
             InfiniteData(listOf(page) + current.pages, listOf(param) + current.pageParams),
             evictFrom = Evict.Back,
@@ -223,7 +259,7 @@ public class InfiniteQuery<P : Any, T> internal constructor(
         var param: P? = current.pageParams.firstOrNull() ?: options.initialPageParam
 
         while (pages.size < target && param != null) {
-            val page = fetchPage(param)
+            val page = fetchPageWithRetry(param)
             pages += page
             params += param
             param = options.getNextPageParam(page, pages.toList(), param)
@@ -288,7 +324,17 @@ public fun <P : Any, T> QueryClient.infiniteQuery(
     options: InfiniteQueryOptions<P, T>,
     queryOptions: QueryOptions = config.defaultQueryOptions,
     fetchPage: suspend (pageParam: P) -> T,
-): InfiniteQuery<P, T> = InfiniteQuery(this, key, options, queryOptions, fetchPage)
+): InfiniteQuery<P, T> = InfiniteQuery(
+    client = this,
+    key = key,
+    options = options,
+    // The entry must not retry: retry is applied per page inside the query, so
+    // a failing page cannot restart the whole page walk (#8046).
+    queryOptions = queryOptions.copy(retry = RetryPolicy.Never),
+    pageRetry = queryOptions.retry,
+    pageRetryDelay = queryOptions.retryDelay,
+    fetchPage = fetchPage,
+)
 
 /** Flatten accumulated pages, given how to read items out of one. */
 public fun <P : Any, T, I> InfiniteData<P, T>.flatten(items: (T) -> List<I>): List<I> =

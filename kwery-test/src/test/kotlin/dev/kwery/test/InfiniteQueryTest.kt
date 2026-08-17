@@ -396,4 +396,79 @@ class InfiniteQueryTest {
         assertEquals(before, kwery.client.getQueryData(PagedFeedKey), "old pages survive a cancel")
         job.cancel()
     }
+
+    // ---- #8046: a failing page must not re-walk from page 1 --------------
+
+    @Test
+    fun `retrying a failing page does not refetch the pages before it`() = runTest {
+        // TanStack's #8046 regression, described there as "an infinite loop
+        // where the retryer every time restarts from page 1 once it reaches
+        // the page where it errors".
+        val kwery = TestQueryClient(this)
+        val fetched = mutableListOf<Int>()
+        var failuresLeft = 2
+
+        val retrying = QueryOptions(
+            staleTime = StaleTime.of(5.minutes),
+            retry = RetryPolicy.Times(5),
+            retryDelay = dev.kwery.RetryDelay.constant(10.milliseconds),
+        )
+        val feed = kwery.client.infiniteQuery(PagedFeedKey, options(), retrying) { cursor ->
+            fetched += cursor
+            delay(10)
+            // The SECOND page is flaky; the first is fine.
+            if (cursor == 1 && failuresLeft > 0) {
+                failuresLeft--
+                throw IllegalStateException("flaky page")
+            }
+            page(cursor)
+        }
+        val job = backgroundScope.launch { feed.state.collect { } }
+        kwery.settle(200.milliseconds)
+        feed.fetchNextPage()
+        kwery.settle(2.seconds)
+
+        assertEquals(
+            listOf(0, 1, 1, 1),
+            fetched,
+            "page 1 retried three times; page 0 fetched once and never re-walked",
+        )
+        assertEquals(2, kwery.client.getQueryData(PagedFeedKey)!!.pages.size)
+        job.cancel()
+    }
+
+    @Test
+    fun `a page that exhausts its retries fails the query without re-walking`() = runTest {
+        val kwery = TestQueryClient(this)
+        val fetched = mutableListOf<Int>()
+
+        val retrying = QueryOptions(
+            staleTime = StaleTime.of(5.minutes),
+            retry = RetryPolicy.Times(2),
+            retryDelay = dev.kwery.RetryDelay.constant(10.milliseconds),
+        )
+        val feed = kwery.client.infiniteQuery(PagedFeedKey, options(), retrying) { cursor ->
+            fetched += cursor
+            delay(10)
+            if (cursor == 1) throw IllegalStateException("permanently broken")
+            page(cursor)
+        }
+        val job = backgroundScope.launch { feed.state.collect { } }
+        kwery.settle(200.milliseconds)
+        feed.fetchNextPage()
+        kwery.settle(5.seconds)
+
+        assertEquals(
+            listOf(0, 1, 1, 1),
+            fetched,
+            "3 attempts at page 1, and page 0 was never fetched again",
+        )
+        assertTrue(kwery.client.getQueryState(PagedFeedKey)!!.isError)
+        assertEquals(
+            1,
+            kwery.client.getQueryData(PagedFeedKey)!!.pages.size,
+            "the successfully loaded page survives the failure",
+        )
+        job.cancel()
+    }
 }

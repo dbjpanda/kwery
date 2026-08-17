@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 2 — v1 headline |
-| **Status** | **gate 2 in progress** — reconciled; one known gap (#8046 per-page retry) |
+| **Status** | **gate 2 complete** — reconciled against the vendored suite |
 | **Module** | `kwery-core`, `kwery-compose` |
 | **TanStack source** | [`guides/infinite-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/infinite-queries.md), [`guides/paginated-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/paginated-queries.md) |
 | **Depends on** | 03 Query state, 09 Manual cache |
@@ -120,7 +120,7 @@ feed.fetchNextPageWhenNearEnd(listState, threshold = 5)
 | Required `initialPageParam` | yes | yes | planned |
 | Null page param vs "no more pages" | conflated | disambiguated by `P : Any` | divergent (better) |
 | Refetch drops trailing pages when list shrinks | yes | yes | done |
-| Per-page retry (#8046) | yes | **not yet** — retries the whole page walk | **gap** |
+| Per-page retry (#8046) | yes | yes — entry retry disabled, retry applied per page | done |
 | `getNextPageParam` | yes | yes | planned |
 | `getPreviousPageParam` (bidirectional) | yes | yes | planned |
 | `hasNextPage` / `hasPreviousPage` | yes | yes | planned |
@@ -177,18 +177,24 @@ genuinely null cursor is expressed with a sentinel value.
 the fetch direction; page-param callbacks are never invoked on empty pages;
 cancelling a refetch preserves the previously loaded pages.
 
-### Known gap: per-page retry (#8046)
+### Retry is per page, not per walk (#8046)
 
 TanStack has a regression test for an infinite loop where "the retryer every
-time restarts from page 1 once it reaches the page where it errors". Kwery has
-the same shape of problem: an `AllPages` refetch runs inside the entry's single
-fetch, so the entry's retry policy retries **the whole page walk**, not the
-page that failed.
+time restarts from page 1 once it reaches the page where it errors". Kwery had
+the same shape of problem: a page walk happens inside the entry's single fetch,
+so an entry-level retry retried **the whole walk**.
 
-With the default `RetryPolicy.ForMutations`-style settings this is bounded, but
-under `RetryPolicy.Forever` it would re-walk from page 1 indefinitely. Fixing it
-means per-page retry inside the refetch loop rather than delegating to the
-entry. **Not yet done**, and gate 2 stays open because of it.
+Retry therefore lives inside `InfiniteQuery`, applied to each page fetch
+individually, and the entry is configured with `RetryPolicy.Never`. The user's
+retry policy is not ignored — it is applied where it means what they intended.
+
+Reproduced by mutation. Restoring entry-level retry makes the fetch sequence
+`[0, 1, 0]`: page 1 fails, and the retry re-fetches page 0 before reaching it
+again. With the fix it is `[0, 1, 1, 1]` — three attempts at the failing page,
+and the page before it fetched exactly once.
+
+The cost scales badly the further in the failure is: a flaky page 30 under
+`RetryPolicy.Forever` would re-fetch 29 healthy pages per attempt, forever.
 
 ## Definition of done
 
@@ -215,4 +221,8 @@ entry. **Not yet done**, and gate 2 stays open because of it.
 - [x] Test: a refetch re-derives page params rather than replaying stored ones.
 - [x] Test: page-param callbacks are not invoked on empty pages.
 - [x] Test: cancelling a refetch preserves the previously loaded pages.
-- [ ] Per-page retry, so a failing page does not re-walk from page 1 (#8046).
+- [x] Per-page retry, so a failing page does not re-walk from page 1 (#8046).
+      **Verified by mutation**: entry-level retry gives `[0, 1, 0]`, per-page
+      gives `[0, 1, 1, 1]`.
+- [x] Test: a page that exhausts its retries fails the query, and the pages
+      already loaded survive the failure.

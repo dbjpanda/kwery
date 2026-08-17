@@ -94,7 +94,7 @@ that feature's parity table with a reason.
 | 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ◐ | ○ |
 | 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ○ |
 | 15 | [Persistence & hydration](15-persistence.md) | `hydration.test.tsx` | ● | ◐ | ○ |
-| 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ◐ | ○ |
+| 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ● | ○ |
 
 ### Tier 3 — v1 integration surfaces
 
