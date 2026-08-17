@@ -239,21 +239,19 @@ bespoke mechanism.
 
 Scenario IDs refer to the spike harness; each becomes a real test.
 
-- [ ] (S1) Two concurrent observers of one key produce **exactly one** request.
-- [ ] (S2) An observer attaching mid-flight joins rather than restarting.
-- [ ] (S11) Rotation with `staleTime = 0` causes **zero** extra requests.
-- [ ] (S12) Returning after 30 s — past grace — **does** refetch.
-- [ ] (S13) Returning 100 ms after grace expiry **does** refetch (sharp boundary).
-- [ ] (S9) Leaving and returning inside grace with a request in flight joins the
-      existing request; total requests = 1.
-- [ ] (S10) Abandoning past grace cancels the in-flight request at grace expiry.
-- [ ] (S5) Eviction occurs at `grace + gcTime` after the last observer leaves.
-- [ ] (S8) `SharingStarted.Lazily` is detected and warned about — it otherwise
-      never releases the entry.
-- [ ] Test: cancelling one of two observers does not cancel the shared request.
-- [ ] Test: `select` + `distinctUntilChanged` suppresses unchanged emissions.
-- [ ] Stress test: 1000 observers across 100 keys, asserting no entry leaks
-      after all scopes cancel.
+- [x] (S1) Two concurrent observers of one key produce **exactly one** request.
+- [x] (S2) An observer attaching mid-flight joins rather than restarting.
+- [x] (S11) Rotation with `staleTime = 0` causes **zero** extra requests.
+- [x] (S12) Returning after 30 s — past grace — **does** refetch.
+- [x] (S13) Returning 100 ms after grace expiry **does** refetch.
+- [x] (S9) Leaving and returning inside grace joins the existing request.
+- [x] (S10) Abandoning past grace cancels the in-flight request at grace expiry.
+- [x] (S5) Eviction occurs at `grace + gcTime` after the last observer leaves.
+- [ ] (S8) `SharingStarted.Lazily` detection and warning.
+- [x] Test: cancelling one of two observers does not cancel the shared request.
+- [x] Test: `select` suppresses emissions when the projection is unchanged.
+- [x] Stress test: 500 observers across 100 keys — one entry and one request
+      per key, and every entry evicted once its observers are gone.
 
 > Note for whoever writes these: `advanceUntilIdle()` does **not** dispatch
 > coroutines launched in `backgroundScope`. The spike initially measured zero

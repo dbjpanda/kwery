@@ -240,7 +240,9 @@ class QueryCacheBehaviourTest {
         kwery.settle(200.milliseconds)
         assertEquals(QueryStatus.Success, kwery.client.getQueryState(key)?.status)
 
-        kwery.client.invalidateQueries(key)
+        // invalidateQueries AWAITS its refetch, so observe from another
+        // coroutine to catch the query mid-flight.
+        backgroundScope.launch { kwery.client.invalidateQueries(key) }
         kwery.settle(10.milliseconds) // mid-flight
 
         val midFlight = kwery.client.getQueryState(key)
@@ -291,11 +293,14 @@ class QueryCacheBehaviourTest {
         val job = backgroundScope.observe(kwery, key, fetchMs = 10_000)
         kwery.settle(1.seconds) // still in flight
 
-        kwery.client.invalidateQueries(key)
-        kwery.client.invalidateQueries(key)
+        // Both issued while the first refetch is still in flight — sequential
+        // invalidations legitimately refetch twice, since the first has
+        // settled by the time the second runs.
+        backgroundScope.launch { kwery.client.invalidateQueries(key) }
+        backgroundScope.launch { kwery.client.invalidateQueries(key) }
         kwery.settle(20.seconds)
 
-        assertEquals(1, kwery.requestCount, "invalidate must be idempotent")
+        assertEquals(1, kwery.requestCount, "invalidate must be idempotent while in flight")
         job.cancel()
     }
 

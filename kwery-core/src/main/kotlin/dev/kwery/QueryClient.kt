@@ -232,7 +232,7 @@ public class QueryClient(
      * [QueryFilters.All] explicitly, so it can never happen by accident.
      */
     public suspend fun invalidateQueries(filters: QueryFilters) {
-        matching(filters).forEach { it.invalidate() }
+        awaitAll(matching(filters).mapNotNull { it.invalidate() })
     }
 
     /** Invalidate exactly one entry. */
@@ -245,7 +245,18 @@ public class QueryClient(
 
     /** Refetch matching queries regardless of staleness. */
     public suspend fun refetchQueries(filters: QueryFilters) {
-        matching(filters).forEach { it.refetch() }
+        awaitAll(matching(filters).mapNotNull { it.refetch() })
+    }
+
+    /**
+     * Wait for refetches to settle, without letting a failed one escape.
+     *
+     * A failing refetch is already reflected in that query's own state; letting
+     * it propagate out of `invalidateQueries` would surface someone else's
+     * failure at an unrelated call site.
+     */
+    private suspend fun awaitAll(pending: List<kotlinx.coroutines.Deferred<*>>) {
+        pending.forEach { runCatching { it.await() } }
     }
 
     /** Cancel in-flight requests for matching queries, reverting their state. */

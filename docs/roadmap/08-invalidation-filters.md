@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/query-invalidation.md`](../../.reference/tanstack-query/docs/framework/react/guides/query-invalidation.md), [`guides/filters.md`](../../.reference/tanstack-query/docs/framework/react/guides/filters.md), [`guides/invalidations-from-mutations.md`](../../.reference/tanstack-query/docs/framework/react/guides/invalidations-from-mutations.md) |
 | **Depends on** | 01 Query keys |
@@ -120,14 +120,35 @@ predicates that mutate cache state as a side effect.
   debugging, so it is surfaced as a **reason on the devtools event stream**
   ([22](22-devtools.md)) rather than as log noise.
 
+### `invalidateQueries` did not actually await
+
+`suspend` on the refetching methods was specified so that awaiting them keeps a
+mutation `Pending` until the list has refreshed — the behaviour
+`docs/mutations.md` documents and the reason
+`onSettled = { invalidateQueries(...) }` is useful at all.
+
+It did not work. `invalidate()` started the refetch and returned; the `suspend`
+modifier was doing nothing. Found by writing the test for it, and fixed by
+returning the in-flight fetch so the client can await them all.
+
+A failed refetch is swallowed rather than propagated: it is already reflected in
+that query's own state, and letting it escape would surface an unrelated
+query's failure at the `invalidateQueries` call site.
+
+**Verified by mutation**: reverting to fire-and-forget fails the test.
+
 ## Definition of done
 
-- [ ] `QueryFilters` and all five client methods implemented.
-- [ ] Test for every filter field in isolation and in combination.
-- [ ] Test: invalidation refetches active queries immediately and leaves
-      inactive ones stale-but-unfetched until observed.
-- [ ] Test: data remains visible during an invalidation-triggered refetch.
-- [ ] Test: awaiting `invalidateQueries` waits for refetches to settle.
-- [ ] Test: `enabled = false` and `StaleTime.Static` queries are skipped.
-- [ ] Test: `cancelQueries` aborts in-flight requests without marking them
+- [x] `QueryFilters` and all five client methods implemented.
+- [x] Tests for key prefix, exact key, `type`, `stale`, `fetchStatus` and
+      `predicate`, in isolation and combined.
+- [x] Test: invalidation refetches active queries immediately and leaves
+      inactive ones stale-but-unfetched until observed again.
+- [x] Test: data remains visible during an invalidation-triggered refetch.
+- [x] Test: awaiting `invalidateQueries` waits for refetches to settle.
+      **This was broken and the test found it** — see below.
+- [x] Test: `enabled = false` and `StaleTime.Static` queries are skipped.
+- [x] Test: `cancelQueries` aborts in-flight requests without marking them
       failed — the prerequisite for [12](12-optimistic-updates.md).
+- [x] Test: `removeQueries` evicts without refetching; `resetQueries` returns
+      an entry to its initial state.

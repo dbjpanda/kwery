@@ -380,22 +380,33 @@ internal class QueryEntry<T>(
 
     // ---- External operations --------------------------------------------
 
-    suspend fun invalidate() = mutex.withLock {
-        if (!options.staleTime.allowsInvalidation) return@withLock
+    /**
+     * Mark stale and, if observed, start a refetch.
+     *
+     * Returns the in-flight fetch so the caller can await it. That is what lets
+     * `onSettled = { invalidateQueries(...) }` keep a mutation `Pending` until
+     * the list has actually refreshed, rather than flashing "done" and then
+     * visibly updating a moment later.
+     */
+    suspend fun invalidate(): Deferred<*>? = mutex.withLock {
+        if (!options.staleTime.allowsInvalidation) return@withLock null
         // A disabled query ignores invalidation entirely, matching TanStack:
         // it is excluded even from refetchType 'all'.
-        if (!options.enabled) return@withLock
+        if (!options.enabled) return@withLock null
         // Idempotent: invalidating twice must not produce a second state object
         // or a second fetch.
-        if (state.value.isInvalidated) return@withLock
+        if (state.value.isInvalidated) return@withLock null
 
         state.value = state.value.copy(isInvalidated = true)
-        if (observers > 0) startFetchLocked()
+        if (observers == 0) return@withLock null
+        startFetchLocked()
+        inFlight
     }
 
-    suspend fun refetch() = mutex.withLock {
-        if (!options.enabled) return@withLock
+    suspend fun refetch(): Deferred<*>? = mutex.withLock {
+        if (!options.enabled) return@withLock null
         startFetchLocked()
+        inFlight
     }
 
     suspend fun cancel() = mutex.withLock {

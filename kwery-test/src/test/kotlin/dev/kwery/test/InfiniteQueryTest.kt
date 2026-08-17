@@ -153,10 +153,10 @@ class InfiniteQueryTest {
         kwery.settle(1.seconds)
         fetched.clear()
 
-        feed.fetchNextPage()
-        kwery.settle(50.milliseconds) // still fetching
-        feed.fetchNextPage()
-        feed.fetchNextPage()
+        // fetchNextPage awaits its page, so overlap has to be expressed with
+        // concurrent callers — which is the real scenario anyway: a scroll
+        // listener firing from separate frames.
+        repeat(3) { backgroundScope.launch { feed.fetchNextPage() } }
         kwery.settle(2.seconds)
 
         assertEquals(listOf(1), fetched, "only one page request should have gone out")

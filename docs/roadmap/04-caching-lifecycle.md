@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | gate 2 in progress — StaleTime and TimeSource implemented and tested |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/caching.md`](../../.reference/tanstack-query/docs/framework/react/guides/caching.md), [`guides/important-defaults.md`](../../.reference/tanstack-query/docs/framework/react/guides/important-defaults.md) |
 | **Blocks** | 05 Observers, 15 Persistence |
@@ -191,11 +191,14 @@ where the hard part lives.
 
 - [x] `StaleTime` and `TimeSource` implemented, with the backwards-clock guard
       verified by mutation. `QueryOptions` lands with the cache.
-- [ ] The five-step lifecycle from `guides/caching.md` reproduced as a single
-      integration test against a virtual clock.
+- [x] The five-step lifecycle from `guides/caching.md` reproduced as a single
+      integration test against a virtual clock — each step is individually
+      plausible and it is the ORDER that is easy to get wrong.
 - [x] Test: `Infinite` yields to invalidation; `Static` does not (`allowsInvalidation`).
 - [x] Test: `Static` blocks automatic refetch (`allowsAutomaticRefetch`).
       End-to-end `refetchOnMount = "always"` coverage lands with the cache.
-- [ ] Test: gc timer cancelled and restarted correctly across detach/reattach.
-- [ ] Test: `gcTime = Duration.INFINITE` never evicts and does not overflow.
-- [ ] Whole suite runs with zero real `delay()` calls.
+- [x] Test: the gc timer restarts on each detach rather than accumulating.
+- [x] Test: an entry a second screen is still watching is never evicted.
+- [x] Test: `gcTime = Duration.INFINITE` survives a year of virtual time and
+      does not overflow — TanStack caps at ~24 days because `setTimeout` does.
+- [x] Whole suite runs on a virtual clock with zero real `delay()` calls.
