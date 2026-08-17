@@ -42,6 +42,8 @@ internal class QueryEntry<T>(
     private val timeSource: TimeSource,
     private val onlineManager: OnlineManager,
     private val gracePeriodMillis: Long,
+    /** True while a persisted cache is being restored; suppresses fetching. */
+    private val isRestoring: () -> Boolean,
     /**
      * Suspending, because removing an entry requires the client's map lock.
      * The only lock nesting in this class is `entry.mutex -> entriesMutex`, and
@@ -172,6 +174,9 @@ internal class QueryEntry<T>(
     /** Fetch if not already in flight. Caller must hold [mutex]. */
     private fun startFetchLocked() {
         val fetch = fetcher ?: return // seeded entry: nothing to call
+        // Hold off while a restore is running: the data may be about to arrive
+        // from disk, and fetching now would race it.
+        if (isRestoring()) return
         if (inFlight != null) return // deduplicated: join the existing request
 
         state.value = state.value.copy(

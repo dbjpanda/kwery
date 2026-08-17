@@ -11,7 +11,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -262,6 +266,58 @@ public class QueryClient(
         matching(filters).forEach { it.reset() }
     }
 
+    // ---- Hydration -------------------------------------------------------
+
+    internal suspend fun dehydrateInternal(): List<DehydratedEntry> {
+        val optimisticKeys = entriesMutex.withLock { entries.keys.toList() }
+            .filter { optimisticRegistry.isOptimistic(it) }
+            .toSet()
+
+        return entriesMutex.withLock { entries.values.toList() }
+            .mapNotNull { entry ->
+                val current = entry.state.value
+                val data = current.data ?: return@mapNotNull null
+                val updatedAt = current.dataUpdatedAt ?: return@mapNotNull null
+                // Never persist an unconfirmed write: it would come back on the
+                // next launch looking like server truth.
+                if (entry.key in optimisticKeys) return@mapNotNull null
+                DehydratedEntry(entry.key, data, updatedAt)
+            }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    internal suspend fun hydrateInternal(restored: List<DehydratedEntry>) {
+        for (entry in restored) {
+            obtainSeeded(entry.key as QueryKey<Any?>).setData(entry.data, entry.dataUpdatedAt)
+        }
+    }
+
+    /**
+     * True while a persisted cache is being restored.
+     *
+     * Queries created during restoration hold in [FetchStatus.Idle] rather than
+     * fetching, so a cold start does not race the restore and issue a request
+     * for data that is about to arrive from disk.
+     */
+    public val isRestoring: StateFlow<Boolean> get() = restoringState.asStateFlow()
+
+    private val restoringState = MutableStateFlow(false)
+
+    /** Suspend until any in-progress restore has finished. */
+    public suspend fun awaitRestored() {
+        restoringState.first { !it }
+    }
+
+    /** Run [block] with [isRestoring] held true. Used by `kwery-persist`. */
+    public suspend fun <T> withRestoring(block: suspend () -> T): T {
+        restoringState.value = true
+        return try {
+            block()
+        } finally {
+            restoringState.value = false
+        }
+    }
+
     /** Snapshots of every cached entry, for inspection and devtools. */
     public suspend fun cacheSnapshot(): List<QueryEntrySnapshot> =
         entriesMutex.withLock { entries.values.map { it.snapshot() } }
@@ -365,6 +421,7 @@ public class QueryClient(
             timeSource = config.timeSource,
             onlineManager = config.onlineManager,
             gracePeriodMillis = config.gracePeriod.inWholeMilliseconds,
+            isRestoring = { restoringState.value },
             onEvict = { evicted ->
                 entriesMutex.withLock {
                     // Only remove if this is still the live entry for that key;

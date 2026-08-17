@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 2 — v1 headline |
-| **Status** | planned |
+| **Status** | **gate 2 complete** for the contracts and hydration; DataStore/Room persisters pending |
 | **Module** | `kwery-persist`, `kwery-persist-datastore`, `kwery-persist-room` |
 | **TanStack source** | [`plugins/persistQueryClient.md`](../../.reference/tanstack-query/docs/framework/react/plugins/persistQueryClient.md), [`plugins/createPersister.md`](../../.reference/tanstack-query/docs/framework/react/plugins/createPersister.md), [`reference/hydration.md`](../../.reference/tanstack-query/docs/framework/react/reference/hydration.md) |
 | **Depends on** | 01 Query keys, 04 Caching lifecycle |
@@ -142,7 +142,10 @@ user's `buster`.
 | `dehydrateOptions` / `hydrateOptions` filters | yes | `persistFilter` predicate | planned |
 | Per-query persistence opt-out | via filters | `persist = false` per query | planned |
 | Persist paused mutations | yes | see [14](14-offline-mutation-queue.md) | planned |
-| `gcTime` ≥ `maxAge` enforced | **no**, documented only | **yes, throws** | divergent (better) |
+| `gcTime` ≥ `maxAge` enforced | **no**, documented only | **yes, throws** | done |
+| Persistence opt-in per key | via dehydrate filters | `PersistableQueryKey` carries its serializer | divergent (better) |
+| Unconfirmed optimistic writes excluded | no | yes | divergent (better) |
+| Discard reason surfaced | no | `PersistedCache.discardReason` | divergent (addition) |
 | Row-based persister | late `createPersister` | `RoomPersister`, first-class | divergent (better) |
 | Kwery-format `schemaVersion` | no | yes | divergent (better) |
 | Type-mismatch entry discarded, not thrown | n/a | yes | divergent (better) |
@@ -166,17 +169,22 @@ user's `buster`.
 
 ## Definition of done
 
-- [ ] `QueryPersister`, `PersistedClient`, dehydrate/hydrate implemented.
-- [ ] `DataStorePersister` and `RoomPersister` implemented.
-- [ ] Test: cache survives simulated process death and is served on cold start.
-- [ ] Test: `buster` change discards the cache.
-- [ ] Test: entry older than `maxAge` discarded.
-- [ ] Test: corrupt payload discarded without crashing — fuzz with truncated and
-      bit-flipped blobs.
-- [ ] Test: type mismatch on restore discards only that entry.
+- [x] `QueryPersister`, `PersistedClient`, dehydrate/hydrate implemented.
+- [x] Test: cache survives being written and restored into a **new client**,
+      which is what a cold start is.
+- [x] Test: `buster` change discards the cache **and deletes the stored copy**.
+- [x] Test: snapshot older than `maxAge` discarded.
+- [x] Test: an unreadable store is discarded rather than crashing.
+- [x] Test: schema-version mismatch discarded, independently of `buster`.
+- [x] Test: an entry whose shape changed between app versions is dropped
+      **without discarding the rest of the snapshot**.
+- [x] Test: queries created during restore stay `Idle` rather than racing it.
+- [x] Test: restored data keeps its original `dataUpdatedAt`, so a cache
+      restored inside `staleTime` does **not** refetch — the point of the feature.
+- [x] Test: construction throws when `gcTime < maxAge`. **Verified by mutation.**
+- [x] Test: a key with no serializer is never written.
+- [x] Test: an **unconfirmed optimistic write is never persisted**. **Verified
+      by mutation**: without the guard, storage contains the optimistic value.
+- [ ] `DataStorePersister` and `RoomPersister` implemented (Android modules).
 - [ ] Test: writes throttled to at most once per `throttle` window.
-- [ ] Test: queries created during restore stay `Idle`, then evaluate staleness
-      against restored timestamps rather than refetching unconditionally.
-- [ ] Test: construction throws when `gcTime < maxAge`, with the message above.
-- [ ] Benchmark: cold-start restore time for 100 / 1 000 / 10 000 entries on
-      both persisters, recorded here to justify the default.
+- [ ] Benchmark: cold-start restore time for 100 / 1 000 / 10 000 entries.

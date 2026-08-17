@@ -1,0 +1,116 @@
+public final class dev/kwery/persist/DiscardReason : java/lang/Enum {
+	public static final field BusterMismatch Ldev/kwery/persist/DiscardReason;
+	public static final field Expired Ldev/kwery/persist/DiscardReason;
+	public static final field None Ldev/kwery/persist/DiscardReason;
+	public static final field SchemaMismatch Ldev/kwery/persist/DiscardReason;
+	public static final field Unreadable Ldev/kwery/persist/DiscardReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/persist/DiscardReason;
+	public static fun values ()[Ldev/kwery/persist/DiscardReason;
+}
+
+public final class dev/kwery/persist/InMemoryPersister : dev/kwery/persist/QueryPersister {
+	public fun <init> ()V
+	public final fun getWriteCount ()I
+	public fun persist (Ldev/kwery/persist/PersistedClient;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun remove (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun restore (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class dev/kwery/persist/PersistOptions {
+	public synthetic fun <init> (Ldev/kwery/persist/QueryPersister;Ljava/util/List;JLjava/lang/String;JLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/kwery/persist/QueryPersister;Ljava/util/List;JLjava/lang/String;JLkotlin/jvm/functions/Function1;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getBuster ()Ljava/lang/String;
+	public final fun getExclude ()Lkotlin/jvm/functions/Function1;
+	public final fun getKeys ()Ljava/util/List;
+	public final fun getMaxAge-UwyO8pc ()J
+	public final fun getPersister ()Ldev/kwery/persist/QueryPersister;
+	public final fun getThrottle-UwyO8pc ()J
+}
+
+public final class dev/kwery/persist/PersistQueryClientKt {
+	public static final fun persist (Ldev/kwery/QueryClient;Lkotlinx/coroutines/CoroutineScope;Ldev/kwery/persist/PersistOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class dev/kwery/persist/PersistableQueryKey : dev/kwery/QueryKey {
+	public abstract fun getSerializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/kwery/persist/PersistedCache {
+	public final fun close ()V
+	public final fun getDiscardReason ()Ldev/kwery/persist/DiscardReason;
+	public final fun getRestoredEntryCount ()I
+}
+
+public final class dev/kwery/persist/PersistedClient {
+	public static final field CURRENT_SCHEMA_VERSION I
+	public static final field Companion Ldev/kwery/persist/PersistedClient$Companion;
+	public fun <init> (JLjava/lang/String;ILjava/util/List;)V
+	public synthetic fun <init> (JLjava/lang/String;ILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (JLjava/lang/String;ILjava/util/List;)Ldev/kwery/persist/PersistedClient;
+	public static synthetic fun copy$default (Ldev/kwery/persist/PersistedClient;JLjava/lang/String;ILjava/util/List;ILjava/lang/Object;)Ldev/kwery/persist/PersistedClient;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBuster ()Ljava/lang/String;
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getSchemaVersion ()I
+	public final fun getTimestamp ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/kwery/persist/PersistedClient$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/kwery/persist/PersistedClient$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/kwery/persist/PersistedClient;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/kwery/persist/PersistedClient;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/kwery/persist/PersistedClient$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/kwery/persist/PersistedEntry {
+	public static final field Companion Ldev/kwery/persist/PersistedEntry$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;J)Ldev/kwery/persist/PersistedEntry;
+	public static synthetic fun copy$default (Ldev/kwery/persist/PersistedEntry;Ljava/lang/String;Ljava/lang/String;JILjava/lang/Object;)Ldev/kwery/persist/PersistedEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/String;
+	public final fun getDataUpdatedAt ()J
+	public final fun getKeyHash ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/kwery/persist/PersistedEntry$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/kwery/persist/PersistedEntry$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/kwery/persist/PersistedEntry;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/kwery/persist/PersistedEntry;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/kwery/persist/PersistedEntry$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class dev/kwery/persist/QueryPersister {
+	public abstract fun persist (Ldev/kwery/persist/PersistedClient;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun remove (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun restore (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
