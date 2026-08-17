@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | gate 2 in progress — policy and backoff implemented and tested |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/query-retries.md`](../../.reference/tanstack-query/docs/framework/react/guides/query-retries.md) |
 | **Blocks** | 13 Network mode |
@@ -151,16 +151,17 @@ val Default: RetryDelay = RetryDelay.equalJitter(Exponential)
 ## Definition of done
 
 - [x] `RetryPolicy`, `RetryDelay`, `exceptWhen` implemented.
-- [ ] Test: exactly 3 retries by default, then `status = Error`.
+- [x] Test: exactly 3 retries by default (4 attempts), then `status = Error`.
 - [x] Test: delays are 1 s, 2 s, 4 s, 8 s, 16 s, capped at 30 s.
 - [x] Test: no shift overflow at extreme attempt indices. **Verified by
       mutation**: without the guard, attempt 63 yields a **0 s** delay, which
       under `RetryPolicy.Forever` is an unbounded hot retry loop.
-- [ ] Test: `failureCount` increments and `failureReason` is populated while
-      `error` stays null until the final attempt.
-- [ ] Test: `CancellationException` neither retries nor increments
-      `failureCount` — under `Forever`, which would otherwise loop forever.
-- [ ] Test: mutations default to no retries.
+- [x] Test: `failureCount` increments and `failureReason` is populated while
+      `error` stays null until the final attempt, and both clear on recovery.
+- [x] Test: `CancellationException` neither retries nor increments
+      `failureCount`, under `Forever`. **Verified by mutation**: 251 attempts
+      without the guard.
+- [x] Test: mutations default to no retries (`MutationTest`).
 - [x] Test: equal jitter stays within `[base/2, base]`, never returns zero,
       actually spreads, and is deterministic for a seeded `Random`.
 - [x] Test: `RetryDelay.Default` is jittered — guards the decision itself

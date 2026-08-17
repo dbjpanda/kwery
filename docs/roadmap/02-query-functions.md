@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/query-functions.md`](../../.reference/tanstack-query/docs/framework/react/guides/query-functions.md), [`guides/default-query-function.md`](../../.reference/tanstack-query/docs/framework/react/guides/default-query-function.md) |
 | **Blocks** | 03 Query state, 10 Cancellation |
@@ -26,22 +26,20 @@ The query function is the unit of work: given a key, produce data or fail.
 ## Kwery design
 
 ```kotlin
-fun interface QueryFn<T> {
-    /** Throws on failure. Cancellation is cooperative via the calling scope. */
-    suspend fun QueryFnScope.fetch(): T
-}
-
-class QueryFnScope internal constructor(
-    val key: QueryKey<*>,
-    val signal: QuerySignal,   // for interop with non-suspending clients
-)
+client.query(TodoKey(id)) { api.todo(id) }
 ```
+
+A query function is a plain `suspend () -> T`. **No `QueryFn` or `QueryFnScope`
+type was needed** — the design in the original spec, before OQ-1 was closed. The
+call site already holds everything a scope would have carried, because the key
+was just constructed from the same values, and structured concurrency removes
+the need to thread a cancellation token.
 
 Kotlin removes the two biggest footguns for free:
 
-- **`undefined` is not representable.** A `QueryFn<T>` where `T` is non-nullable
-  cannot return "nothing" — it either returns `T` or throws. If a user genuinely
-  wants a nullable result they declare `QueryFn<T?>` and opt in explicitly.
+- **`undefined` is not representable.** A `suspend () -> T` with non-nullable
+  `T` cannot return "nothing" — it either returns `T` or throws. A genuinely
+  nullable result is declared `suspend () -> T?` and opted into explicitly.
 - **Cancellation needs no `AbortSignal` threading.** The function is `suspend`,
   so it is cancelled by its coroutine scope, and any well-behaved suspending
   client (Ktor, Retrofit with `suspend`, OkHttp via `await`) already honours it.
@@ -61,11 +59,11 @@ type-safe against `QueryKey<T>`. See OQ-2.
 
 | Capability | TanStack | Kwery | Status |
 |---|---|---|---|
-| Async function returning data | `queryFn: () => Promise<T>` | `suspend fun fetch(): T` | planned |
+| Async function returning data | `queryFn: () => Promise<T>` | `suspend () -> T` | done |
 | Failure by throwing | yes | yes | planned |
 | `undefined` return is an error | runtime check | **impossible to express** | divergent (better) |
-| Key available in fn context | `ctx.queryKey` | `QueryFnScope.key` | planned |
-| Cancellation signal | `ctx.signal` (`AbortSignal`) | structured concurrency + `QuerySignal` bridge | divergent (better) |
+| Key available in fn context | `ctx.queryKey` | not needed — the call site has it | divergent (simpler) |
+| Cancellation signal | `ctx.signal` (`AbortSignal`) | structured concurrency | divergent (better) |
 | `pageParam` for infinite queries | `ctx.pageParam` | see [16](16-infinite-queries.md) | planned |
 | Global default query function | `defaultOptions.queries.queryFn` | **dropped** — cannot be type-safe (OQ-2) | divergent (gap) |
 | `skipToken` to disable type-safely | yes | see [03](03-query-state.md) | planned |
@@ -74,9 +72,10 @@ type-safe against `QueryKey<T>`. See OQ-2.
 
 1. **No `Result<T>` return type.** Exceptions are the contract, as in TanStack.
    Kotlin users may expect `Result`, so this needs to be explicit in the docs.
-2. **`AbortSignal` demoted to a bridge.** Structured concurrency covers the
-   common case; `QuerySignal` exists only for blocking clients that cannot be
-   cancelled cooperatively.
+2. **No cancellation token at all.** Structured concurrency covers every
+   suspending client. A `QuerySignal` bridge for blocking, callback-based
+   clients remains unbuilt — `suspendCancellableCoroutine` already does the job
+   in user code, so it may never be needed.
 
 ## Open questions
 
@@ -119,11 +118,14 @@ type-safe against `QueryKey<T>`. See OQ-2.
 
 ## Definition of done
 
-- [ ] `QueryFn` and `QueryFnScope` implemented.
-- [ ] Test: thrown exception propagates to `QueryState.error` after retries.
-- [ ] Test: `CancellationException` is **not** treated as a failure and does not
-      consume a retry attempt — the single most important correctness test here.
-- [ ] Test: cancelling the observing scope cancels an in-flight Ktor request.
-- [ ] Test: `QuerySignal` cancels a blocking OkHttp call.
-- [ ] Decision recorded on OQ-2, with the default query function either
-      implemented safely or documented as an explicit non-goal.
+- [x] Query functions are plain `suspend () -> T` (see OQ-1); no separate
+      `QueryFn`/`QueryFnScope` types were needed.
+- [x] Test: the thrown exception reaches `QueryState.error` **unchanged** —
+      the caller's own instance, not a stacktrace-recovered copy.
+- [x] Test: `CancellationException` is **not** treated as a failure and does not
+      consume a retry attempt. **Verified by mutation**: without the guard,
+      `RetryPolicy.Forever` turns one cancellation into 251 attempts.
+- [ ] Test against a real HTTP client (Ktor/OkHttp) — needs an integration
+      source set; structured concurrency covers it in principle.
+- [ ] `QuerySignal` bridge for non-cancellable clients.
+- [x] OQ-2 closed: the global default query function is an explicit non-goal.

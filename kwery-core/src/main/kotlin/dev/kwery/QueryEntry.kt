@@ -6,14 +6,12 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration
-import kotlin.coroutines.coroutineContext
 
 /**
  * One cache entry: its state, its observers, and the single in-flight request
@@ -298,13 +296,13 @@ internal class QueryEntry<T>(
         while (true) {
             awaitFetchAllowed()
             try {
-                val result = fetch()
-                // Containment for a fetcher that swallows CancellationException
-                // in a broad `catch (e: Exception)`: if this coroutine was
-                // cancelled, treat it as cancelled regardless of what the
-                // fetcher returned.
-                coroutineContext.ensureActive()
-                return result
+                // A fetcher that swallows CancellationException in a broad
+                // `catch (e: Exception)` cannot fabricate a success: it runs
+                // inside a cancelled `async`, so `await()` throws whatever the
+                // body returned. Containment is structural — an explicit
+                // isActive check here was verified redundant by mutation
+                // testing and removed rather than left looking load-bearing.
+                return fetch()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Throwable) {

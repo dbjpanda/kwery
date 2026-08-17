@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/query-cancellation.md`](../../.reference/tanstack-query/docs/framework/react/guides/query-cancellation.md) |
 | **Depends on** | 02 Query functions, 05 Observers |
@@ -43,10 +43,16 @@ become the user's problem:
 
 - The engine rethrows `CancellationException` before any error handling, so a
   swallowed cancellation cannot enter the retry loop or reach `QueryState.error`.
+  **Correction from mutation testing:** an additional explicit `isActive` check
+  after the fetcher returned was verified redundant and removed. Containment is
+  structural — the fetcher runs inside a cancelled `async`, so `await()` throws
+  whatever the body returned. The behaviour is still pinned by a test; only the
+  guard that never fired is gone.
 - The retry engine never counts a `CancellationException` toward `failureCount`
   (see [06](06-retries.md)).
-- A lint rule or documented recipe should steer users toward `catch (e: IOException)`
-  over `catch (e: Exception)` inside a `QueryFn`.
+- A documented recipe should still steer users toward `catch (e: IOException)`
+  over `catch (e: Exception)` inside a query function: containment stops the bad
+  value being cached, but a swallowed cancellation is still confusing to debug.
 
 This is the concrete Kotlin analogue of TanStack's "you must forward the signal"
 footgun: less common, but more silent when it happens.
@@ -54,7 +60,7 @@ footgun: less common, but more silent when it happens.
 ### Bridging non-cancellable clients
 
 ```kotlin
-QueryFn {
+client.query(key) {
     suspendCancellableCoroutine { cont ->
         val call = okHttp.newCall(request)
         cont.invokeOnCancellation { call.cancel() }
@@ -63,8 +69,8 @@ QueryFn {
 }
 ```
 
-`QuerySignal` (from [02](02-query-functions.md)) wraps this pattern for clients
-that expose only a cancel token.
+This is standard Kotlin and needs nothing from Kwery, which is why the planned
+`QuerySignal` wrapper remains unbuilt.
 
 ## Parity table
 
@@ -75,10 +81,10 @@ that expose only a cancel token.
 | Refetch supersedes in-flight (`cancelRefetch`) | default `true` | same default | planned |
 | Cancelled query reverts, not errors | yes | yes | planned |
 | Signal passed to fetch fn | `AbortSignal`, manual forwarding | automatic | divergent (better) |
-| Bridge for non-cancellable clients | n/a | `QuerySignal` | divergent (addition) |
+| Bridge for non-cancellable clients | n/a | `suspendCancellableCoroutine` suffices | divergent (simpler) |
 | Cancellation excluded from retries | implicit | enforced | divergent (better) |
 | Leave and return mid-request | cancels, then refetches | joins the in-flight request | divergent (better) |
-| Swallowed `CancellationException` | breaks cancellation | contained via `isActive` check | divergent (better) |
+| Swallowed `CancellationException` | breaks cancellation | cannot fabricate a success (structural) | divergent (better) |
 | Cancellation gated on the fn consuming the signal | **yes** | no — always cancels at grace expiry | **divergent (see below)** |
 | Original exception instance preserved | n/a | yes — no stacktrace-recovered copy | divergent (better) |
 
@@ -127,25 +133,26 @@ two TanStack cases have no Kwery equivalent.
   **Closed: no lint. The failure is contained in the engine instead.**
 
   Lint would catch the mistake at authoring time but only for users who run it,
-  and it costs a whole tooling artifact. Containment is better: after a query
-  function returns, the engine checks `coroutineContext.isActive` and treats a
-  return from a cancelled scope as cancellation regardless of what the function
-  did with the exception.
+  and it costs a whole tooling artifact. Containment is better — and it turned
+  out to need no code: the fetcher runs inside a cancelled `async`, so `await()`
+  throws whatever the body returned. A value invented after swallowing the
+  cancellation can never be cached as though it were a response.
 
-  So a `QueryFn` that swallows `CancellationException` in a broad catch still
-  results in a correctly cancelled query. The bug becomes benign rather than
-  silent, which is the outcome lint was wanted for. Documented, and covered by
-  the regression test below.
+  An explicit `isActive` check was written first and then **removed**, because
+  mutation testing showed deleting it changed no test outcome. The behaviour
+  remains pinned by a regression test; only the guard that never fired is gone.
 
 ## Definition of done
 
-- [ ] `cancelQueries` implemented; cancellation reverts prior state.
-- [ ] Test: cancelled query does **not** enter `Error` status.
-- [ ] Test: `CancellationException` thrown inside a `QueryFn` propagates as
-      cancellation and does not consume a retry.
-- [ ] Test: a `QueryFn` that swallows `CancellationException` in a broad
-      `catch (e: Exception)` still results in the query being cancelled — the
-      regression test for the sharp edge above.
-- [ ] Test: refetch cancels the superseded in-flight fetch by default and does
-      not with `cancelRefetch = false`.
-- [ ] Test: cancelling one of two observers leaves the shared request running.
+- [x] `cancelQueries` implemented; cancellation reverts prior state.
+- [x] Test: a cancelled query does **not** enter `Error` status.
+- [x] Test: `CancellationException` thrown inside a query function propagates
+      as cancellation and does not consume a retry.
+- [x] Test: a query function that swallows `CancellationException` in a broad
+      `catch (e: Exception)` cannot fabricate a success. **Containment is
+      structural**, not an explicit check — see the correction below.
+- [x] Test: a refetch supersedes the in-flight fetch, so the older response
+      cannot win the race and write stale data.
+- [x] Test: cancelling one of two observers leaves the shared request running.
+- [x] Test: abandoning a query mid-flight leaves no phantom error for the next
+      observer.
