@@ -24,3 +24,6 @@ include(":kwery-test")
 // Android modules. kwery-core must never depend on these (AD-1).
 include(":kwery-android")
 include(":kwery-compose")
+
+// Not published. Exists so documentation examples must actually compile.
+include(":sample")

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp) apply false
@@ -10,9 +11,9 @@ plugins {
 
 // The .api dumps are the public surface. Any change to them must appear as a
 // reviewed diff, never as a side effect of an unrelated edit.
-// NOTE: add "sample" to ignoredProjects when the sample app module lands.
 apiValidation {
-    ignoredProjects += emptyList<String>()
+    // The sample app is not published, so it has no public API to guard.
+    ignoredProjects += listOf("sample")
 }
 
 subprojects {
