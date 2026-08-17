@@ -73,11 +73,29 @@ val todo: Todo? = client.getQueryData(TodoKey("5"))     // typed, no cast
 client.setQueryData(TodoKey("5")) { it?.copy(done = true) }  // lambda param is Todo?
 ```
 
-### Prefix matching without instantiating a key
+### Correction from the vendored tests: matching is *partial*, not prefix
+
+This section originally specified list-prefix matching. Reading TanStack's
+`partialMatchKey` suite showed that is wrong, and the spec is corrected here per
+the gate-2 rule.
+
+Matching is a **deep partial match**:
+
+- Lists match positionally and the filter may be shorter — `[1,2,3]` contains
+  `[1,2]`, which is the prefix case.
+- **Maps match on subset, recursively.** A filter of `["todos", {"done": true}]`
+  matches an entry keyed `["todos", {"done": true, "page": 1}]`.
+- Null-valued map entries in the filter are treated as absent.
+
+Simple prefix matching would have made this document's own example —
+`TodoListKey`, whose `parts` contain a `Map` — impossible to filter by anything
+except the whole map. All eight of TanStack's cases are ported verbatim in
+`QueryKeyMatchingTest`.
+
+### Matching without instantiating a key
 
 Typed keys cannot express "every todo query" — you would have to construct a
-`TodoKey`, which is a specific entry. Prefix matching therefore takes a raw
-parts prefix:
+`TodoKey`, which is a specific entry. Filters therefore take raw parts:
 
 ```kotlin
 client.invalidateQueries(prefixOf("todos"))          // all todo lists
@@ -188,15 +206,20 @@ that their cache never survives a cold start.
 
 ## Definition of done
 
-- [ ] `QueryKey<T>`, `QueryFilters`, `prefixOf` implemented in `kwery-core`.
-- [ ] Structural equality tests mirroring the TanStack doc examples exactly:
-      array order matters; map key order does not; null map values stripped.
-- [ ] Prefix matching tests: `prefixOf("todos")` matches `["todos"]`,
+- [x] `QueryKey<T>`, `QueryFilters`, `prefixOf` implemented in `kwery-core`.
+- [x] Structural equality tests mirroring the TanStack doc examples exactly:
+      list order matters; map key order does not; null map values stripped.
+- [x] **All 8 `partialMatchKey` cases ported** from the vendored
+      `utils.test.tsx`, plus Kwery's own filter-composition cases.
+- [x] Partial matching tests: `prefixOf("todos")` matches `["todos"]`,
       `["todos", 1]`, `["todos", {...}]`; does not match `["todo", 1]`.
-- [ ] `QueryKeyCodec` round-trip tests for every supported part type.
-- [ ] Enum encoding proven stable when enum constants are reordered — the
-      regression test for the `ordinal` trap.
-- [ ] Unencodable part throws at registration with a message naming the
-      offending part and its type.
+- [x] `QueryKeyCodec` encoding tests for every supported part type, including
+      collision checks across structurally different keys.
+- [x] Enum encoding proven stable when enum constants are reordered — the
+      regression test for the `ordinal` trap. **Verified by mutation**:
+      substituting `ordinal` for `name` makes this test fail.
+- [x] Unencodable part throws with a message naming the offending part's path
+      and type, including when nested inside a map.
 - [ ] R8-shrunk instrumentation test proving canonical strings survive
-      obfuscation.
+      obfuscation. **Blocked**: needs the `kwery-android` module, which does not
+      exist yet. This is the only reason gate 2 is not closed for this feature.

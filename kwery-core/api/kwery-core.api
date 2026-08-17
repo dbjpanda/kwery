@@ -1,0 +1,181 @@
+public final class dev/kwery/FetchStatus : java/lang/Enum {
+	public static final field Fetching Ldev/kwery/FetchStatus;
+	public static final field Idle Ldev/kwery/FetchStatus;
+	public static final field Paused Ldev/kwery/FetchStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/FetchStatus;
+	public static fun values ()[Ldev/kwery/FetchStatus;
+}
+
+public final class dev/kwery/QueryEntrySnapshot {
+	public fun <init> (Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZI)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()Ldev/kwery/QueryStatus;
+	public final fun component3 ()Ldev/kwery/FetchStatus;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun component7 ()I
+	public final fun copy (Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZI)Ldev/kwery/QueryEntrySnapshot;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEntrySnapshot;Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZIILjava/lang/Object;)Ldev/kwery/QueryEntrySnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDataUpdatedAt ()Ljava/lang/Long;
+	public final fun getFetchStatus ()Ldev/kwery/FetchStatus;
+	public final fun getKey ()Ldev/kwery/QueryKey;
+	public final fun getObserverCount ()I
+	public final fun getStatus ()Ldev/kwery/QueryStatus;
+	public fun hashCode ()I
+	public final fun isActive ()Z
+	public final fun isInvalidated ()Z
+	public final fun isStale ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryFilters {
+	public static final field Companion Ldev/kwery/QueryFilters$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ldev/kwery/QueryKey;Ldev/kwery/QueryType;Ljava/lang/Boolean;Ldev/kwery/FetchStatus;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/util/List;Ldev/kwery/QueryKey;Ldev/kwery/QueryType;Ljava/lang/Boolean;Ldev/kwery/FetchStatus;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ldev/kwery/QueryKey;
+	public final fun component3 ()Ldev/kwery/QueryType;
+	public final fun component4 ()Ljava/lang/Boolean;
+	public final fun component5 ()Ldev/kwery/FetchStatus;
+	public final fun component6 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Ljava/util/List;Ldev/kwery/QueryKey;Ldev/kwery/QueryType;Ljava/lang/Boolean;Ldev/kwery/FetchStatus;Lkotlin/jvm/functions/Function1;)Ldev/kwery/QueryFilters;
+	public static synthetic fun copy$default (Ldev/kwery/QueryFilters;Ljava/util/List;Ldev/kwery/QueryKey;Ldev/kwery/QueryType;Ljava/lang/Boolean;Ldev/kwery/FetchStatus;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/kwery/QueryFilters;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExactKey ()Ldev/kwery/QueryKey;
+	public final fun getFetchStatus ()Ldev/kwery/FetchStatus;
+	public final fun getKeyPrefix ()Ljava/util/List;
+	public final fun getPredicate ()Lkotlin/jvm/functions/Function1;
+	public final fun getStale ()Ljava/lang/Boolean;
+	public final fun getType ()Ldev/kwery/QueryType;
+	public fun hashCode ()I
+	public final fun matches (Ldev/kwery/QueryEntrySnapshot;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryFilters$Companion {
+	public final fun getAll ()Ldev/kwery/QueryFilters;
+}
+
+public abstract interface class dev/kwery/QueryKey {
+	public abstract fun getParts ()Ljava/util/List;
+}
+
+public abstract interface class dev/kwery/QueryKeyCodec {
+	public static final field Companion Ldev/kwery/QueryKeyCodec$Companion;
+	public abstract fun encodeLeaf (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryKeyCodec$Companion {
+	public final fun getDefault ()Ldev/kwery/QueryKeyCodec;
+}
+
+public final class dev/kwery/QueryKeyCodecKt {
+	public static final fun encodeKey (Ljava/util/List;Ldev/kwery/QueryKeyCodec;)Ljava/lang/String;
+	public static synthetic fun encodeKey$default (Ljava/util/List;Ldev/kwery/QueryKeyCodec;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryKeyKt {
+	public static final fun partialMatchKey (Ljava/util/List;Ljava/util/List;)Z
+	public static final fun prefixOf ([Ljava/lang/Object;)Ldev/kwery/QueryFilters;
+}
+
+public final class dev/kwery/QueryState {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZ)V
+	public synthetic fun <init> (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component10 ()Z
+	public final fun component2 ()Ljava/lang/Throwable;
+	public final fun component3 ()Ldev/kwery/QueryStatus;
+	public final fun component4 ()Ldev/kwery/FetchStatus;
+	public final fun component5 ()I
+	public final fun component6 ()Ljava/lang/Throwable;
+	public final fun component7 ()Ljava/lang/Long;
+	public final fun component8 ()Ljava/lang/Long;
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZ)Ldev/kwery/QueryState;
+	public static synthetic fun copy$default (Ldev/kwery/QueryState;Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZILjava/lang/Object;)Ldev/kwery/QueryState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/Object;
+	public final fun getDataUpdatedAt ()Ljava/lang/Long;
+	public final fun getError ()Ljava/lang/Throwable;
+	public final fun getErrorUpdatedAt ()Ljava/lang/Long;
+	public final fun getFailureCount ()I
+	public final fun getFailureReason ()Ljava/lang/Throwable;
+	public final fun getFetchStatus ()Ldev/kwery/FetchStatus;
+	public final fun getStatus ()Ldev/kwery/QueryStatus;
+	public fun hashCode ()I
+	public final fun isError ()Z
+	public final fun isFetching ()Z
+	public final fun isInvalidated ()Z
+	public final fun isLoading ()Z
+	public final fun isPaused ()Z
+	public final fun isPending ()Z
+	public final fun isPlaceholderData ()Z
+	public final fun isRefreshing ()Z
+	public final fun isSuccess ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryStateKt {
+	public static final fun toUiState (Ldev/kwery/QueryState;)Ldev/kwery/QueryUiState;
+}
+
+public final class dev/kwery/QueryStatus : java/lang/Enum {
+	public static final field Error Ldev/kwery/QueryStatus;
+	public static final field Pending Ldev/kwery/QueryStatus;
+	public static final field Success Ldev/kwery/QueryStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/QueryStatus;
+	public static fun values ()[Ldev/kwery/QueryStatus;
+}
+
+public final class dev/kwery/QueryType : java/lang/Enum {
+	public static final field Active Ldev/kwery/QueryType;
+	public static final field All Ldev/kwery/QueryType;
+	public static final field Inactive Ldev/kwery/QueryType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/QueryType;
+	public static fun values ()[Ldev/kwery/QueryType;
+}
+
+public abstract interface class dev/kwery/QueryUiState {
+}
+
+public final class dev/kwery/QueryUiState$Content : dev/kwery/QueryUiState {
+	public fun <init> (Ljava/lang/Object;Z)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/Object;Z)Ldev/kwery/QueryUiState$Content;
+	public static synthetic fun copy$default (Ldev/kwery/QueryUiState$Content;Ljava/lang/Object;ZILjava/lang/Object;)Ldev/kwery/QueryUiState$Content;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public final fun isRefreshing ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryUiState$Failed : dev/kwery/QueryUiState {
+	public fun <init> (Ljava/lang/Throwable;Z)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/Throwable;Z)Ldev/kwery/QueryUiState$Failed;
+	public static synthetic fun copy$default (Ldev/kwery/QueryUiState$Failed;Ljava/lang/Throwable;ZILjava/lang/Object;)Ldev/kwery/QueryUiState$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public final fun isRetrying ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryUiState$Loading : dev/kwery/QueryUiState {
+	public static final field INSTANCE Ldev/kwery/QueryUiState$Loading;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

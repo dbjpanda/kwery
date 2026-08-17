@@ -137,6 +137,26 @@ client.query(TodoListKey(filter), enabled = filter.isNotEmpty())
 3. **`isRefreshing` added.** `isSuccess && isFetching` is the single most common
    derived check in real UIs and TanStack makes users write it by hand.
 
+## Binary compatibility of public data classes
+
+`QueryState` and `QueryFilters` are `data class`es in the public API, which the
+`.api` dump makes visible: they expose `componentN`, `copy` and a
+`copy$default` whose signature changes whenever a field is added. Adding a
+field is therefore a **binary**-incompatible change, even though it stays
+source-compatible.
+
+**Decision: keep them as data classes.** The consumer benefit is large and
+constant — `copy` for optimistic updates, destructuring, and structural
+equality that makes assertions in tests read well — while the cost is bounded
+and visible. `apiCheck` turns any such addition into a reviewed diff rather
+than a surprise, which is precisely why it is wired into CI.
+
+The obligation this creates: **field additions to `QueryState` are a
+minor-version-with-recompile change and must be batched**, not dribbled in one
+per feature. `isOptimistic` (from [12](12-optimistic-updates.md)) is the known
+pending addition; it lands with that feature, not before, because shipping
+unused public API is worse than adding it later.
+
 ## Open questions
 
 - **OQ-1.** ~~Should `data` survive a transition to `error`?~~ **Closed: yes,
@@ -166,11 +186,16 @@ client.query(TodoListKey(filter), enabled = filter.isNotEmpty())
 
 ## Definition of done
 
-- [ ] `QueryState`, `QueryStatus`, `FetchStatus` implemented.
-- [ ] A test for **each reachable combination** of the two axes, including
-      `success`+`fetching` and `pending`+`paused`, asserting the derived flags.
-- [ ] Test: `isLoading` is false for a disabled query with no data, while
+- [x] `QueryState`, `QueryStatus`, `FetchStatus` implemented.
+- [x] A test for **each reachable combination** of the two axes (all 9,
+      exhaustively over both enums), asserting every derived flag — including
+      `success`+`fetching` and `pending`+`paused` explicitly.
+- [x] Test: `isLoading` is false for a disabled query with no data, while
       `isPending` is true — the regression test for the spinner bug.
-- [ ] Test: `enabled = false` ignores `invalidateQueries`.
-- [ ] Test: data is retained when a background refetch fails.
-- [ ] `toUiState()` implemented with tests covering the lossy mappings.
+- [x] Test: `data` is retained on a `QueryState` whose status is `Error`.
+- [x] `toUiState()` implemented with tests covering the lossy mappings,
+      including that retained data wins over an error.
+- [ ] Test: `enabled = false` ignores `invalidateQueries`. **Blocked on the
+      cache** — this is behaviour, not a value type.
+- [ ] Test: data survives an actual failed background refetch end to end.
+      **Blocked on the cache**; the value-type invariant above is covered.

@@ -27,9 +27,14 @@ subprojects {
                     ),
                 )
                 allWarningsAsErrors.set(true)
-                freeCompilerArgs.addAll("-Xjvm-default=all")
             }
         }
+    }
+
+    // The toolchain compiles with JDK 17, but emitted bytecode must match the
+    // Kotlin jvmTarget or Gradle rejects the inconsistency.
+    tasks.withType<JavaCompile>().configureEach {
+        options.release.set(libs.versions.jvmTarget.get().toInt())
     }
 
     tasks.withType<Test>().configureEach {

@@ -32,9 +32,11 @@ core rather than as an extension.**
 - **AD-2 — Flow-first surface.** The core primitive is
   `QueryObserver` → `Flow<QueryState<T>>`. `rememberQuery` in `kwery-compose`
   is a thin adapter over the same primitive, not a parallel implementation.
-- **AD-3 — Hybrid query keys.** `interface QueryKey { val parts: List<Any?> }`.
+- **AD-3 — Hybrid query keys.** `interface QueryKey<T> { val parts: List<Any?> }`.
   Typed data classes give compile-time safety; `parts` preserves TanStack's
-  prefix matching, filters, and stable serialization.
+  **partial** key matching, filters, and stable serialization. `T` is invariant
+  — marking it `out` would let the compiler widen `QueryKey<Todo>` to
+  `QueryKey<Any>` during inference and defeat the type safety.
 - **AD-4 — Two orthogonal status axes.** `status` (pending/error/success) and
   `fetchStatus` (fetching/paused/idle) are separate, exactly as in TanStack.
   Never collapsed into a single sealed class.
@@ -68,9 +70,9 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ○ | ○ |
+| 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ◐ | ○ |
 | 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ○ | ○ |
-| 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ○ | ○ |
+| 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ◐ | ○ |
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ○ | ○ |
 | 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ○ | ○ |
 | 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ○ | ○ |
