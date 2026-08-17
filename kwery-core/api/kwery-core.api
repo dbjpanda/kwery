@@ -36,6 +36,46 @@ public final class dev/kwery/HydrationKt {
 	public static final fun hydrate (Ldev/kwery/QueryClient;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class dev/kwery/InfiniteData {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;Ljava/util/List;)Ldev/kwery/InfiniteData;
+	public static synthetic fun copy$default (Ldev/kwery/InfiniteData;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Ldev/kwery/InfiniteData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPageParams ()Ljava/util/List;
+	public final fun getPages ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/InfiniteQuery {
+	public final fun fetchNextPage (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun fetchPreviousPage (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getState ()Lkotlinx/coroutines/flow/Flow;
+	public final fun hasNextPage (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun hasPreviousPage (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class dev/kwery/InfiniteQueryKt {
+	public static final fun flatten (Ldev/kwery/InfiniteData;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public static final fun infiniteQuery (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/InfiniteQueryOptions;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function2;)Ldev/kwery/InfiniteQuery;
+	public static synthetic fun infiniteQuery$default (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/InfiniteQueryOptions;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/kwery/InfiniteQuery;
+}
+
+public final class dev/kwery/InfiniteQueryOptions {
+	public fun <init> (Ljava/lang/Object;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Ljava/lang/Integer;Ldev/kwery/RefetchStrategy;)V
+	public synthetic fun <init> (Ljava/lang/Object;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Ljava/lang/Integer;Ldev/kwery/RefetchStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getGetNextPageParam ()Lkotlin/jvm/functions/Function3;
+	public final fun getGetPreviousPageParam ()Lkotlin/jvm/functions/Function3;
+	public final fun getInitialPageParam ()Ljava/lang/Object;
+	public final fun getMaxPages ()Ljava/lang/Integer;
+	public final fun getRefetchStrategy ()Ldev/kwery/RefetchStrategy;
+}
+
 public final class dev/kwery/Mutation {
 	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
 	public final fun mutate (Ljava/lang/Object;)Lkotlinx/coroutines/Job;
@@ -391,6 +431,34 @@ public final class dev/kwery/RefetchOn : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/RefetchOn;
 	public static fun values ()[Ldev/kwery/RefetchOn;
+}
+
+public abstract interface class dev/kwery/RefetchStrategy {
+}
+
+public final class dev/kwery/RefetchStrategy$AllPages : dev/kwery/RefetchStrategy {
+	public static final field INSTANCE Ldev/kwery/RefetchStrategy$AllPages;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/RefetchStrategy$FirstPageOnly : dev/kwery/RefetchStrategy {
+	public static final field INSTANCE Ldev/kwery/RefetchStrategy$FirstPageOnly;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/RefetchStrategy$Windowed : dev/kwery/RefetchStrategy {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Ldev/kwery/RefetchStrategy$Windowed;
+	public static synthetic fun copy$default (Ldev/kwery/RefetchStrategy$Windowed;IILjava/lang/Object;)Ldev/kwery/RefetchStrategy$Windowed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPages ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class dev/kwery/RetryDelay {

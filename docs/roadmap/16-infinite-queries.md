@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 2 — v1 headline |
-| **Status** | planned |
+| **Status** | **gate 2 in progress** — implemented and tested; reconciling against the vendored suite |
 | **Module** | `kwery-core`, `kwery-compose` |
 | **TanStack source** | [`guides/infinite-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/infinite-queries.md), [`guides/paginated-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/paginated-queries.md) |
 | **Depends on** | 03 Query state, 09 Manual cache |
@@ -87,11 +87,20 @@ Kwery adds `RefetchStrategy`:
 Default is `AllPages` for parity and correctness; the docs should make clear that
 `FirstPageOnly` is the right choice for most offset-paginated REST APIs.
 
-**Concurrent `fetchNextPage` calls** are guarded by default rather than left to
-the caller: overlapping calls are conflated (the second is ignored while the
-first is in flight) unless `allowConcurrentPageFetches = true`. TanStack's
-documented advice — "verify the query is not `isFetching`" — is exactly the kind
-of guard a library should provide instead of request.
+**Concurrent `fetchNextPage` calls are conflated structurally**, and this turned
+out to need no code at all.
+
+The first implementation added an explicit guard plus an
+`allowConcurrentPageFetches` escape hatch. Mutation testing then showed that
+deleting the guard changed nothing: all pages live in **one** cache entry, and
+the entry already deduplicates in-flight fetches, so a second `fetchNextPage`
+joins the existing request rather than starting a competing one.
+
+The guard was removed and the option deleted. An option that silently cannot be
+honoured is worse than no option — and the safety is better for being
+structural, since there is no guard left to forget. TanStack's documented advice
+("verify the query is not `isFetching`") is work Kwery's users simply never have
+to do.
 
 ### Compose integration
 
@@ -115,42 +124,50 @@ feed.fetchNextPageWhenNearEnd(listState, threshold = 5)
 | `fetchNextPage` / `fetchPreviousPage` | yes | yes | planned |
 | `isFetchingNextPage` / `…Previous` | yes | yes | planned |
 | Single cache entry, single in-flight fetch | yes | yes | planned |
-| `cancelRefetch` control | yes | `allowConcurrentPageFetches` | planned |
+| `cancelRefetch` control | yes | **not needed** — conflation is structural, see below | divergent |
 | Sequential refetch of all pages | yes | `RefetchStrategy.AllPages` (default) | planned |
 | `maxPages` window | yes | yes | planned |
 | Manual page manipulation via `setQueryData` | yes | yes, typed | planned |
 | Reverse display via `select` | yes | `select` | planned |
 | Paginated (non-infinite) via `KeepPrevious` | yes | yes, see [09](09-manual-cache.md) | planned |
 | Cheaper refetch strategies | **no** | `FirstPageOnly`, `Windowed(n)` | divergent (better) |
-| Concurrent-fetch guard by default | no, documented | yes | divergent (better) |
+| Concurrent-fetch guard by default | no, documented as the caller's job | yes, structural | divergent (better) |
 | Lazy-list "near end" helper | no | `kwery-compose` | divergent (addition) |
 
 ## Open questions
 
-- **OQ-1.** Should `FirstPageOnly` be the default? It is right for most REST
-  APIs and dramatically cheaper, but it is silently wrong for cursor APIs where
-  an insertion shifts every subsequent cursor. Correctness should win:
-  keep `AllPages`, document loudly.
+- **OQ-1.** ~~Should `FirstPageOnly` be the default?~~ **Closed: no, `AllPages`
+  stays the default.** It is the only correct choice for cursor APIs, where each
+  page's parameter comes from the previous page's response and a stale cursor
+  duplicates or skips records. Correctness wins over cost for a default; the
+  cheaper strategies are documented and one line away for offset-paginated APIs.
 - **OQ-2.** How do infinite queries interact with persistence
   ([15](15-persistence.md))? Persisting 40 pages of a feed can dominate the
   cache. Options: persist only the first `n` pages, or exclude infinite queries
   by default. Leaning: persist `min(pages, maxPages ?: 3)` and make it
   configurable.
-- **OQ-3.** Should `InfiniteData` expose a flattened `items` view? Every
-  consumer writes `pages.flatMap { it.items }`, but the flattening is
-  page-shape-specific so the library cannot do it generically — unless pages
-  are required to be `List<T>`, which would be too restrictive. Possibly a
-  `select` recipe in the docs instead.
+- **OQ-3.** ~~Expose a flattened view?~~ **Closed: `flatten { it.items }`.**
+  The library cannot know a page's shape, so it takes the accessor as a
+  parameter rather than constraining pages to be lists. One line at the call
+  site, no restriction on page shape.
 
 ## Definition of done
 
-- [ ] `InfiniteData`, `infiniteQuery`, page-fetching implemented.
-- [ ] Test: pages accumulate under one key; `pageParams` stay aligned.
-- [ ] Test: `getNextPageParam` returning null sets `hasNextPage` false.
-- [ ] Test: bidirectional fetching prepends and appends correctly.
-- [ ] Test: concurrent `fetchNextPage` calls are conflated by default.
-- [ ] Test: `AllPages` refetch is sequential, in order, from page 1.
-- [ ] Test: `FirstPageOnly` refetches exactly one request and merges.
-- [ ] Test: `maxPages` evicts from the correct end when fetching each direction.
-- [ ] Test: `setQueryData` page manipulation keeps `pages`/`pageParams` aligned.
-- [ ] OQ-2 resolved and reflected in [15](15-persistence.md).
+- [x] `InfiniteData`, `infiniteQuery`, page-fetching implemented.
+- [x] Test: pages accumulate under one key; `pageParams` stay aligned.
+- [x] Test: `getNextPageParam` returning null sets `hasNextPage` false, and a
+      further `fetchNextPage` is a no-op rather than an error.
+- [x] Test: bidirectional fetching prepends, keeping params in order.
+- [x] Test: `hasPreviousPage` is false without a previous-page function.
+- [x] Test: overlapping `fetchNextPage` calls cost one request.
+- [x] Test: `AllPages` refetch is sequential, in order, from page 1.
+- [x] Test: `FirstPageOnly` issues exactly one request and keeps the pages
+      already scrolled past.
+- [x] Test: `Windowed(n)` refetches the first n pages.
+- [x] Test: `maxPages` evicts from the **front** when paging forward and the
+      **back** when paging backward.
+- [x] Test: misaligned `pages`/`pageParams` are rejected at construction.
+- [ ] Test: `setQueryData` page manipulation keeps them aligned.
+- [ ] OQ-2 (how many pages to persist) resolved and reflected in
+      [15](15-persistence.md).
+- [ ] Reconcile against `infiniteQueryBehavior.test.tsx`.
