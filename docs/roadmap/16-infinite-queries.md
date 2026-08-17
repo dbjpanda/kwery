@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 2 — v1 headline |
-| **Status** | **gate 2 in progress** — implemented and tested; reconciling against the vendored suite |
+| **Status** | **gate 2 in progress** — reconciled; one known gap (#8046 per-page retry) |
 | **Module** | `kwery-core`, `kwery-compose` |
 | **TanStack source** | [`guides/infinite-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/infinite-queries.md), [`guides/paginated-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/paginated-queries.md) |
 | **Depends on** | 03 Query state, 09 Manual cache |
@@ -118,6 +118,9 @@ feed.fetchNextPageWhenNearEnd(listState, threshold = 5)
 |---|---|---|---|
 | `pages` + `pageParams` structure | yes | `InfiniteData` | planned |
 | Required `initialPageParam` | yes | yes | planned |
+| Null page param vs "no more pages" | conflated | disambiguated by `P : Any` | divergent (better) |
+| Refetch drops trailing pages when list shrinks | yes | yes | done |
+| Per-page retry (#8046) | yes | **not yet** — retries the whole page walk | **gap** |
 | `getNextPageParam` | yes | yes | planned |
 | `getPreviousPageParam` (bidirectional) | yes | yes | planned |
 | `hasNextPage` / `hasPreviousPage` | yes | yes | planned |
@@ -141,7 +144,7 @@ feed.fetchNextPageWhenNearEnd(listState, threshold = 5)
   page's parameter comes from the previous page's response and a stale cursor
   duplicates or skips records. Correctness wins over cost for a default; the
   cheaper strategies are documented and one line away for offset-paginated APIs.
-- **OQ-2.** How do infinite queries interact with persistence
+- **OQ-2.** *(unchanged)* How do infinite queries interact with persistence
   ([15](15-persistence.md))? Persisting 40 pages of a feed can dominate the
   cache. Options: persist only the first `n` pages, or exclude infinite queries
   by default. Leaning: persist `min(pages, maxPages ?: 3)` and make it
@@ -150,6 +153,42 @@ feed.fetchNextPageWhenNearEnd(listState, threshold = 5)
   The library cannot know a page's shape, so it takes the accessor as a
   parameter rather than constraining pages to be lists. One line at the call
   site, no restriction on page shape.
+
+## Reconciliation against the vendored suite
+
+Reading `infiniteQueryBehavior.test.tsx` and `infiniteQueryObserver.test.tsx`
+found two real bugs and one type-safety hole.
+
+**Bug: a refetch must DROP trailing pages when the list shrinks.** If
+`getNextPageParam` now returns null earlier than before, the server no longer
+has those pages, and keeping the cached tail shows data that no longer exists.
+Kwery was keeping them — the same code path that legitimately preserves pages
+for the cheap strategies. Why the loop ended now decides: exhausted means drop,
+strategy-limited means keep. **Verified by mutation.**
+
+**Type-safety hole: `null` as a page parameter versus null meaning "no more
+pages".** JavaScript conflates these — TanStack's `initialPageParam: null` is a
+valid parameter while `getNextPageParam` returning null means "stop". A Kotlin
+port using `P?` for both inherits the ambiguity. `P` is now bound to
+`P : Any`, so `getNextPageParam`'s `P?` unambiguously means the end. A
+genuinely null cursor is expressed with a sentinel value.
+
+**Confirmed correct without change:** `maxPages` evicts from the end opposite
+the fetch direction; page-param callbacks are never invoked on empty pages;
+cancelling a refetch preserves the previously loaded pages.
+
+### Known gap: per-page retry (#8046)
+
+TanStack has a regression test for an infinite loop where "the retryer every
+time restarts from page 1 once it reaches the page where it errors". Kwery has
+the same shape of problem: an `AllPages` refetch runs inside the entry's single
+fetch, so the entry's retry policy retries **the whole page walk**, not the
+page that failed.
+
+With the default `RetryPolicy.ForMutations`-style settings this is bounded, but
+under `RetryPolicy.Forever` it would re-walk from page 1 indefinitely. Fixing it
+means per-page retry inside the refetch loop rather than delegating to the
+entry. **Not yet done**, and gate 2 stays open because of it.
 
 ## Definition of done
 
@@ -170,4 +209,10 @@ feed.fetchNextPageWhenNearEnd(listState, threshold = 5)
 - [ ] Test: `setQueryData` page manipulation keeps them aligned.
 - [ ] OQ-2 (how many pages to persist) resolved and reflected in
       [15](15-persistence.md).
-- [ ] Reconcile against `infiniteQueryBehavior.test.tsx`.
+- [x] Reconciled against `infiniteQueryBehavior.test.tsx` and
+      `infiniteQueryObserver.test.tsx` — see above.
+- [x] Test: a refetch drops trailing pages when the list shrinks.
+- [x] Test: a refetch re-derives page params rather than replaying stored ones.
+- [x] Test: page-param callbacks are not invoked on empty pages.
+- [x] Test: cancelling a refetch preserves the previously loaded pages.
+- [ ] Per-page retry, so a failing page does not re-walk from page 1 (#8046).

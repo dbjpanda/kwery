@@ -42,4 +42,6 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
     api(composeBom)
     api("androidx.compose.runtime:runtime")
+    // For the lazy-list paging helper.
+    implementation("androidx.compose.foundation:foundation")
 }

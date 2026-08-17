@@ -318,6 +318,25 @@ public class QueryClient(
         }
     }
 
+    private val fetchingCount = MutableStateFlow(0)
+
+    /**
+     * How many queries are fetching right now, across the whole cache.
+     *
+     * For a global activity indicator. Counted rather than derived from a
+     * snapshot, so it updates as fetches start and settle instead of only when
+     * something asks.
+     */
+    public val isFetching: StateFlow<Int> get() = fetchingCount.asStateFlow()
+
+    internal fun onFetchStarted() {
+        fetchingCount.value += 1
+    }
+
+    internal fun onFetchSettled() {
+        fetchingCount.value = (fetchingCount.value - 1).coerceAtLeast(0)
+    }
+
     /** Snapshots of every cached entry, for inspection and devtools. */
     public suspend fun cacheSnapshot(): List<QueryEntrySnapshot> =
         entriesMutex.withLock { entries.values.map { it.snapshot() } }
@@ -422,6 +441,8 @@ public class QueryClient(
             onlineManager = config.onlineManager,
             gracePeriodMillis = config.gracePeriod.inWholeMilliseconds,
             isRestoring = { restoringState.value },
+            onFetchStarted = ::onFetchStarted,
+            onFetchSettled = ::onFetchSettled,
             onEvict = { evicted ->
                 entriesMutex.withLock {
                     // Only remove if this is still the live entry for that key;

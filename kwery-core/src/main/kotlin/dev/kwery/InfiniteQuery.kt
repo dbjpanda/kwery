@@ -12,7 +12,7 @@ import kotlinx.coroutines.sync.withLock
  * parameter that produced `pages[i]`. Every operation preserves that, because
  * a misaligned pair silently refetches the wrong page.
  */
-public data class InfiniteData<P, T>(
+public data class InfiniteData<P : Any, T>(
     val pages: List<T> = emptyList(),
     val pageParams: List<P> = emptyList(),
 ) {
@@ -60,7 +60,16 @@ public sealed interface RefetchStrategy {
     }
 }
 
-public class InfiniteQueryOptions<P, T>(
+/**
+ * [P] is bound to non-null on purpose.
+ *
+ * `getNextPageParam` returns `P?`, where null means "no more pages". If `P`
+ * were itself nullable, a legitimate null page parameter would be
+ * indistinguishable from the end of the list — a conflation TanStack has, since
+ * JavaScript uses the same `null`/`undefined` for both. Represent a genuinely
+ * null cursor with a sentinel value instead.
+ */
+public class InfiniteQueryOptions<P : Any, T>(
     /** The parameter for the first page. Required — there is no sensible default. */
     public val initialPageParam: P,
 
@@ -106,7 +115,7 @@ private enum class PageDirection { Refresh, Next, Previous }
  * last: those need nothing new — an ordinary query whose key contains the page
  * number, plus `PlaceholderData.KeepPrevious` so the list does not flash empty.
  */
-public class InfiniteQuery<P, T> internal constructor(
+public class InfiniteQuery<P : Any, T> internal constructor(
     private val client: QueryClient,
     private val key: QueryKey<InfiniteData<P, T>>,
     private val options: InfiniteQueryOptions<P, T>,
@@ -220,9 +229,18 @@ public class InfiniteQuery<P, T> internal constructor(
             param = options.getNextPageParam(page, pages.toList(), param)
         }
 
-        // Pages beyond the refreshed window keep their cached values, so a
-        // cheap strategy does not discard what the user already scrolled past.
-        if (pages.size < current.pages.size) {
+        // Why the loop ended matters.
+        //
+        // If it stopped because the strategy asked for fewer pages, the pages
+        // beyond the refreshed window keep their cached values — that is the
+        // point of the cheap strategies.
+        //
+        // If it stopped because getNextPageParam returned null, the list has
+        // genuinely become shorter: the server no longer has those pages, and
+        // keeping them would show data that no longer exists. TanStack drops
+        // them too, and this is easy to get backwards.
+        val endedBecauseExhausted = param == null && pages.size < target
+        if (!endedBecauseExhausted && pages.size < current.pages.size) {
             pages += current.pages.drop(pages.size)
             params += current.pageParams.drop(params.size)
         }
@@ -265,7 +283,7 @@ public class InfiniteQuery<P, T> internal constructor(
  *
  * @param fetchPage fetches one page for a given page parameter.
  */
-public fun <P, T> QueryClient.infiniteQuery(
+public fun <P : Any, T> QueryClient.infiniteQuery(
     key: QueryKey<InfiniteData<P, T>>,
     options: InfiniteQueryOptions<P, T>,
     queryOptions: QueryOptions = config.defaultQueryOptions,
@@ -273,5 +291,5 @@ public fun <P, T> QueryClient.infiniteQuery(
 ): InfiniteQuery<P, T> = InfiniteQuery(this, key, options, queryOptions, fetchPage)
 
 /** Flatten accumulated pages, given how to read items out of one. */
-public fun <P, T, I> InfiniteData<P, T>.flatten(items: (T) -> List<I>): List<I> =
+public fun <P : Any, T, I> InfiniteData<P, T>.flatten(items: (T) -> List<I>): List<I> =
     pages.flatMap(items)

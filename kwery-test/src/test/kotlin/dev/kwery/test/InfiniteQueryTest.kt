@@ -297,4 +297,103 @@ class InfiniteQueryTest {
         )
         assertEquals(listOf("a", "b", "c"), data.flatten { it.items })
     }
+
+    // ---- Ported from infiniteQueryBehavior.test.tsx -----------------------
+
+    @Test
+    fun `a refetch drops trailing pages the server no longer has`() = runTest {
+        // Ported from "should stop refetching if undefined is returned from
+        // getNextPageParam". The list genuinely became shorter: keeping the
+        // cached tail would show data that no longer exists.
+        val kwery = TestQueryClient(this)
+        var lastCursor = 2
+        val opts = InfiniteQueryOptions<Int, Page>(
+            initialPageParam = 0,
+            getNextPageParam = { _, _, param -> if (param < lastCursor) param + 1 else null },
+        )
+        val feed = kwery.feed(opts)
+        val job = backgroundScope.launch { feed.state.collect { } }
+        kwery.settle(200.milliseconds)
+        repeat(2) { feed.fetchNextPage(); kwery.settle(200.milliseconds) }
+        assertEquals(3, kwery.client.getQueryData(PagedFeedKey)!!.pages.size)
+
+        // The server now only has one page.
+        lastCursor = 0
+        kwery.client.invalidateQueries(PagedFeedKey)
+        kwery.settle(2.seconds)
+
+        val data = kwery.client.getQueryData(PagedFeedKey)!!
+        assertEquals(1, data.pages.size, "trailing pages must be dropped, not kept")
+        assertEquals(listOf(0), data.pageParams)
+        job.cancel()
+    }
+
+    @Test
+    fun `a refetch re-derives page params rather than replaying stored ones`() = runTest {
+        // Ported from "should make getNextPageParam and getPreviousPageParam
+        // receive current pageParams". The point of AllPages: a cursor derived
+        // from a stale page can duplicate or skip records.
+        val kwery = TestQueryClient(this)
+        val derivedFrom = mutableListOf<Int>()
+        val opts = InfiniteQueryOptions<Int, Page>(
+            initialPageParam = 0,
+            getNextPageParam = { last, _, param -> derivedFrom += param; last.nextCursor },
+        )
+        val feed = kwery.feed(opts)
+        val job = backgroundScope.launch { feed.state.collect { } }
+        kwery.settle(200.milliseconds)
+        repeat(2) { feed.fetchNextPage(); kwery.settle(200.milliseconds) }
+        derivedFrom.clear()
+
+        kwery.client.invalidateQueries(PagedFeedKey)
+        kwery.settle(2.seconds)
+
+        assertEquals(
+            listOf(0, 1, 2),
+            derivedFrom,
+            "each param is re-derived from the freshly fetched previous page",
+        )
+        job.cancel()
+    }
+
+    @Test
+    fun `page param callbacks are not invoked on empty pages`() = runTest {
+        // Ported from "should not invoke getNextPageParam and
+        // getPreviousPageParam on empty pages".
+        val kwery = TestQueryClient(this)
+        var nextCalls = 0
+        var prevCalls = 0
+        val opts = InfiniteQueryOptions<Int, Page>(
+            initialPageParam = 0,
+            getNextPageParam = { last, _, _ -> nextCalls++; last.nextCursor },
+            getPreviousPageParam = { first, _, _ -> prevCalls++; first.prevCursor },
+        )
+        val feed = kwery.client.infiniteQuery(PagedFeedKey, opts, fresh) { page(it) }
+
+        // Nothing cached yet: neither callback has a "last page" to be given.
+        assertTrue(feed.hasNextPage())
+        assertFalse(feed.hasPreviousPage())
+        assertEquals(0, nextCalls)
+        assertEquals(0, prevCalls)
+    }
+
+    @Test
+    fun `cancelling a refetch preserves the previously loaded pages`() = runTest {
+        // Ported from "should not refetch pages if the query is cancelled".
+        val kwery = TestQueryClient(this)
+        val feed = kwery.feed(fetchMs = 500)
+        val job = backgroundScope.launch { feed.state.collect { } }
+        kwery.settle(1.seconds)
+        feed.fetchNextPage()
+        kwery.settle(1.seconds)
+        val before = kwery.client.getQueryData(PagedFeedKey)!!
+
+        kwery.client.invalidateQueries(PagedFeedKey)
+        kwery.settle(50.milliseconds) // refetch in flight
+        kwery.client.cancelQueries(dev.kwery.QueryFilters(exactKey = PagedFeedKey))
+        kwery.settle(2.seconds)
+
+        assertEquals(before, kwery.client.getQueryData(PagedFeedKey), "old pages survive a cancel")
+        job.cancel()
+    }
 }

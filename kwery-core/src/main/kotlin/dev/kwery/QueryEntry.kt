@@ -44,6 +44,8 @@ internal class QueryEntry<T>(
     private val gracePeriodMillis: Long,
     /** True while a persisted cache is being restored; suppresses fetching. */
     private val isRestoring: () -> Boolean,
+    private val onFetchStarted: () -> Unit,
+    private val onFetchSettled: () -> Unit,
     /**
      * Suspending, because removing an entry requires the client's map lock.
      * The only lock nesting in this class is `entry.mutex -> entriesMutex`, and
@@ -185,6 +187,7 @@ internal class QueryEntry<T>(
             failureReason = null,
         )
 
+        onFetchStarted()
         val attempt: Deferred<FetchOutcome<T>> = scope.async {
             // The failure is caught INSIDE the async body and carried out as a
             // value. Letting it propagate would hand the user a
@@ -206,6 +209,7 @@ internal class QueryEntry<T>(
                     is FetchOutcome.Ok -> outcome.value
                     is FetchOutcome.Failed -> {
                         recordFailure(attempt, outcome.error)
+                        onFetchSettled()
                         return@launch
                     }
                 }
@@ -222,6 +226,7 @@ internal class QueryEntry<T>(
                         failureReason = null,
                     )
                 }
+                onFetchSettled()
             } catch (cancellation: CancellationException) {
                 // Cancellation is not failure. The query reverts to its prior
                 // state rather than entering an error state, so navigating away
@@ -234,6 +239,7 @@ internal class QueryEntry<T>(
                         failureReason = null,
                     )
                 }
+                onFetchSettled()
             } catch (error: Throwable) {
                 mutex.withLock {
                     if (inFlight === attempt) inFlight = null
@@ -246,6 +252,7 @@ internal class QueryEntry<T>(
                         errorUpdatedAt = timeSource.nowMillis(),
                     )
                 }
+                onFetchSettled()
             }
         }
     }
