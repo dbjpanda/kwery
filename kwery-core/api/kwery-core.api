@@ -7,6 +7,80 @@ public final class dev/kwery/FetchStatus : java/lang/Enum {
 	public static fun values ()[Ldev/kwery/FetchStatus;
 }
 
+public abstract interface class dev/kwery/FocusManager {
+	public static final field Companion Ldev/kwery/FocusManager$Companion;
+	public abstract fun isFocused ()Lkotlinx/coroutines/flow/StateFlow;
+}
+
+public final class dev/kwery/FocusManager$Companion {
+	public final fun getAlwaysFocused ()Ldev/kwery/FocusManager;
+}
+
+public final class dev/kwery/NetworkMode : java/lang/Enum {
+	public static final field Always Ldev/kwery/NetworkMode;
+	public static final field OfflineFirst Ldev/kwery/NetworkMode;
+	public static final field Online Ldev/kwery/NetworkMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/NetworkMode;
+	public static fun values ()[Ldev/kwery/NetworkMode;
+}
+
+public abstract interface class dev/kwery/OnlineManager {
+	public static final field Companion Ldev/kwery/OnlineManager$Companion;
+	public abstract fun isOnline ()Lkotlinx/coroutines/flow/StateFlow;
+}
+
+public final class dev/kwery/OnlineManager$Companion {
+	public final fun getAlwaysOnline ()Ldev/kwery/OnlineManager;
+}
+
+public final class dev/kwery/QueryClient {
+	public fun <init> ()V
+	public fun <init> (Lkotlinx/coroutines/CoroutineScope;Ldev/kwery/QueryClientConfig;)V
+	public synthetic fun <init> (Lkotlinx/coroutines/CoroutineScope;Ldev/kwery/QueryClientConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun cacheSnapshot (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun cancelQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun close ()V
+	public final fun getConfig ()Ldev/kwery/QueryClientConfig;
+	public final fun getQueryData (Ldev/kwery/QueryKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getQueryState (Ldev/kwery/QueryKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun invalidateQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun invalidateQueries (Ldev/kwery/QueryKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun invalidateQueries ([Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun query$default (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun query$default (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public final fun refetchQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun removeQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun resetQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setQueryData (Ldev/kwery/QueryKey;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setQueryData (Ldev/kwery/QueryKey;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun updateQueryData (Ldev/kwery/QueryKey;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class dev/kwery/QueryClientConfig {
+	public synthetic fun <init> (Ldev/kwery/TimeSource;Ldev/kwery/FocusManager;Ldev/kwery/OnlineManager;JILdev/kwery/QueryOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/kwery/TimeSource;Ldev/kwery/FocusManager;Ldev/kwery/OnlineManager;JILdev/kwery/QueryOptions;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/kwery/TimeSource;
+	public final fun component2 ()Ldev/kwery/FocusManager;
+	public final fun component3 ()Ldev/kwery/OnlineManager;
+	public final fun component4-UwyO8pc ()J
+	public final fun component5 ()I
+	public final fun component6 ()Ldev/kwery/QueryOptions;
+	public final fun copy-gwCluXo (Ldev/kwery/TimeSource;Ldev/kwery/FocusManager;Ldev/kwery/OnlineManager;JILdev/kwery/QueryOptions;)Ldev/kwery/QueryClientConfig;
+	public static synthetic fun copy-gwCluXo$default (Ldev/kwery/QueryClientConfig;Ldev/kwery/TimeSource;Ldev/kwery/FocusManager;Ldev/kwery/OnlineManager;JILdev/kwery/QueryOptions;ILjava/lang/Object;)Ldev/kwery/QueryClientConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefaultQueryOptions ()Ldev/kwery/QueryOptions;
+	public final fun getFocusManager ()Ldev/kwery/FocusManager;
+	public final fun getGracePeriod-UwyO8pc ()J
+	public final fun getMaxEntries ()I
+	public final fun getOnlineManager ()Ldev/kwery/OnlineManager;
+	public final fun getTimeSource ()Ldev/kwery/TimeSource;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/kwery/QueryEntrySnapshot {
 	public fun <init> (Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZI)V
 	public final fun component1 ()Ldev/kwery/QueryKey;
@@ -81,6 +155,28 @@ public final class dev/kwery/QueryKeyCodecKt {
 public final class dev/kwery/QueryKeyKt {
 	public static final fun partialMatchKey (Ljava/util/List;Ljava/util/List;)Z
 	public static final fun prefixOf ([Ljava/lang/Object;)Ldev/kwery/QueryFilters;
+}
+
+public final class dev/kwery/QueryOptions {
+	public synthetic fun <init> (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/kwery/StaleTime;
+	public final fun component2-UwyO8pc ()J
+	public final fun component3 ()Ldev/kwery/RetryPolicy;
+	public final fun component4 ()Ldev/kwery/RetryDelay;
+	public final fun component5 ()Z
+	public final fun component6 ()Ldev/kwery/NetworkMode;
+	public final fun copy-NcHsxvU (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;)Ldev/kwery/QueryOptions;
+	public static synthetic fun copy-NcHsxvU$default (Ldev/kwery/QueryOptions;Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;ILjava/lang/Object;)Ldev/kwery/QueryOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnabled ()Z
+	public final fun getGcTime-UwyO8pc ()J
+	public final fun getNetworkMode ()Ldev/kwery/NetworkMode;
+	public final fun getRetry ()Ldev/kwery/RetryPolicy;
+	public final fun getRetryDelay ()Ldev/kwery/RetryDelay;
+	public final fun getStaleTime ()Ldev/kwery/StaleTime;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class dev/kwery/QueryState {

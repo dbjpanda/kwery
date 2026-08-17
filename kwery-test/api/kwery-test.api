@@ -1,0 +1,17 @@
+public final class dev/kwery/test/TestQueryClient {
+	public synthetic fun <init> (Lkotlinx/coroutines/test/TestScope;JILdev/kwery/QueryOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlinx/coroutines/test/TestScope;JILdev/kwery/QueryOptions;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clearRecordedRequests ()V
+	public final fun getClient ()Ldev/kwery/QueryClient;
+	public final fun getCurrentTimeMillis ()J
+	public final fun getRecordedRequests ()Ljava/util/List;
+	public final fun getRequestCount ()I
+	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun query$default (Ldev/kwery/test/TestQueryClient;Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public final fun requestCountFor (Ldev/kwery/QueryKey;)I
+	public final fun setFocused (Z)V
+	public final fun setOnline (Z)V
+	public final fun settle-LRDsOJo (J)V
+	public static synthetic fun settle-LRDsOJo$default (Ldev/kwery/test/TestQueryClient;JILjava/lang/Object;)V
+}
+

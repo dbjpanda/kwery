@@ -16,3 +16,5 @@ local.properties
 # documentation at a pinned revision so parity claims in docs/roadmap/ are
 # checkable offline and diffable when TanStack ships changes.
 # See .reference/README.md.
+
+.reference/

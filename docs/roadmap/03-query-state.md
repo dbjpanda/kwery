@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | gate 2 in progress — value types done; behavioural tests need the cache |
+| **Status** | **gate 2 complete** — value types and behaviour both tested |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/queries.md), [`guides/disabling-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/disabling-queries.md) |
 | **Blocks** | everything |
@@ -195,7 +195,7 @@ unused public API is worse than adding it later.
 - [x] Test: `data` is retained on a `QueryState` whose status is `Error`.
 - [x] `toUiState()` implemented with tests covering the lossy mappings,
       including that retained data wins over an error.
-- [ ] Test: `enabled = false` ignores `invalidateQueries`. **Blocked on the
-      cache** — this is behaviour, not a value type.
-- [ ] Test: data survives an actual failed background refetch end to end.
-      **Blocked on the cache**; the value-type invariant above is covered.
+- [x] Test: `enabled = false` ignores `invalidateQueries`
+      (`QueryCacheBehaviourTest`).
+- [x] Test: data survives an actual failed background refetch end to end, and
+      `status` stays `Success` mid-refetch rather than reverting to `Pending`.
