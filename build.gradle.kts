@@ -1,6 +1,10 @@
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.ksp) apply false
     alias(libs.plugins.binary.compatibility.validator)
 }
 
@@ -29,12 +33,17 @@ subprojects {
                 allWarningsAsErrors.set(true)
             }
         }
-    }
 
-    // The toolchain compiles with JDK 17, but emitted bytecode must match the
-    // Kotlin jvmTarget or Gradle rejects the inconsistency.
-    tasks.withType<JavaCompile>().configureEach {
-        options.release.set(libs.versions.jvmTarget.get().toInt())
+        // The toolchain compiles with JDK 17, but emitted bytecode must match
+        // the Kotlin jvmTarget or Gradle rejects the inconsistency.
+        //
+        // Scoped to JVM modules only: AGP rejects `--release` outright, because
+        // it prevents the plugin from setting up the bootclasspath for
+        // compiling against Android APIs. Android modules use
+        // source/targetCompatibility in their own build files instead.
+        tasks.withType<JavaCompile>().configureEach {
+            options.release.set(libs.versions.jvmTarget.get().toInt())
+        }
     }
 
     tasks.withType<Test>().configureEach {

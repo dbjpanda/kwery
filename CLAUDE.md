@@ -127,29 +127,36 @@ directly.
 `staleTime` still defaults to `0`, preserving parity. Do not "fix" rotation by
 changing that default.
 
-## Toolchain constraint (verified by building, 2026-08-18)
+## Toolchain: do not upgrade Gradle past 9.5.x
 
-**Gradle 9.6.0 must not be used once Android modules land**, and the reason is
-non-obvious enough to record:
+**Pinned: Gradle 9.5.1 + AGP 8.13.2 + Kotlin 2.2.20, compileSdk 36.** Verified by
+building, not by reading compatibility tables. Upgrading Gradle breaks the
+library in ways that are silent rather than loud:
 
-Gradle 9.6.0 removed an internal API that AGP 8.x depends on, so only AGP 9.x
-works with it. AGP 9.x ships "built-in Kotlin" hard-pinned to **Kotlin 2.2.10**
-and *rejects* the classic `org.jetbrains.kotlin.android` plugin outright. That
-chain then breaks two things Kwery needs:
+Gradle 9.6.0 removed an internal API AGP 8.x depends on, so only AGP 9.x works
+with it. AGP 9.x ships "built-in Kotlin" hard-pinned to **Kotlin 2.2.10** and
+*rejects* the classic `org.jetbrains.kotlin.android` plugin outright. That chain
+breaks two things Kwery needs:
 
-- **KSP does not work at all**, so Room's annotation processor cannot run.
+- **KSP stops working entirely**, so Room's annotation processor cannot run and
+  `kwery-persist-room` becomes unbuildable.
 - **binary-compatibility-validator registers no tasks on Android modules**, so
-  `apiCheck` would silently cover only the JVM half of a published library.
+  `apiCheck` would silently cover only the JVM half of a published library —
+  a guarantee quietly reduced to half a guarantee.
 
-Getting Kotlin 2.2.20 under that stack requires `buildscript {}` classpath
-forcing and `extensions.getByName("android") as LibraryExtension` casts —
-un-idiomatic build files, for a strictly worse outcome.
+Two consequences of staying on AGP 8.x, both accepted deliberately:
 
-The current Gradle version was chosen only because it happened to be in the
-wrapper cache. The fix is to pin an older Gradle that supports AGP 8.x and the
-classic Kotlin plugin. **Verify by building before changing this** — the whole
-finding above came from an agent that actually ran the builds rather than
-reading compatibility tables.
+- **Compose BOM is capped at 2026.06.01.** BOM 2026.08.00 hard-requires AGP 9.1+
+  in its AAR metadata, so no AGP 8.x can consume it at any compileSdk. One
+  Compose cycle behind is a smaller cost than losing API validation and Room.
+- **`androidx.lifecycle` is pinned to 2.10.0, not 2.11.0.** It is an atomic
+  group, so requesting 2.11.0 for `lifecycle-process` drags in
+  `lifecycle-runtime-compose` 2.11.0 transitively, which also requires AGP 9.1+.
+- **compileSdk cannot exceed 36** — AGP 8.13.2 refuses higher.
+
+Do not "fix" a version here without building the whole matrix again. The
+constraints interact, and most of them fail at dependency-resolution time with
+messages that do not name the real cause.
 
 ## Conventions
 

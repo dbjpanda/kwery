@@ -1,0 +1,13 @@
+public final class dev/kwery/android/AndroidFocusManager : dev/kwery/FocusManager {
+	public fun <init> ()V
+	public fun <init> (Landroidx/lifecycle/Lifecycle;)V
+	public synthetic fun <init> (Landroidx/lifecycle/Lifecycle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun isFocused ()Lkotlinx/coroutines/flow/StateFlow;
+}
+
+public final class dev/kwery/android/AndroidOnlineManager : dev/kwery/OnlineManager, java/lang/AutoCloseable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public fun isOnline ()Lkotlinx/coroutines/flow/StateFlow;
+}
+

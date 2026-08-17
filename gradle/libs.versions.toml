@@ -4,6 +4,19 @@ coroutines = "1.10.2"
 serialization = "1.9.0"
 bcv = "0.18.1"
 
+# Android. Verified by building: Gradle 9.5.1 + AGP 8.13.2 is the newest
+# combination where the classic Kotlin plugin, KSP (Room codegen) and
+# binary-compatibility-validator all work. See CLAUDE.md.
+agp = "8.13.2"
+ksp = "2.2.20-2.0.4"
+compileSdk = "36"
+minSdk = "24"
+composeBom = "2026.06.01"
+activityCompose = "1.13.0"
+lifecycle = "2.10.0"
+datastore = "1.2.1"
+room = "2.8.4"
+
 # Library consumers compile against this. Kept at 11 rather than 17 so Kwery is
 # usable from Android modules and older JVM projects; the toolchain used to
 # *build* it is 17.
@@ -15,7 +28,23 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+# 2.10.0 deliberately, not 2.11.0: androidx.lifecycle is an atomic group, so
+# requesting 2.11.0 drags lifecycle-runtime-compose 2.11.0 in transitively, and
+# that artifact hard-requires AGP 9.1+.
+androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }
+androidx-lifecycle-common = { module = "androidx.lifecycle:lifecycle-common", version.ref = "lifecycle" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "bcv" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

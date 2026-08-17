@@ -44,14 +44,14 @@ core rather than as an extension.**
 ## Module layout
 
 ```
-kwery-core         pure Kotlin/JVM — cache, observers, retries, mutations
-kwery-android      lifecycle-based FocusManager, connectivity OnlineManager
+kwery-core         pure Kotlin/JVM — cache, observers, retries, mutations       [BUILT]
+kwery-android      lifecycle FocusManager, validated-connectivity OnlineManager  [BUILT]
 kwery-compose      rememberQuery / rememberMutation / rememberInfiniteQuery
 kwery-persist      persistence contracts + dehydrate/hydrate
 kwery-persist-datastore   DataStore-backed persister
 kwery-persist-room        Room/SQLite-backed persister (larger caches)
 kwery-devtools     inspection surface (post-v1)
-kwery-test         virtual-clock test harness for consumers
+kwery-test         virtual-clock test harness for consumers                     [BUILT]
 ```
 
 ## Feature index

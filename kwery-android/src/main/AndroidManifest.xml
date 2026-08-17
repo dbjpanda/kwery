@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Required by AndroidOnlineManager. Declared here so it merges into consuming
+      apps automatically: a connectivity manager that silently reports "offline"
+      because the host app forgot a permission would be a very confusing bug.
+      This is a normal permission, so it needs no runtime request.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+</manifest>
