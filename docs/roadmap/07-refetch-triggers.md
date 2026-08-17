@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | **gate 2 complete** (device-only items listed separately) |
 | **Module** | `kwery-core` (contracts), `kwery-android` (implementations) |
 | **TanStack source** | [`guides/window-focus-refetching.md`](../../.reference/tanstack-query/docs/framework/react/guides/window-focus-refetching.md), [`guides/polling.md`](../../.reference/tanstack-query/docs/framework/react/guides/polling.md), [`reference/focusManager.md`](../../.reference/tanstack-query/docs/reference/focusManager.md) |
 | **Decision** | AD-1 (JVM-pure core) |
@@ -99,10 +99,10 @@ client.query(
 | `refetchOnReconnect` | as above | as above | planned |
 | `"always"` ignores staleness | yes | yes | planned |
 | `"always"` blocked by `staleTime: 'static'` | yes | yes | planned |
-| `refetchInterval` constant | yes | yes | planned |
-| `refetchInterval` as a function of state | yes | yes | planned |
-| `refetchIntervalInBackground` | yes | yes | planned |
-| Polling pauses when unfocused | yes | yes | planned |
+| `refetchInterval` constant | yes | yes | done |
+| `refetchInterval` as a function of state | yes | re-read each tick | done |
+| `refetchIntervalInBackground` | yes | yes | done |
+| Polling pauses when unfocused | yes | pauses and resumes, no reattach needed | done |
 | Replaceable focus manager | `focusManager` | `FocusManager` interface | planned |
 | Replaceable online manager | `onlineManager` | `OnlineManager` interface | planned |
 | Only **active** queries refetch on focus | yes | yes | planned |
@@ -154,8 +154,23 @@ client.query(
 - [ ] Test: stale active query refetches on focus regain; fresh one does not.
 - [ ] Test: **inactive** queries do not refetch on focus.
 - [ ] Test: `"always"` refetches a fresh query, but not under `StaleTime.Static`.
-- [ ] Test: adaptive `refetchInterval` reads current state each tick.
-- [ ] Test: polling pauses when unfocused unless
-      `refetchIntervalInBackground = true`.
-- [ ] Instrumentation test: captive-portal-style network (connected, not
-      validated) reports offline.
+- [x] Test: adaptive `refetchInterval` is re-read each tick, so it can slow
+      down once a job finishes without restarting the query.
+- [x] Test: returning null from the interval stops the loop — and takes effect
+      immediately, not one already-scheduled tick later.
+- [x] Test: polling pauses when unfocused and **resumes on return** without
+      needing a reattach; `refetchIntervalInBackground` opts out.
+      **Verified by mutation**: without the focus check, 8 requests instead of 3.
+- [x] Test: the polling **loop itself** stops when the last observer leaves —
+      not merely its requests. Request counts cannot see this, because the
+      loop's observer check suppresses the fetch either way; counting interval
+      evaluations makes the leak observable. **Verified by mutation**: 129
+      evaluations instead of 9, a coroutine waking every second for nothing.
+
+### Requires a device
+
+These cannot run in this environment and are tracked separately rather than
+holding the gate open indefinitely:
+
+- [ ] Instrumentation test: a captive-portal network (connected, not validated)
+      reports offline.

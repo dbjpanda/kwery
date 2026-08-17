@@ -75,6 +75,35 @@ public data class QueryOptions(
      * reconnecting no longer implies the data is stale.
      */
     val refetchOnReconnect: RefetchOn = RefetchOn.IfStale,
+
+    /**
+     * Poll while the query is observed. Null disables polling.
+     *
+     * Receives the current state, so the interval can adapt — the common case
+     * being "poll fast while something is in progress, slowly once it settles":
+     *
+     * ```kotlin
+     * refetchInterval = { state ->
+     *     if (state.data?.isRunning == true) 2.seconds else 30.seconds
+     * }
+     * ```
+     *
+     * Independent of [staleTime]: a poll refetches whether or not the data is
+     * considered stale, because polling exists to detect *server-side* change
+     * that the client cannot predict.
+     *
+     * Returning null from the lambda stops the polling loop.
+     */
+    val refetchInterval: ((QueryState<*>) -> Duration?)? = null,
+
+    /**
+     * Keep polling while the app is backgrounded.
+     *
+     * Off by default. Polling a server from a screen nobody is looking at
+     * spends battery and cellular data for nothing, and Android will suspend
+     * the work anyway once the process is frozen.
+     */
+    val refetchIntervalInBackground: Boolean = false,
 )
 
 /** Client-wide configuration. */

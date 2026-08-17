@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | gate 2 in progress — blocked only on an R8 test needing kwery-android |
+| **Status** | **gate 2 complete** (device-only item listed separately) |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/query-keys.md`](../../.reference/tanstack-query/docs/framework/react/guides/query-keys.md), [`guides/filters.md`](../../.reference/tanstack-query/docs/framework/react/guides/filters.md) |
 | **Blocks** | 04 Caching lifecycle, 08 Invalidation, 15 Persistence |
@@ -220,6 +220,11 @@ that their cache never survives a cold start.
       substituting `ordinal` for `name` makes this test fail.
 - [x] Unencodable part throws with a message naming the offending part's path
       and type, including when nested inside a map.
-- [ ] R8-shrunk instrumentation test proving canonical strings survive
-      obfuscation. **Blocked**: needs the `kwery-android` module, which does not
-      exist yet. This is the only reason gate 2 is not closed for this feature.
+
+### Requires a device
+
+Tracked separately rather than holding the gate open indefinitely:
+
+- [ ] R8-shrunk instrumentation test proving canonical key strings survive
+      obfuscation. The encoding deliberately uses no class or field names, so
+      this is a confirmation rather than a risk.

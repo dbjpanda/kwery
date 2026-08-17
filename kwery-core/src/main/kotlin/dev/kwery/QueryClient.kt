@@ -462,6 +462,7 @@ public class QueryClient(
             isRestoring = { restoringState.value },
             onFetchStarted = ::onFetchStarted,
             onFetchSettled = ::onFetchSettled,
+            isFocused = { config.focusManager.isFocused.value },
             onEvict = { evicted ->
                 entriesMutex.withLock {
                     // Only remove if this is still the live entry for that key;

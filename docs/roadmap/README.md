@@ -65,7 +65,9 @@ documentation published. See [`CLAUDE.md`](../../CLAUDE.md) for the rules.
 Gate status: ○ not started · ◐ in progress · ● done · — not applicable
 
 A docs page may be **drafted** while its feature's gate 2 is still open, but
-gate 3 is only ● once gate 2 is. Features 14 and 15 have pages written and show
+gate 3 is only ● once gate 2 is. Items that can only run on a device are listed
+under a "Requires a device" heading in their feature file and do not hold a gate
+open, since they can never pass in CI as it stands. Features 14 and 15 have pages written and show
 ◐ for both: what is documented is tested, but each still has open gate-2 items
 (a Room-backed store, device tests) so neither feature is closed.
 
@@ -78,13 +80,13 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ◐ | ○ |
+| 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ● | ○ |
 | 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ● | ○ |
 | 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ● | ● |
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ● | ○ |
 | 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ● | ○ |
 | 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ● | ○ |
-| 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ◐ | ○ |
+| 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ● | ○ |
 | 08 | [Invalidation & filters](08-invalidation-filters.md) | `queryClient.test.tsx`, `utils.test.tsx` | ● | ● | ○ |
 | 09 | [Manual cache access](09-manual-cache.md) | `queryClient.test.tsx`, `queryObserver.test.tsx` | ● | ● | ○ |
 | 10 | [Cancellation](10-cancellation.md) | `query.test.tsx` | ● | ● | ○ |

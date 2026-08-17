@@ -44,6 +44,7 @@ internal class QueryEntry<T>(
     private val isRestoring: () -> Boolean,
     private val onFetchStarted: () -> Unit,
     private val onFetchSettled: () -> Unit,
+    private val isFocused: () -> Boolean,
     /**
      * Suspending, because removing an entry requires the client's map lock.
      * The only lock nesting in this class is `entry.mutex -> entriesMutex`, and
@@ -63,6 +64,7 @@ internal class QueryEntry<T>(
     private var inFlight: Deferred<FetchOutcome<T>>? = null
     private var graceJob: Job? = null
     private var gcJob: Job? = null
+    private var pollJob: Job? = null
 
     /** Drives LRU eviction. Updated on every attach. */
     var lastAccessMillis: Long = timeSource.nowMillis()
@@ -148,6 +150,8 @@ internal class QueryEntry<T>(
         gcJob?.cancel()
         gcJob = null
 
+        startPollingLocked()
+
         if (withinGrace) {
             lastContinuationMillis = timeSource.nowMillis()
             return@withLock
@@ -165,6 +169,10 @@ internal class QueryEntry<T>(
         observers--
         if (observers > 0) return@withLock
 
+        // Polling is a property of being watched. Nobody is watching.
+        pollJob?.cancel()
+        pollJob = null
+
         graceJob = scope.launch {
             delay(gracePeriodMillis)
             mutex.withLock {
@@ -179,6 +187,38 @@ internal class QueryEntry<T>(
                 gcJob = scope.launch {
                     delay(effectiveGcTime.inWholeMilliseconds)
                     mutex.withLock { if (observers == 0) onEvict(this@QueryEntry) }
+                }
+            }
+        }
+    }
+
+    /**
+     * Poll while observed. Caller must hold [mutex].
+     *
+     * The interval is re-read on every tick rather than captured once, so an
+     * adaptive interval reacts to the state it is given.
+     */
+    private fun startPollingLocked() {
+        val interval = options.refetchInterval ?: return
+        if (pollJob != null) return
+
+        pollJob = scope.launch {
+            while (true) {
+                val next = interval(state.value) ?: return@launch
+                delay(next.inWholeMilliseconds)
+
+                // Re-read after waiting. The caller may have turned polling off
+                // during the delay, and a tick that was already scheduled
+                // should not fire one last request after they said stop.
+                if (interval(state.value) == null) return@launch
+
+                // Skip the tick rather than exiting the loop: the app coming
+                // back to the foreground should resume polling, not require a
+                // reattach to restart it.
+                if (!options.refetchIntervalInBackground && !isFocused()) continue
+
+                mutex.withLock {
+                    if (observers > 0 && options.enabled) startFetchLocked()
                 }
             }
         }
@@ -437,6 +477,7 @@ internal class QueryEntry<T>(
     fun dispose() {
         graceJob?.cancel()
         gcJob?.cancel()
+        pollJob?.cancel()
         inFlight?.cancel()
     }
 }
