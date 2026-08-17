@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 2 — v1 headline |
-| **Status** | gate 2 in progress — implemented and tested; reconciling against the vendored suite |
+| **Status** | **gate 2 complete** — reconciled against the vendored suite |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/mutations.md`](../../.reference/tanstack-query/docs/framework/react/guides/mutations.md), [`guides/invalidations-from-mutations.md`](../../.reference/tanstack-query/docs/framework/react/guides/invalidations-from-mutations.md) |
 | **Blocks** | 12 Optimistic updates, 14 Offline queue |
@@ -128,6 +128,49 @@ This is a deliberate parity gap, recorded as such.
 | `setMutationDefaults` | yes | see [14](14-offline-mutation-queue.md) | planned |
 | `isMutating` / mutation filters | yes | yes | planned |
 | Observe others' mutations (`useMutationState`) | yes | `client.mutationStates(filters)` | planned |
+| Throwing `onSettled` promotes success → error | yes | yes | done |
+| Throwing `onError` loses the original error | yes — unhandled rejection | **no** — original stays primary, callback attached as suppressed | divergent (better) |
+| Cache-level (global) callbacks | yes, with an extra `mutation` arg | **not ported** — see below | divergent (gap) |
+| Mutation cache with `gcTime` | yes | **not ported** — see below | divergent (gap) |
+| `onSettled` uses `null` for error, `undefined` for data | yes | normalised: `null` for both | divergent (Kotlin) |
+| Call-level callbacks need a live subscriber to fire | yes | n/a — no call-level callbacks | divergent (gap) |
+| Late-bound options via `setOptions` | yes | n/a — no `setOptions` | divergent (gap) |
+
+### Reconciliation against the vendored suite
+
+Reading `mutations.test.tsx`, `mutationCache.test.tsx` and `mutationObserver.test.tsx`
+surfaced behaviour worth recording explicitly:
+
+**Matched, and now covered by tests.** A callback that throws on the *success*
+path promotes the whole mutation to `Error` — `onError` runs even though the
+write itself succeeded, and `onSettled` is entered a second time. Kwery does
+this because `onSuccess`/`onSettled` sit inside the same `try` as the mutation
+function, which turned out to be the correct shape.
+
+**Deliberately better.** TanStack routes a throw from `onError` to an
+unhandled-rejection channel, where it is easy to lose, and the mutation still
+rejects with the original error. Kwery keeps the original error primary *and*
+attaches the callback's failure as a **suppressed** exception, so neither is
+lost and no separate reporting channel is needed.
+
+**Normalised.** TanStack's `onSettled` receives `null` for "no error" but
+`undefined` for "no data" — an asymmetry Kotlin cannot express, since it has a
+single `null`. Both are `null` here.
+
+**Two real gaps, both deferred with reasons.** TanStack has a `MutationCache`
+holding every mutation, which provides (a) *global* callbacks with an extra
+`mutation` argument, and (b) garbage collection of settled mutations. Kwery's
+`client.mutation()` returns a fresh object each call and caches nothing, so
+neither exists. Global callbacks are a cross-cutting-concern hook (logging,
+error reporting) that is better served in Kotlin by wrapping `mutationFn`;
+mutation GC only matters once mutations are retained by key, which is exactly
+what [14](14-offline-mutation-queue.md) introduces. Both are revisited there.
+
+**Note for [14](14-offline-mutation-queue.md).** Resuming a paused mutation
+must **not** re-run `onMutate` — TanStack asserts this explicitly
+(`expect(onMutate).not.toHaveBeenCalled()`). An optimistic update was already
+applied when the mutation was first submitted; applying it twice on resume
+would double it.
 
 ## Open questions
 
@@ -148,11 +191,21 @@ This is a deliberate parity gap, recorded as such.
 
 ## Definition of done
 
-- [ ] `Mutation`, `MutationState`, `MutationOptions` implemented.
-- [ ] Test: callbacks fire in documented order and each is awaited.
-- [ ] Test: `onMutate` result reaches `onError` and `onSettled`, typed.
-- [ ] Test: mutations do not retry by default; `retry` opts in.
-- [ ] Test: two mutations sharing a scope run serially, second reports `isPaused`.
-- [ ] Test: mutations in different scopes run concurrently.
-- [ ] Test: `mutateAwait` throws the original exception, not a wrapper.
-- [ ] Test: `reset()` returns state to `Idle`.
+- [x] `Mutation`, `MutationState`, `MutationOptions` implemented.
+- [x] Test: callbacks fire in documented order and each is awaited.
+- [x] Test: `onMutate` result reaches `onError` and `onSettled`, typed.
+- [x] Test: mutations do not retry by default; `retry` opts in.
+- [x] Test: two mutations sharing a scope run serially, second reports `isPaused`.
+      **Verified by mutation**: without the lock, ordering becomes
+      `[start:a, start:b, start:c, end:a, …]`.
+- [x] Test: mutations in different scopes run concurrently.
+- [x] Test: a **failing** scoped mutation still releases the lock. TanStack has
+      no test for this; the gap was found while reading their suite.
+- [x] Test: `mutateAwait` throws the original exception, not a wrapper.
+- [x] Test: `reset()` returns state to `Idle`.
+- [x] Test: `onMutate` runs before the mutation waits for its scope turn, so an
+      optimistic update is visible on tap rather than after the queue drains.
+- [x] Test: offline mutations pause rather than fail, and resume on reconnect.
+- [x] Test: a throwing `onSettled` on the success path promotes to `Error` and
+      re-enters `onSettled` (ported from TanStack's cascade tests).
+- [x] Test: a throwing `onError` does not replace the original failure.

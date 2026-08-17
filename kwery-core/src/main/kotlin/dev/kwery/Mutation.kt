@@ -199,8 +199,15 @@ public class Mutation<V, R> internal constructor(
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Throwable) {
-                typed.onError?.invoke(error, variables, context)
-                typed.onSettled?.invoke(null, error, variables, context)
+                // A throw from onError or onSettled must NOT replace the
+                // failure the caller actually needs to see. TanStack routes
+                // these to an unhandled-rejection channel, which loses them;
+                // attaching them as suppressed keeps the original error primary
+                // while preserving the callback's failure for diagnosis.
+                reportingSuppressed(error) { typed.onError?.invoke(error, variables, context) }
+                reportingSuppressed(error) {
+                    typed.onSettled?.invoke(null, error, variables, context)
+                }
 
                 mutableState.value = mutableState.value.copy(
                     status = MutationStatus.Error,
@@ -209,6 +216,23 @@ public class Mutation<V, R> internal constructor(
                 )
                 throw error
             }
+        }
+    }
+
+    /**
+     * Run [block], attaching any failure to [primary] as suppressed rather than
+     * letting it escape.
+     *
+     * Used only on the error path, where a throwing callback must not mask the
+     * failure that caused it.
+     */
+    private suspend fun reportingSuppressed(primary: Throwable, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (callbackFailure: Throwable) {
+            if (callbackFailure !== primary) primary.addSuppressed(callbackFailure)
         }
     }
 

@@ -464,4 +464,66 @@ class MutationTest {
             "onMutate must not wait for the scope lock",
         )
     }
+
+    // ---- Throwing callbacks (ported from TanStack's cascade tests) --------
+
+    @Test
+    fun `a throwing onSettled on the success path promotes the mutation to Error`() = runTest {
+        // Ported from "error by global onSettled triggers onError callback".
+        // The mutationFn succeeded, but a callback failed, so the mutation as a
+        // whole did not: onError runs even though nothing about the write went
+        // wrong, and onSettled is entered a second time.
+        val kwery = TestQueryClient(this)
+        val order = mutableListOf<String>()
+        var settledCount = 0
+
+        val mutation = kwery.client.mutation(
+            MutationOptions<Int, String, Unit>(
+                mutationFn = { delay(10); "ok" },
+                onSuccess = { _, _, _ -> order += "onSuccess" },
+                onError = { _, _, _ -> order += "onError" },
+                onSettled = { _, _, _, _ ->
+                    settledCount++
+                    order += "onSettled"
+                    if (settledCount == 1) throw IllegalStateException("callback blew up")
+                },
+            ),
+        )
+
+        mutation.mutate(1)
+        kwery.settle(200.milliseconds)
+
+        assertEquals(listOf("onSuccess", "onSettled", "onError", "onSettled"), order)
+        assertTrue(mutation.state.value.isError)
+    }
+
+    @Test
+    fun `a throwing onError does not replace the original failure`() = runTest {
+        // TanStack routes a throwing onError to an unhandled-rejection channel,
+        // which loses it. Kwery keeps the original error primary and attaches
+        // the callback failure as suppressed, so neither is lost.
+        val kwery = TestQueryClient(this)
+        val original = IllegalStateException("the real failure")
+        val fromCallback = IllegalArgumentException("callback blew up")
+
+        val mutation = kwery.client.mutation(
+            MutationOptions<Int, String, Unit>(
+                mutationFn = { delay(10); throw original },
+                onError = { _, _, _ -> throw fromCallback },
+            ),
+        )
+
+        var caught: Throwable? = null
+        backgroundScope.launch {
+            caught = assertFailsWith<IllegalStateException> { mutation.mutateAwait(1) }
+        }
+        kwery.settle(200.milliseconds)
+
+        assertSame(original, caught, "the caller must see the real failure")
+        assertTrue(
+            caught!!.suppressed.any { it === fromCallback },
+            "the callback failure must be preserved, not silently dropped",
+        )
+        assertSame(original, mutation.state.value.error)
+    }
 }
