@@ -310,4 +310,41 @@ class OfflineQueueTest {
         settle(500)
         assertEquals(1, attempts)
     }
+
+    @Test
+    fun `the handler receives the idempotency key and attempt number`() = runTest {
+        // Without this the at-least-once guarantee is unusable: the id exists
+        // but cannot reach the request. Caught while writing docs/offline.md.
+        val store = InMemoryMutationQueueStore()
+        val seenKeys = mutableListOf<String>()
+        val seenAttempts = mutableListOf<Int>()
+        var failuresLeft = 2
+
+        val queue = OfflineQueue(
+            backgroundScope,
+            OfflineQueueOptions(store, maxAttempts = 5),
+            TestOnline(),
+            time(),
+        ) {
+            register(AddTodoKey) {
+                seenKeys += idempotencyKey
+                seenAttempts += attempt
+                if (failuresLeft > 0) {
+                    failuresLeft--
+                    throw IllegalStateException("transient")
+                }
+            }
+        }
+
+        val id = queue.submit(AddTodoKey, AddTodo("a"))
+        settle()
+        repeat(3) { queue.resume(); settle() }
+
+        assertTrue(seenKeys.isNotEmpty())
+        assertTrue(
+            seenKeys.all { it == id },
+            "the key must be stable across retries so a replay is recognisable",
+        )
+        assertEquals(listOf(0, 1, 2), seenAttempts, "attempt count increments")
+    }
 }

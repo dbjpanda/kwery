@@ -4,7 +4,7 @@
 |---|---|
 | **Tier** | 2 — v1 headline |
 | **Status** | **gate 2 complete** for the contracts and hydration; DataStore/Room persisters pending |
-| **Module** | `kwery-persist`, `kwery-persist-datastore`, `kwery-persist-room` |
+| **Module** | `kwery-persist`, `kwery-persist-room` (not built) |
 | **TanStack source** | [`plugins/persistQueryClient.md`](../../.reference/tanstack-query/docs/framework/react/plugins/persistQueryClient.md), [`plugins/createPersister.md`](../../.reference/tanstack-query/docs/framework/react/plugins/createPersister.md), [`reference/hydration.md`](../../.reference/tanstack-query/docs/framework/react/reference/hydration.md) |
 | **Depends on** | 01 Query keys, 04 Caching lifecycle |
 
@@ -105,18 +105,30 @@ Ordering across features is strict and must be tested as such:
 restore cache -> apply staleness -> resume paused mutations (feature 14)
 ```
 
-### Two persister implementations
+### Persister implementations
 
-- **`DataStorePersister`** — Proto/Preferences DataStore, single blob. Simple,
-  transactional, good to a few hundred KB. The default.
-- **`RoomPersister`** — per-entry rows in SQLite. Supports partial writes,
-  per-query eviction, and caches in the multi-MB range without rewriting the
-  whole blob on every change.
+- **`FilePersister`** — a single JSON file, written **atomically** (temp file
+  plus rename), so a process killed mid-write leaves the previous file wholly
+  intact. Good to a few hundred KB. The default. Ships in `kwery-persist`, so
+  it is unit-testable on the JVM with no device.
+- **`RoomPersister`** *(not built)* — per-entry rows in SQLite, for partial
+  writes and caches in the multi-MB range without rewriting the whole blob on
+  every change.
 
-The whole-blob approach degrades badly on Android: a 2 MB cache rewritten every
-second drains battery and blocks I/O. Offering a row-based persister is a
-concrete improvement over TanStack's design, whose `createPersister` per-query
-variant is a late addition rather than the default shape.
+**`kwery-persist-datastore` was dropped.** The module was specified before
+`FilePersister` existed, and a Preferences DataStore would offer exactly what
+`FilePersister` already provides — a single transactional blob — while adding a
+dependency, an Android-only artifact, and a store that can only be tested on a
+device. On Android the file-based persister is one line:
+
+```kotlin
+FilePersister(File(context.filesDir, "kwery-cache.json"))
+```
+
+Room stays on the list because it is genuinely different in kind: the whole-blob
+approach degrades badly once a cache is large, since a 2 MB rewrite on every
+change drains battery and blocks I/O. That is a capability gain; DataStore was
+not.
 
 ### Serialization
 
@@ -185,6 +197,11 @@ user's `buster`.
 - [x] Test: a key with no serializer is never written.
 - [x] Test: an **unconfirmed optimistic write is never persisted**. **Verified
       by mutation**: without the guard, storage contains the optimistic value.
-- [ ] `DataStorePersister` and `RoomPersister` implemented (Android modules).
+- [x] `FilePersister` implemented, with atomic writes verified by a test that
+      simulates the process dying between the temp write and the rename.
+- [x] `FileMutationQueueStore` implemented, in a **separate file** from the
+      cache so a cache reset can never drop pending writes.
+- [ ] ~~`DataStorePersister`~~ — **dropped**, see above.
+- [ ] `RoomPersister` for large caches.
 - [ ] Test: writes throttled to at most once per `throttle` window.
 - [ ] Benchmark: cold-start restore time for 100 / 1 000 / 10 000 entries.

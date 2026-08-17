@@ -23,6 +23,11 @@ public abstract interface class dev/kwery/persist/DurableMutationKey {
 	public abstract fun getSerializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public final class dev/kwery/persist/DurableMutationScope {
+	public final fun getAttempt ()I
+	public final fun getIdempotencyKey ()Ljava/lang/String;
+}
+
 public final class dev/kwery/persist/FileMutationQueueStore : dev/kwery/persist/MutationQueueStore {
 	public fun <init> (Ljava/io/File;Lkotlinx/coroutines/CoroutineDispatcher;)V
 	public synthetic fun <init> (Ljava/io/File;Lkotlinx/coroutines/CoroutineDispatcher;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -71,7 +76,7 @@ public final class dev/kwery/persist/OfflineQueue {
 }
 
 public final class dev/kwery/persist/OfflineQueue$Registrar {
-	public final fun register (Ldev/kwery/persist/DurableMutationKey;Lkotlin/jvm/functions/Function2;)V
+	public final fun register (Ldev/kwery/persist/DurableMutationKey;Lkotlin/jvm/functions/Function3;)V
 }
 
 public final class dev/kwery/persist/OfflineQueueOptions {

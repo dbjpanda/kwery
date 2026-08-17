@@ -100,7 +100,7 @@ optimistic writes will be applied to an empty cache.
 | Missing fn detected | runtime, on resume | **at the submit call site** | divergent (better) |
 | Survives process death | no (tab-scoped) | **yes** | divergent (better) |
 | Queue written before first attempt | no | yes | divergent (better) |
-| Idempotency key | no | `QueuedMutation.id`, stable across restarts | divergent (addition) |
+| Idempotency key | no | `DurableMutationScope.idempotencyKey`, stable across restarts | done |
 | Dead-letter for poison mutations | no | yes, with a reason | divergent (addition) |
 | Pending-write count for the UI | no | `pending: StateFlow<Int>` | divergent (addition) |
 | Queue entry expiry | no | `maxAge`, default 7 days | divergent (addition) |
@@ -151,7 +151,12 @@ optimistic writes will be applied to an empty cache.
 - [x] Test: offline writes wait for connectivity rather than burning attempts.
 - [x] Test: `pending` reflects undelivered writes.
 - [x] Test: the idempotency id survives a restart unchanged.
-- [ ] Android `MutationQueueStore` (Room or DataStore).
+- [x] `FileMutationQueueStore`, written atomically, in a separate file from
+      the cache.
+- [x] Test: the handler receives the idempotency key and attempt number.
+      **Found by writing the documentation** — the id existed but could not
+      reach the request, making at-least-once delivery unusable in practice.
+- [ ] Room-backed `MutationQueueStore` for large queues.
 - [ ] Test: resume happens strictly after hydration, end to end.
 - [ ] Instrumentation test on a real device using process-death simulation.
 

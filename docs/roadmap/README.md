@@ -51,8 +51,7 @@ kwery-core         pure Kotlin/JVM — cache, observers, retries, mutations     
 kwery-android      lifecycle FocusManager, validated-connectivity OnlineManager  [BUILT]
 kwery-compose      rememberQuery / rememberMutation / rememberInfiniteQuery      [BUILT]
 kwery-persist      persistence contracts + dehydrate/hydrate                    [BUILT]
-kwery-persist-datastore   DataStore-backed persister
-kwery-persist-room        Room/SQLite-backed persister (larger caches)
+kwery-persist-room        Room/SQLite-backed persister (larger caches; not built)
 kwery-devtools     inspection surface (post-v1)
 sample             not published — keeps documentation examples compiling     [BUILT]
 kwery-test         virtual-clock test harness for consumers                     [BUILT]
@@ -92,7 +91,7 @@ that feature's parity table with a reason.
 | 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ● | ○ |
 | 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ● | ○ |
 | 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ◐ | ○ |
-| 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ○ |
+| 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ● |
 | 15 | [Persistence & hydration](15-persistence.md) | `hydration.test.tsx` | ● | ◐ | ○ |
 | 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ● | ○ |
 
@@ -186,9 +185,9 @@ justified in the linked feature file — none is a preference.
 
 13. **Structured concurrency for cancellation** ([10](10-cancellation.md)) —
     no manual `AbortSignal` threading.
-14. **Row-based persister option** ([15](15-persistence.md)) — rewriting a
-    multi-MB blob every second is a battery and I/O problem TanStack's
-    whole-cache design does not have to face.
+14. **Atomic persistence writes** ([15](15-persistence.md)) — a process killed
+    mid-write leaves the previous snapshot wholly intact, rather than a
+    half-written mixture. A row-based persister for large caches is future work.
 15. **Seeded cache entries can later refetch** ([09](09-manual-cache.md)) — a
     `setQueryData`-created entry adopts a query function when first observed,
     instead of staying frozen forever.

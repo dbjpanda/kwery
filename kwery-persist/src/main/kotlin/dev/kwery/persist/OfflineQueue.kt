@@ -29,6 +29,27 @@ public interface DurableMutationKey<V> {
     public val serializer: KSerializer<V>
 }
 
+/**
+ * What a durable write's handler is told about the attempt it is running.
+ *
+ * Exists so [idempotencyKey] can actually reach the request. Delivery is
+ * at-least-once, so without a way to pass this to the server the guarantee is
+ * unusable — which is exactly what it looked like before the documentation for
+ * this feature tried to give an example.
+ */
+public class DurableMutationScope internal constructor(
+    /**
+     * Stable identity for this write, unchanged across retries and restarts.
+     *
+     * Send it as an idempotency key so the server can recognise a replay. A
+     * non-idempotent endpoint given no key **will** be duplicated eventually.
+     */
+    public val idempotencyKey: String,
+
+    /** Failed attempts so far. 0 on the first try. */
+    public val attempt: Int,
+)
+
 /** Why a queued write will never be attempted again. */
 public enum class DeadLetterReason {
     /** Failed more times than [OfflineQueueOptions.maxAttempts]. */
@@ -151,17 +172,20 @@ public class OfflineQueue(
     public class Registrar internal constructor() {
         internal val handlers = mutableMapOf<String, Handler<*>>()
 
-        public fun <V> register(key: DurableMutationKey<V>, fn: suspend (V) -> Unit) {
+        public fun <V> register(
+            key: DurableMutationKey<V>,
+            fn: suspend DurableMutationScope.(V) -> Unit,
+        ) {
             handlers[encodeKey(key.parts)] = Handler(key, fn)
         }
     }
 
     internal class Handler<V>(
         val key: DurableMutationKey<V>,
-        val fn: suspend (V) -> Unit,
+        val fn: suspend DurableMutationScope.(V) -> Unit,
     ) {
-        suspend fun run(rawVariables: String) {
-            fn(json.decodeFromString(key.serializer, rawVariables))
+        suspend fun run(scope: DurableMutationScope, rawVariables: String) {
+            scope.fn(json.decodeFromString(key.serializer, rawVariables))
         }
     }
 
@@ -271,7 +295,13 @@ public class OfflineQueue(
             }
 
             try {
-                handler.run(record.variables)
+                handler.run(
+                    DurableMutationScope(
+                        idempotencyKey = record.id,
+                        attempt = record.attempts,
+                    ),
+                    record.variables,
+                )
                 options.store.remove(record.id)
             } catch (failure: Throwable) {
                 val attempts = record.attempts + 1
