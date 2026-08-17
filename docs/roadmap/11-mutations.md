@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 2 — v1 headline |
-| **Status** | planned |
+| **Status** | gate 2 in progress — implemented and tested; reconciling against the vendored suite |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/mutations.md`](../../.reference/tanstack-query/docs/framework/react/guides/mutations.md), [`guides/invalidations-from-mutations.md`](../../.reference/tanstack-query/docs/framework/react/guides/invalidations-from-mutations.md) |
 | **Blocks** | 12 Optimistic updates, 14 Offline queue |
@@ -131,13 +131,20 @@ This is a deliberate parity gap, recorded as such.
 
 ## Open questions
 
-- **OQ-1.** Is the third type parameter `C` too costly in practice? Every
-  `MutationOptions` reference carries it, and inference may struggle where
-  `onMutate` is absent. Prototype before committing; fall back to `Any?` with a
-  typed accessor if the ergonomics are bad.
-- **OQ-2.** Should omitting per-call callbacks be reconsidered for the fire-and-
-  forget path, where there is no `mutateAwait` to hang code off? A one-shot
-  `onResult` on `mutate` would cover it without the "only the last one" weirdness.
+- **OQ-1.** ~~Is the third type parameter `C` too costly?~~ **Closed: keep it,
+  but only on `MutationOptions`.** The question assumed `C` had to appear on
+  `Mutation` too, and it does not — nothing on a mutation's observable surface
+  exposes the rollback context.
+
+  So `MutationOptions<V, R, C>` is fully typed, giving the user a checked
+  rollback snapshot in `onError`/`onSettled` with no cast at the point that
+  matters, while `Mutation<V, R>` erases it. The single unchecked cast is
+  confined to one line inside `Mutation.execute`, and it is sound because the
+  context value came from that same options object.
+- **OQ-2.** ~~Reconsider per-call callbacks for the fire-and-forget path?~~
+  **Closed: no.** `mutate` returns its `Job`, so a caller who wants to react can
+  `mutate(v).join()` or observe `state`. Adding a second callback channel to
+  cover a case already served by two mechanisms is API surface for its own sake.
 
 ## Definition of done
 

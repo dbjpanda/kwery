@@ -16,6 +16,77 @@ public final class dev/kwery/FocusManager$Companion {
 	public final fun getAlwaysFocused ()Ldev/kwery/FocusManager;
 }
 
+public final class dev/kwery/Mutation {
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun mutate (Ljava/lang/Object;)Lkotlinx/coroutines/Job;
+	public final fun mutateAwait (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun reset ()V
+}
+
+public final class dev/kwery/MutationOptions {
+	public fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function5;Ldev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;Ldev/kwery/MutationScope;Ldev/kwery/NetworkMode;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function5;Ldev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;Ldev/kwery/MutationScope;Ldev/kwery/NetworkMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMutationFn ()Lkotlin/jvm/functions/Function2;
+	public final fun getNetworkMode ()Ldev/kwery/NetworkMode;
+	public final fun getOnError ()Lkotlin/jvm/functions/Function4;
+	public final fun getOnMutate ()Lkotlin/jvm/functions/Function2;
+	public final fun getOnSettled ()Lkotlin/jvm/functions/Function5;
+	public final fun getOnSuccess ()Lkotlin/jvm/functions/Function4;
+	public final fun getRetry ()Ldev/kwery/RetryPolicy;
+	public final fun getRetryDelay ()Ldev/kwery/RetryDelay;
+	public final fun getScope ()Ldev/kwery/MutationScope;
+}
+
+public final class dev/kwery/MutationScope {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Ldev/kwery/MutationScope;
+	public static synthetic fun copy$default (Ldev/kwery/MutationScope;Ljava/lang/String;ILjava/lang/Object;)Ldev/kwery/MutationScope;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/MutationState {
+	public fun <init> ()V
+	public fun <init> (Ldev/kwery/MutationStatus;Ljava/lang/Object;Ljava/lang/Throwable;Ljava/lang/Object;Ljava/lang/Long;ZI)V
+	public synthetic fun <init> (Ldev/kwery/MutationStatus;Ljava/lang/Object;Ljava/lang/Throwable;Ljava/lang/Object;Ljava/lang/Long;ZIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/kwery/MutationStatus;
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun component3 ()Ljava/lang/Throwable;
+	public final fun component4 ()Ljava/lang/Object;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Z
+	public final fun component7 ()I
+	public final fun copy (Ldev/kwery/MutationStatus;Ljava/lang/Object;Ljava/lang/Throwable;Ljava/lang/Object;Ljava/lang/Long;ZI)Ldev/kwery/MutationState;
+	public static synthetic fun copy$default (Ldev/kwery/MutationState;Ldev/kwery/MutationStatus;Ljava/lang/Object;Ljava/lang/Throwable;Ljava/lang/Object;Ljava/lang/Long;ZIILjava/lang/Object;)Ldev/kwery/MutationState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/Object;
+	public final fun getError ()Ljava/lang/Throwable;
+	public final fun getFailureCount ()I
+	public final fun getStatus ()Ldev/kwery/MutationStatus;
+	public final fun getSubmittedAt ()Ljava/lang/Long;
+	public final fun getVariables ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public final fun isError ()Z
+	public final fun isIdle ()Z
+	public final fun isPaused ()Z
+	public final fun isPending ()Z
+	public final fun isSuccess ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/MutationStatus : java/lang/Enum {
+	public static final field Error Ldev/kwery/MutationStatus;
+	public static final field Idle Ldev/kwery/MutationStatus;
+	public static final field Pending Ldev/kwery/MutationStatus;
+	public static final field Success Ldev/kwery/MutationStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/MutationStatus;
+	public static fun values ()[Ldev/kwery/MutationStatus;
+}
+
 public final class dev/kwery/NetworkMode : java/lang/Enum {
 	public static final field Always Ldev/kwery/NetworkMode;
 	public static final field OfflineFirst Ldev/kwery/NetworkMode;
@@ -47,6 +118,7 @@ public final class dev/kwery/QueryClient {
 	public final fun invalidateQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun invalidateQueries (Ldev/kwery/QueryKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun invalidateQueries ([Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun mutation (Ldev/kwery/MutationOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
 	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
 	public static synthetic fun query$default (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;

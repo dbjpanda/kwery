@@ -103,6 +103,33 @@ public class QueryClient(
         fetcher: suspend () -> T,
     ): Flow<R> = query(key, options, fetcher).map { select(it.data) }.distinctUntilChanged()
 
+    // ---- Mutations -------------------------------------------------------
+
+    /** One lock per [MutationScope.id]; mutations sharing a scope share a lock. */
+    private val mutationLocks = mutableMapOf<String, Mutex>()
+    private val mutationLocksGuard = Mutex()
+
+    /**
+     * Create a mutation.
+     *
+     * Mutations are not cached by key the way queries are — each call returns a
+     * new [Mutation]. What *is* shared is the [MutationScope] lock, so two
+     * mutations declaring the same scope serialise against each other even
+     * though they are separate objects.
+     */
+    public suspend fun <V, R, C> mutation(options: MutationOptions<V, R, C>): Mutation<V, R> {
+        val lock = options.scope?.let { scope ->
+            mutationLocksGuard.withLock { mutationLocks.getOrPut(scope.id) { Mutex() } }
+        }
+        return Mutation(
+            options = options,
+            coroutineScope = scope,
+            timeSource = config.timeSource,
+            onlineManager = config.onlineManager,
+            serialLock = lock,
+        )
+    }
+
     // ---- Cache access ----------------------------------------------------
 
     /** The currently cached data for [key], without triggering a fetch. */
