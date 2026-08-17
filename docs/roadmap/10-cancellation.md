@@ -79,6 +79,31 @@ that expose only a cancel token.
 | Cancellation excluded from retries | implicit | enforced | divergent (better) |
 | Leave and return mid-request | cancels, then refetches | joins the in-flight request | divergent (better) |
 | Swallowed `CancellationException` | breaks cancellation | contained via `isActive` check | divergent (better) |
+| Cancellation gated on the fn consuming the signal | **yes** | no — always cancels at grace expiry | **divergent (see below)** |
+| Original exception instance preserved | n/a | yes — no stacktrace-recovered copy | divergent (better) |
+
+### The signal-consumption gate
+
+TanStack only cancels an in-flight fetch when the last observer leaves **if the
+query function actually read the `AbortSignal`**. A `queryFn` that ignores the
+signal runs to completion and populates the cache; one that reads
+`signal.aborted` gets cancelled. Their own tests pin both halves:
+`should continue if cancellation is not supported and signal is not consumed`
+versus `should not continue when last observer unsubscribed if the signal was
+consumed`.
+
+Kotlin has no equivalent gate — a coroutine is cancellable whether or not its
+body ever checks `isActive` — so the behaviour cannot be ported as-is.
+
+**Decision: always cancel, at grace expiry.** This is better than either TanStack
+branch rather than a compromise between them. The grace window means leaving and
+returning quickly **joins the in-flight request** instead of restarting it
+(measured: 1 request, not 2), which is the outcome the signal-consumption gate
+was approximating. Abandoning for real still cancels, so no work is wasted on a
+screen nobody is watching.
+
+The divergence is recorded because a reader porting tests across will notice the
+two TanStack cases have no Kwery equivalent.
 
 ## Open questions
 

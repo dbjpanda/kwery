@@ -158,20 +158,26 @@ public final class dev/kwery/QueryKeyKt {
 }
 
 public final class dev/kwery/QueryOptions {
-	public synthetic fun <init> (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;Ldev/kwery/RefetchOn;Ldev/kwery/RefetchOn;Ldev/kwery/RefetchOn;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;Ldev/kwery/RefetchOn;Ldev/kwery/RefetchOn;Ldev/kwery/RefetchOn;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ldev/kwery/StaleTime;
 	public final fun component2-UwyO8pc ()J
 	public final fun component3 ()Ldev/kwery/RetryPolicy;
 	public final fun component4 ()Ldev/kwery/RetryDelay;
 	public final fun component5 ()Z
 	public final fun component6 ()Ldev/kwery/NetworkMode;
-	public final fun copy-NcHsxvU (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;)Ldev/kwery/QueryOptions;
-	public static synthetic fun copy-NcHsxvU$default (Ldev/kwery/QueryOptions;Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;ILjava/lang/Object;)Ldev/kwery/QueryOptions;
+	public final fun component7 ()Ldev/kwery/RefetchOn;
+	public final fun component8 ()Ldev/kwery/RefetchOn;
+	public final fun component9 ()Ldev/kwery/RefetchOn;
+	public final fun copy-LFamP3s (Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;Ldev/kwery/RefetchOn;Ldev/kwery/RefetchOn;Ldev/kwery/RefetchOn;)Ldev/kwery/QueryOptions;
+	public static synthetic fun copy-LFamP3s$default (Ldev/kwery/QueryOptions;Ldev/kwery/StaleTime;JLdev/kwery/RetryPolicy;Ldev/kwery/RetryDelay;ZLdev/kwery/NetworkMode;Ldev/kwery/RefetchOn;Ldev/kwery/RefetchOn;Ldev/kwery/RefetchOn;ILjava/lang/Object;)Ldev/kwery/QueryOptions;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEnabled ()Z
 	public final fun getGcTime-UwyO8pc ()J
 	public final fun getNetworkMode ()Ldev/kwery/NetworkMode;
+	public final fun getRefetchOnFocus ()Ldev/kwery/RefetchOn;
+	public final fun getRefetchOnMount ()Ldev/kwery/RefetchOn;
+	public final fun getRefetchOnReconnect ()Ldev/kwery/RefetchOn;
 	public final fun getRetry ()Ldev/kwery/RetryPolicy;
 	public final fun getRetryDelay ()Ldev/kwery/RetryDelay;
 	public final fun getStaleTime ()Ldev/kwery/StaleTime;
@@ -273,6 +279,15 @@ public final class dev/kwery/QueryUiState$Loading : dev/kwery/QueryUiState {
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/RefetchOn : java/lang/Enum {
+	public static final field Always Ldev/kwery/RefetchOn;
+	public static final field IfStale Ldev/kwery/RefetchOn;
+	public static final field Never Ldev/kwery/RefetchOn;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/RefetchOn;
+	public static fun values ()[Ldev/kwery/RefetchOn;
 }
 
 public abstract interface class dev/kwery/RetryDelay {

@@ -76,7 +76,7 @@ that feature's parity table with a reason.
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ◐ | ○ |
 | 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ◐ | ○ |
 | 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ◐ | ○ |
-| 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ○ | ○ |
+| 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ◐ | ○ |
 | 08 | [Invalidation & filters](08-invalidation-filters.md) | `queryClient.test.tsx`, `utils.test.tsx` | ● | ◐ | ○ |
 | 09 | [Manual cache access](09-manual-cache.md) | `queryClient.test.tsx`, `queryObserver.test.tsx` | ● | ◐ | ○ |
 | 10 | [Cancellation](10-cancellation.md) | `query.test.tsx` | ● | ◐ | ○ |
@@ -87,7 +87,7 @@ that feature's parity table with a reason.
 |---|---|---|:--:|:--:|:--:|
 | 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ○ | ○ |
 | 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ○ | ○ |
-| 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ○ | ○ |
+| 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ◐ | ○ |
 | 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ○ | ○ |
 | 15 | [Persistence & hydration](15-persistence.md) | `hydration.test.tsx` | ● | ○ | ○ |
 | 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ○ | ○ |

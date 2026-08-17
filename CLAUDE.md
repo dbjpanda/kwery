@@ -127,6 +127,30 @@ directly.
 `staleTime` still defaults to `0`, preserving parity. Do not "fix" rotation by
 changing that default.
 
+## Toolchain constraint (verified by building, 2026-08-18)
+
+**Gradle 9.6.0 must not be used once Android modules land**, and the reason is
+non-obvious enough to record:
+
+Gradle 9.6.0 removed an internal API that AGP 8.x depends on, so only AGP 9.x
+works with it. AGP 9.x ships "built-in Kotlin" hard-pinned to **Kotlin 2.2.10**
+and *rejects* the classic `org.jetbrains.kotlin.android` plugin outright. That
+chain then breaks two things Kwery needs:
+
+- **KSP does not work at all**, so Room's annotation processor cannot run.
+- **binary-compatibility-validator registers no tasks on Android modules**, so
+  `apiCheck` would silently cover only the JVM half of a published library.
+
+Getting Kotlin 2.2.20 under that stack requires `buildscript {}` classpath
+forcing and `extensions.getByName("android") as LibraryExtension` casts —
+un-idiomatic build files, for a strictly worse outcome.
+
+The current Gradle version was chosen only because it happened to be in the
+wrapper cache. The fix is to pin an older Gradle that supports AGP 8.x and the
+classic Kotlin plugin. **Verify by building before changing this** — the whole
+finding above came from an agent that actually ran the builds rather than
+reading compatibility tables.
+
 ## Conventions
 
 **Tests**

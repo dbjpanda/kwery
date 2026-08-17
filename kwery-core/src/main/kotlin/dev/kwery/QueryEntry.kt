@@ -66,6 +66,15 @@ internal class QueryEntry<T>(
     var lastAccessMillis: Long = timeSource.nowMillis()
         private set
 
+    /**
+     * When a reattach was last treated as a continuation rather than a mount.
+     *
+     * Focus-triggered refetches consult this too: backgrounding and returning
+     * within the grace window produces BOTH a reattach and a focus event, and
+     * suppressing only the reattach would let the focus event refetch anyway.
+     */
+    private var lastContinuationMillis: Long? = null
+
     val observerCount: Int get() = observers
 
     fun snapshot(): QueryEntrySnapshot {
@@ -116,9 +125,12 @@ internal class QueryEntry<T>(
         gcJob?.cancel()
         gcJob = null
 
-        if (withinGrace) return@withLock
+        if (withinGrace) {
+            lastContinuationMillis = timeSource.nowMillis()
+            return@withLock
+        }
         if (!options.enabled) return@withLock
-        if (isStaleNow()) startFetchLocked()
+        if (shouldRefetchFor(options.refetchOnMount)) startFetchLocked()
     }
 
     /**
@@ -297,6 +309,42 @@ internal class QueryEntry<T>(
         mutex.withLock {
             state.value = state.value.copy(fetchStatus = FetchStatus.Fetching)
         }
+    }
+
+    /** True when [policy] permits a fetch right now. Caller must hold [mutex]. */
+    private fun shouldRefetchFor(policy: RefetchOn): Boolean {
+        // A query that has never loaded is doing an INITIAL fetch, not a
+        // refetch. StaleTime.Static suppresses refetching, but a Static query
+        // that never fetched would hold no data forever — TanStack likewise
+        // reports a dataless Static query as stale.
+        val neverLoaded = state.value.dataUpdatedAt == null && state.value.error == null
+        if (neverLoaded) return true
+
+        return when (policy) {
+            RefetchOn.Never -> false
+            // Static refuses every automatic refetch, including "Always".
+            RefetchOn.Always -> options.staleTime.allowsAutomaticRefetch
+            RefetchOn.IfStale -> options.staleTime.allowsAutomaticRefetch && isStaleNow()
+        }
+    }
+
+    private fun withinContinuationWindow(): Boolean {
+        val at = lastContinuationMillis ?: return false
+        return !isElapsed(timeSource.nowMillis(), at, gracePeriodMillis)
+    }
+
+    /** The app returned to the foreground. */
+    suspend fun onFocusRegained(): Unit = onEnvironmentTrigger(options.refetchOnFocus)
+
+    /** Connectivity returned. */
+    suspend fun onReconnected(): Unit = onEnvironmentTrigger(options.refetchOnReconnect)
+
+    private suspend fun onEnvironmentTrigger(policy: RefetchOn) = mutex.withLock {
+        if (!options.enabled) return@withLock
+        // Only queries something is actually watching refetch on these triggers.
+        if (observers == 0) return@withLock
+        if (withinContinuationWindow()) return@withLock
+        if (shouldRefetchFor(policy)) startFetchLocked()
     }
 
     // ---- External operations --------------------------------------------

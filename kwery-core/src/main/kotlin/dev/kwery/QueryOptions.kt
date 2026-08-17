@@ -4,6 +4,23 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
+/** When an automatic refetch trigger should actually refetch. */
+public enum class RefetchOn {
+    /** Never refetch on this trigger. */
+    Never,
+
+    /** Refetch only when the data is stale. The default. */
+    IfStale,
+
+    /**
+     * Refetch regardless of staleness.
+     *
+     * Still blocked by [StaleTime.Static], which refuses every automatic
+     * refetch — that is what separates it from [StaleTime.Infinite].
+     */
+    Always,
+}
+
 /**
  * Per-query configuration.
  *
@@ -38,6 +55,26 @@ public data class QueryOptions(
     val enabled: Boolean = true,
 
     val networkMode: NetworkMode = NetworkMode.Online,
+
+    /** Refetch when a new observer attaches. */
+    val refetchOnMount: RefetchOn = RefetchOn.IfStale,
+
+    /**
+     * Refetch when the app returns to the foreground.
+     *
+     * Suppressed inside the grace window, so a brief app switch — a
+     * notification, replying to a message, the app switcher — does not refetch
+     * every visible query. See `docs/roadmap/05-deduplication-observers.md`.
+     */
+    val refetchOnFocus: RefetchOn = RefetchOn.IfStale,
+
+    /**
+     * Refetch when connectivity returns.
+     *
+     * Under [NetworkMode.Always] this should be [RefetchOn.Never], since
+     * reconnecting no longer implies the data is stale.
+     */
+    val refetchOnReconnect: RefetchOn = RefetchOn.IfStale,
 )
 
 /** Client-wide configuration. */

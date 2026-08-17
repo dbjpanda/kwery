@@ -5,8 +5,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -45,6 +47,18 @@ public class QueryClient(
 
     private val entries = LinkedHashMap<QueryKey<*>, QueryEntry<*>>()
     private val entriesMutex = Mutex()
+
+    init {
+        // Rising edges only: `drop(1)` skips the StateFlow's current value, so
+        // constructing a client while already focused and online is not itself
+        // a trigger.
+        this.scope.launch {
+            config.focusManager.isFocused.observeReturns { entry -> entry.onFocusRegained() }
+        }
+        this.scope.launch {
+            config.onlineManager.isOnline.observeReturns { entry -> entry.onReconnected() }
+        }
+    }
 
     // ---- Observing -------------------------------------------------------
 
@@ -185,6 +199,39 @@ public class QueryClient(
     }
 
     // ---- Internals -------------------------------------------------------
+
+    /**
+     * Invoke [onReturn] for every entry when this flow returns to `true`, but
+     * only if it was away for at least [QueryClientConfig.gracePeriod].
+     *
+     * A two-second app switch — a notification, replying to a message, the app
+     * switcher — is not a return to the app, and a 200 ms connectivity blip is
+     * not a reconnection. Treating them as triggers refetches every visible
+     * query, repeatedly, on cellular. Reusing the grace window rather than
+     * adding a separate throttle keeps this one concept instead of two.
+     */
+    private suspend fun kotlinx.coroutines.flow.Flow<Boolean>.observeReturns(
+        onReturn: suspend (QueryEntry<*>) -> Unit,
+    ) {
+        var awaySince: Long? = null
+        // drop(1) skips the StateFlow's current value: constructing a client
+        // while already focused and online is not itself a trigger.
+        drop(1).collect { present ->
+            if (!present) {
+                awaySince = config.timeSource.nowMillis()
+                return@collect
+            }
+            val since = awaySince ?: return@collect
+            awaySince = null
+            val awayLongEnough = isElapsed(
+                nowMillis = config.timeSource.nowMillis(),
+                sinceMillis = since,
+                durationMillis = config.gracePeriod.inWholeMilliseconds,
+            )
+            if (!awayLongEnough) return@collect
+            entriesMutex.withLock { entries.values.toList() }.forEach { onReturn(it) }
+        }
+    }
 
     private suspend fun matching(filters: QueryFilters): List<QueryEntry<*>> =
         entriesMutex.withLock {
