@@ -1,0 +1,21 @@
+[versions]
+kotlin = "2.2.20"
+coroutines = "1.10.2"
+serialization = "1.9.0"
+bcv = "0.18.1"
+
+# Library consumers compile against this. Kept at 11 rather than 17 so Kwery is
+# usable from Android modules and older JVM projects; the toolchain used to
+# *build* it is 17.
+jvmTarget = "11"
+jdkToolchain = "17"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "bcv" }

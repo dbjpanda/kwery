@@ -1,0 +1,34 @@
+Kwery
+Copyright 2026 The Kwery Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+--------------------------------------------------------------------------------
+Third-party material
+--------------------------------------------------------------------------------
+
+This repository vendors documentation and test sources from TanStack Query for
+the purpose of tracking behavioural parity. That material is NOT part of the
+distributed Kwery artifacts — it is developer reference only, is not compiled,
+and is not published to Maven Central.
+
+    TanStack Query
+    https://github.com/TanStack/query
+    Copyright (c) 2021-present Tanner Linsley
+    Licensed under the MIT License
+
+    Vendored at revision dce04b5c5ab1e71cd5de1ea1481a48c5a2d9c9a5 under
+    .reference/tanstack-query/, comprising:
+      - docs/
+      - packages/query-core/src/__tests__/
+
+    Full licence text: .reference/tanstack-query/LICENSE
+
+Kwery is an independent implementation for Kotlin and Android. It is not
+affiliated with, endorsed by, or derived from the TanStack Query source code.
+Where Kwery's behaviour matches TanStack Query, that is deliberate API parity,
+documented in docs/roadmap/.
+
+Test cases ported from the vendored test suite are re-expressed in Kotlin
+against Kwery's own API; where a test's structure or naming follows the
+original, the MIT licence above applies to that provenance.
