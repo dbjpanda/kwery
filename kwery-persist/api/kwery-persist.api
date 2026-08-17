@@ -1,3 +1,12 @@
+public final class dev/kwery/persist/DeadLetterReason : java/lang/Enum {
+	public static final field Expired Ldev/kwery/persist/DeadLetterReason;
+	public static final field TooManyAttempts Ldev/kwery/persist/DeadLetterReason;
+	public static final field Unregistered Ldev/kwery/persist/DeadLetterReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/persist/DeadLetterReason;
+	public static fun values ()[Ldev/kwery/persist/DeadLetterReason;
+}
+
 public final class dev/kwery/persist/DiscardReason : java/lang/Enum {
 	public static final field BusterMismatch Ldev/kwery/persist/DiscardReason;
 	public static final field Expired Ldev/kwery/persist/DiscardReason;
@@ -9,12 +18,52 @@ public final class dev/kwery/persist/DiscardReason : java/lang/Enum {
 	public static fun values ()[Ldev/kwery/persist/DiscardReason;
 }
 
+public abstract interface class dev/kwery/persist/DurableMutationKey {
+	public abstract fun getParts ()Ljava/util/List;
+	public abstract fun getSerializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/kwery/persist/InMemoryMutationQueueStore : dev/kwery/persist/MutationQueueStore {
+	public fun <init> ()V
+	public fun all (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun put (Ldev/kwery/persist/QueuedMutation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun remove (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class dev/kwery/persist/InMemoryPersister : dev/kwery/persist/QueryPersister {
 	public fun <init> ()V
 	public final fun getWriteCount ()I
 	public fun persist (Ldev/kwery/persist/PersistedClient;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun remove (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun restore (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class dev/kwery/persist/MutationQueueStore {
+	public abstract fun all (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun put (Ldev/kwery/persist/QueuedMutation;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun remove (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class dev/kwery/persist/OfflineQueue {
+	public fun <init> (Lkotlinx/coroutines/CoroutineScope;Ldev/kwery/persist/OfflineQueueOptions;Ldev/kwery/OnlineManager;Ldev/kwery/TimeSource;Lkotlin/jvm/functions/Function1;)V
+	public final fun deadLettered (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun discard (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getPending ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun resume (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun submit (Ldev/kwery/persist/DurableMutationKey;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun submit$default (Ldev/kwery/persist/OfflineQueue;Ldev/kwery/persist/DurableMutationKey;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class dev/kwery/persist/OfflineQueue$Registrar {
+	public final fun register (Ldev/kwery/persist/DurableMutationKey;Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class dev/kwery/persist/OfflineQueueOptions {
+	public synthetic fun <init> (Ldev/kwery/persist/MutationQueueStore;IJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ldev/kwery/persist/MutationQueueStore;IJLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getMaxAge-UwyO8pc ()J
+	public final fun getMaxAttempts ()I
+	public final fun getStore ()Ldev/kwery/persist/MutationQueueStore;
 }
 
 public final class dev/kwery/persist/PersistOptions {
@@ -112,5 +161,47 @@ public abstract interface class dev/kwery/persist/QueryPersister {
 	public abstract fun persist (Ldev/kwery/persist/PersistedClient;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun remove (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun restore (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class dev/kwery/persist/QueuedMutation {
+	public static final field Companion Ldev/kwery/persist/QueuedMutation$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILjava/lang/String;Ldev/kwery/persist/DeadLetterReason;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILjava/lang/String;Ldev/kwery/persist/DeadLetterReason;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()J
+	public final fun component6 ()I
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ldev/kwery/persist/DeadLetterReason;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILjava/lang/String;Ldev/kwery/persist/DeadLetterReason;)Ldev/kwery/persist/QueuedMutation;
+	public static synthetic fun copy$default (Ldev/kwery/persist/QueuedMutation;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILjava/lang/String;Ldev/kwery/persist/DeadLetterReason;ILjava/lang/Object;)Ldev/kwery/persist/QueuedMutation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttempts ()I
+	public final fun getDeadLetter ()Ldev/kwery/persist/DeadLetterReason;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getKeyHash ()Ljava/lang/String;
+	public final fun getLastError ()Ljava/lang/String;
+	public final fun getScopeId ()Ljava/lang/String;
+	public final fun getSubmittedAt ()J
+	public final fun getVariables ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/kwery/persist/QueuedMutation$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/kwery/persist/QueuedMutation$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/kwery/persist/QueuedMutation;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/kwery/persist/QueuedMutation;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/kwery/persist/QueuedMutation$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
