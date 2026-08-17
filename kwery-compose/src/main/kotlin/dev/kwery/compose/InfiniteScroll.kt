@@ -31,7 +31,7 @@ import kotlinx.coroutines.flow.filter
  * @param threshold how many items from the end to trigger at.
  */
 @Composable
-public fun <P, T> InfiniteQuery<P, T>.FetchNextPageWhenNearEnd(
+public fun <P : Any, T> InfiniteQuery<P, T>.FetchNextPageWhenNearEnd(
     listState: LazyListState,
     threshold: Int = 3,
 ) {
@@ -53,7 +53,7 @@ public fun <P, T> InfiniteQuery<P, T>.FetchNextPageWhenNearEnd(
 
 /** Grid equivalent of [FetchNextPageWhenNearEnd]. */
 @Composable
-public fun <P, T> InfiniteQuery<P, T>.FetchNextPageWhenNearEnd(
+public fun <P : Any, T> InfiniteQuery<P, T>.FetchNextPageWhenNearEnd(
     gridState: LazyGridState,
     threshold: Int = 6,
 ) {

@@ -1,3 +1,17 @@
+public final class dev/kwery/compose/InfiniteScrollKt {
+	public static final fun FetchNextPageWhenNearEnd (Ldev/kwery/InfiniteQuery;Landroidx/compose/foundation/lazy/LazyListState;ILandroidx/compose/runtime/Composer;II)V
+	public static final fun FetchNextPageWhenNearEnd (Ldev/kwery/InfiniteQuery;Landroidx/compose/foundation/lazy/grid/LazyGridState;ILandroidx/compose/runtime/Composer;II)V
+}
+
+public final class dev/kwery/compose/RememberMutationKt {
+	public static final fun rememberInfiniteQuery (Ldev/kwery/QueryKey;Ldev/kwery/InfiniteQueryOptions;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)Ldev/kwery/InfiniteQuery;
+	public static final fun rememberIsFetching (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
+	public static final fun rememberIsRestoring (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
+	public static final fun rememberMutation (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)Ldev/kwery/Mutation;
+	public static final fun stateAsState (Ldev/kwery/InfiniteQuery;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
+	public static final fun stateAsState (Ldev/kwery/Mutation;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
+}
+
 public final class dev/kwery/compose/RememberQueryKt {
 	public static final fun getLocalQueryClient ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 	public static final fun rememberQuery (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Ldev/kwery/QueryState;

@@ -73,7 +73,7 @@ public fun <V, R> Mutation<V, R>.stateAsState(): State<MutationState<V, R>> =
  * so a lambda reallocated on every recomposition does not recreate the query.
  */
 @Composable
-public fun <P, T> rememberInfiniteQuery(
+public fun <P : Any, T> rememberInfiniteQuery(
     key: QueryKey<InfiniteData<P, T>>,
     options: InfiniteQueryOptions<P, T>,
     queryOptions: QueryOptions = LocalQueryClient.current.config.defaultQueryOptions,
@@ -88,7 +88,7 @@ public fun <P, T> rememberInfiniteQuery(
 
 /** Observe an infinite query's accumulated pages. */
 @Composable
-public fun <P, T> InfiniteQuery<P, T>.stateAsState(): State<QueryState<InfiniteData<P, T>>> =
+public fun <P : Any, T> InfiniteQuery<P, T>.stateAsState(): State<QueryState<InfiniteData<P, T>>> =
     state.collectAsState(initial = QueryState())
 
 /**
