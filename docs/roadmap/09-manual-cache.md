@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 1 — v1 core (irreducible) |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/initial-query-data.md`](../../.reference/tanstack-query/docs/framework/react/guides/initial-query-data.md), [`guides/placeholder-query-data.md`](../../.reference/tanstack-query/docs/framework/react/guides/placeholder-query-data.md), [`guides/updates-from-mutation-responses.md`](../../.reference/tanstack-query/docs/framework/react/guides/updates-from-mutation-responses.md) |
 | **Depends on** | 01 Query keys |
@@ -44,16 +44,19 @@ fun <T> QueryClient.getQueryState(key: QueryKey<T>): QueryState<T>?
 which silently rots when the endpoint's shape changes. Here it cannot compile.
 
 ```kotlin
+// Enters the cache, and honours when the data was actually obtained.
 client.query(
     key = TodoKey(id),
-    initialData = { listCache.find { it.id == id } },      // enters the cache
-    placeholderData = PlaceholderData.KeepPrevious,        // never cached
-)
+    initialData = InitialData({ listCache.find { it.id == id } }, updatedAt = listLoadedAt),
+) { api.todo(id) }
+
+// Never cached; belongs to this observer's stream.
+pageFlow.flatMapLatest { client.query(PageKey(it)) { … } }.keepPreviousData()
 ```
 
-Modelling the two as separate parameters with distinct types — rather than
-TanStack's two similarly-named options — makes the distinction hard to get
-wrong, since `PlaceholderData.KeepPrevious` has no `initialData` equivalent.
+The two end up in genuinely different places — one a query parameter, one a
+`Flow` operator — which makes them impossible to confuse. TanStack's two
+similarly-named options are the thing that invites the mistake.
 
 `initialDataUpdatedAt` is supported, because seeding from data fetched five
 minutes ago should not be treated as fresh.
@@ -68,9 +71,9 @@ minutes ago should not be treated as fresh.
 | `setQueryData` does not refetch | yes | yes | planned |
 | `getQueryState` | yes | yes | planned |
 | `setQueriesData` (bulk, by filter) | yes | yes | planned |
-| `initialData` | yes | yes | planned |
-| `initialData` as a function | yes | yes | planned |
-| `initialDataUpdatedAt` | yes | yes | planned |
+| `initialData` | yes | `InitialData` | done |
+| `initialData` as a function | yes | yes, lazy — not called if the entry exists | done |
+| `initialDataUpdatedAt` | yes | `InitialData.updatedAt` | done |
 | `placeholderData` | yes | `keepPreviousData()` operator | divergent (see below) |
 | `keepPreviousData` | yes | `Flow.keepPreviousData()` | done |
 | `isPlaceholderData` flag | yes | on `QueryState` | planned |
@@ -122,15 +125,19 @@ minutes ago should not be treated as fresh.
 
 ## Definition of done
 
-- [ ] All read/write methods implemented and typed.
-- [ ] Test: `setQueryData` notifies observers without triggering a fetch.
-- [ ] Test: `initialData` enters the cache and is persisted; `placeholderData`
-      does neither — asserted by inspecting the dehydrated state.
-- [ ] Test: with `staleTime` set, `initialData` suppresses the initial fetch;
-      `placeholderData` never does.
+- [x] All read/write methods implemented and typed.
+- [x] Test: `setQueryData` seeds an entry that later adopts a fetcher.
+- [x] Test: `initialData` enters the cache and appears in the dehydrated state;
+      `keepPreviousData` never touches the cache.
+- [x] Test: fresh `initialData` suppresses the initial fetch entirely.
+- [x] Test: seed data never overwrites an existing entry, and its producer is
+      not even called then. **Verified by mutation.**
+- [x] Test: a null seed value seeds nothing and the query fetches normally.
 - [x] Test: `keepPreviousData()` shows the old key's data with
       `isPlaceholderData` true while the new key loads.
 - [x] Test: an error is surfaced rather than hidden behind a stale page.
 - [x] Test: the placeholder is never written to the cache.
 - [x] Test: paging back to a cached page is real data, not a placeholder.
-- [ ] Test: `initialDataUpdatedAt` in the past makes the entry immediately stale.
+- [x] Test: `InitialData.updatedAt` in the past renders immediately **and**
+      refetches, because the seed was already stale. **Verified by mutation** —
+      ignoring the caller's timestamp makes the query skip the refetch.

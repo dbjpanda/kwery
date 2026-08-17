@@ -80,9 +80,10 @@ public class QueryClient(
     public fun <T> query(
         key: QueryKey<T>,
         options: QueryOptions = config.defaultQueryOptions,
+        initialData: InitialData<T>? = null,
         fetcher: suspend () -> T,
     ): Flow<QueryState<T>> = flow {
-        val entry = obtain(key, options, fetcher)
+        val entry = obtain(key, options, fetcher, initialData)
         entry.attach()
         try {
             emitAll(entry.state)
@@ -105,7 +106,9 @@ public class QueryClient(
         options: QueryOptions = config.defaultQueryOptions,
         select: (T?) -> R,
         fetcher: suspend () -> T,
-    ): Flow<R> = query(key, options, fetcher).map { select(it.data) }.distinctUntilChanged()
+    ): Flow<R> = query(key, options, initialData = null, fetcher = fetcher)
+        .map { select(it.data) }
+        .distinctUntilChanged()
 
     // ---- Mutations -------------------------------------------------------
 
@@ -395,6 +398,7 @@ public class QueryClient(
         key: QueryKey<T>,
         options: QueryOptions,
         fetcher: suspend () -> T,
+        initialData: InitialData<T>? = null,
     ): QueryEntry<T> = entriesMutex.withLock {
         val existing = entries[key] as QueryEntry<T>?
         if (existing != null && existing.hasFetcher) {
@@ -406,6 +410,10 @@ public class QueryClient(
 
         // Either brand new, or a seeded entry adopting a real fetcher.
         val adopted = createEntry(key, options, fetcher, seedFrom = existing)
+        // Only a brand-new entry is seeded. An entry that already exists holds
+        // either a real response or another observer's seed, and replacing it
+        // with a guess would be a silent regression.
+        if (existing == null) adopted.applyInitialData(initialData, config.timeSource.nowMillis())
         entries[key] = adopted
         existing?.dispose()
         evictOverflowLocked()

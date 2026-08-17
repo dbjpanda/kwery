@@ -94,8 +94,9 @@ public class TestQueryClient(
     public fun <T> query(
         key: QueryKey<T>,
         options: QueryOptions = client.config.defaultQueryOptions,
+        initialData: dev.kwery.InitialData<T>? = null,
         fetcher: suspend () -> T,
-    ): Flow<QueryState<T>> = client.query(key, options) {
+    ): Flow<QueryState<T>> = client.query(key, options, initialData) {
         requests += key
         fetcher()
     }

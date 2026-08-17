@@ -86,7 +86,7 @@ that feature's parity table with a reason.
 | 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ◐ | ○ |
 | 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ◐ | ○ |
 | 08 | [Invalidation & filters](08-invalidation-filters.md) | `queryClient.test.tsx`, `utils.test.tsx` | ● | ◐ | ○ |
-| 09 | [Manual cache access](09-manual-cache.md) | `queryClient.test.tsx`, `queryObserver.test.tsx` | ● | ◐ | ○ |
+| 09 | [Manual cache access](09-manual-cache.md) | `queryClient.test.tsx`, `queryObserver.test.tsx` | ● | ● | ○ |
 | 10 | [Cancellation](10-cancellation.md) | `query.test.tsx` | ● | ◐ | ○ |
 
 ### Tier 2 — v1 headline features

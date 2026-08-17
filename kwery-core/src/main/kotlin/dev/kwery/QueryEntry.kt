@@ -114,6 +114,27 @@ internal class QueryEntry<T>(
 
     val gcTime: Duration get() = effectiveGcTime
 
+    /**
+     * Seed this entry before it has ever fetched.
+     *
+     * The caller ([QueryClient.obtain]) only invokes this for an entry that did
+     * not previously exist, which is what stops a guess overwriting a real
+     * response. Deliberately no second check here: a redundant guard reads as
+     * load-bearing, and a reader cannot tell it never fires.
+     */
+    fun applyInitialData(initialData: InitialData<T>?, nowMillis: Long) {
+        if (initialData == null) return
+        val seeded = initialData.value() ?: return
+        state.value = state.value.copy(
+            data = seeded,
+            status = QueryStatus.Success,
+            // Honouring the caller's timestamp is what makes staleness correct:
+            // data lifted from a list fetched five minutes ago is five minutes
+            // old, not new, and should refetch accordingly.
+            dataUpdatedAt = initialData.updatedAt ?: nowMillis,
+        )
+    }
+
     // ---- Observer lifecycle ---------------------------------------------
 
     suspend fun attach() = mutex.withLock {

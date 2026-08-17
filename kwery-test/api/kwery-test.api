@@ -6,8 +6,8 @@ public final class dev/kwery/test/TestQueryClient {
 	public final fun getCurrentTimeMillis ()J
 	public final fun getRecordedRequests ()Ljava/util/List;
 	public final fun getRequestCount ()I
-	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
-	public static synthetic fun query$default (Ldev/kwery/test/TestQueryClient;Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Ldev/kwery/InitialData;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun query$default (Ldev/kwery/test/TestQueryClient;Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Ldev/kwery/InitialData;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
 	public final fun requestCountFor (Ldev/kwery/QueryKey;)I
 	public final fun setFocused (Z)V
 	public final fun setOnline (Z)V
