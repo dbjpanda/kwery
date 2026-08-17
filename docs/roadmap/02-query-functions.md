@@ -52,13 +52,10 @@ returning `Result<T>` — was rejected because it makes the common path noisier
 and interacts badly with the retry engine, which needs to distinguish a thrown
 `CancellationException` from a genuine failure.
 
-### Default query function
+### No global default query function
 
-```kotlin
-val client = QueryClient {
-    defaultQueryFn { key -> httpClient.get(key.toUrl()).body() }
-}
-```
+TanStack's `defaultQueryFn` is deliberately **not** ported — it cannot be made
+type-safe against `QueryKey<T>`. See OQ-2.
 
 ## Parity table
 
@@ -70,7 +67,7 @@ val client = QueryClient {
 | Key available in fn context | `ctx.queryKey` | `QueryFnScope.key` | planned |
 | Cancellation signal | `ctx.signal` (`AbortSignal`) | structured concurrency + `QuerySignal` bridge | divergent (better) |
 | `pageParam` for infinite queries | `ctx.pageParam` | see [16](16-infinite-queries.md) | planned |
-| Global default query function | `defaultOptions.queries.queryFn` | `QueryClient { defaultQueryFn { … } }` | planned |
+| Global default query function | `defaultOptions.queries.queryFn` | **dropped** — cannot be type-safe (OQ-2) | divergent (gap) |
 | `skipToken` to disable type-safely | yes | see [03](03-query-state.md) | planned |
 
 ## Deliberate divergences
@@ -83,13 +80,42 @@ val client = QueryClient {
 
 ## Open questions
 
-- **OQ-1.** Should `QueryFnScope` be a receiver (`QueryFnScope.() -> T`) or a
-  parameter? Receiver reads better at call sites that use `key`, but makes the
-  common ignore-the-context lambda marginally more confusing in IDE hints.
-- **OQ-2.** Does the default query function survive typed keys? It must map an
-  arbitrary `QueryKey<*>` to a request without knowing `T`, which forces an
-  unchecked cast somewhere. Possibly the feature is simply a poor fit for
-  Kwery's key model and should be dropped rather than made unsafe.
+- **OQ-1.** ~~Receiver or parameter for `QueryFnScope`?~~ **Closed: neither, in
+  the common case.** Both options in the original question were worse than the
+  obvious third one.
+
+  The typical call site already has everything it needs, because the key was
+  just constructed from the same values:
+
+  ```kotlin
+  client.query(TodoKey(id)) { api.todo(id) }     // scope never mentioned
+  ```
+
+  So the primary overload takes a plain `suspend () -> T` and there is no
+  ceremony at all. A second overload takes `suspend (QueryFnScope) -> T` for the
+  rare case that needs the key or the cancellation bridge; Kotlin resolves the
+  two by lambda arity.
+
+  A receiver is specifically rejected: `this` inside a `QueryFn` written in a
+  ViewModel or composable would shadow the enclosing receiver, which is
+  confusing in exactly the places people write these lambdas.
+
+- **OQ-2.** ~~Does a global default query function survive typed keys?~~
+  **Closed: no. It is dropped, as an explicit non-goal.**
+
+  It cannot be made type-safe: a global function must map an arbitrary
+  `QueryKey<*>` to some `T` it cannot know, so every implementation ends in an
+  unchecked cast. It exists in TanStack to compensate for stringly-typed keys —
+  a problem AD-3 already solves, since a typed key names its own data type and
+  its fetcher naturally lives beside it.
+
+  Shipping an unsafe convenience to claim a parity checkbox is the wrong trade
+  for a library others depend on. Recorded as a deliberate gap in the parity
+  table with this reason.
+
+  (A `SelfFetchingQueryKey<T>` carrying its own `fetch()` would be type-safe and
+  terser than TanStack, but it couples key identity to the network layer — a
+  design opinion better validated by users than assumed. Not in v1.)
 
 ## Definition of done
 

@@ -77,18 +77,40 @@ that expose only a cancel token.
 | Signal passed to fetch fn | `AbortSignal`, manual forwarding | automatic | divergent (better) |
 | Bridge for non-cancellable clients | n/a | `QuerySignal` | divergent (addition) |
 | Cancellation excluded from retries | implicit | enforced | divergent (better) |
+| Leave and return mid-request | cancels, then refetches | joins the in-flight request | divergent (better) |
+| Swallowed `CancellationException` | breaks cancellation | contained via `isActive` check | divergent (better) |
 
 ## Open questions
 
-- **OQ-1.** Should cancelling the last observer of a query *always* cancel the
-  request, or should an in-flight fetch be allowed to complete and populate the
-  cache? Completing is often what users want — navigate away, come back, data is
-  there. TanStack cancels. Kwery could offer `cancelOnLastObserverLeaving = false`
-  per query. Worth having; needs a default decision. Leaning: match TanStack's
-  cancel-by-default, offer the opt-out.
-- **OQ-2.** Is a custom lint rule for `catch (e: Exception)` inside `QueryFn`
-  worth the tooling cost, or is documentation enough? Defer to post-v1 and see
-  whether it actually bites users.
+- **OQ-1.** ~~Cancel immediately on last observer, or let the fetch finish?~~
+  **Closed: cancel at grace expiry — already the behaviour C′ produces, and no
+  per-query opt-out.**
+
+  The [05](05-deduplication-observers.md) spike measured this directly (S9, S10):
+  an in-flight request survives the grace window and is cancelled exactly when it
+  expires. Returning to the screen inside the window **joins the existing
+  request** rather than restarting it — 1 request, not 2.
+
+  That is better than both options in the original question. TanStack cancels
+  immediately, so navigate-away-and-back wastes the first request and makes the
+  user wait for a second one. Never cancelling leaks work for users who left for
+  good. The grace window already draws the line in the right place, which
+  removes the motivation for the `cancelOnLastObserverLeaving` knob entirely —
+  no proposed use case survives it.
+
+- **OQ-2.** ~~Custom lint rule for `catch (e: Exception)` in a `QueryFn`?~~
+  **Closed: no lint. The failure is contained in the engine instead.**
+
+  Lint would catch the mistake at authoring time but only for users who run it,
+  and it costs a whole tooling artifact. Containment is better: after a query
+  function returns, the engine checks `coroutineContext.isActive` and treats a
+  return from a cancelled scope as cancellation regardless of what the function
+  did with the exception.
+
+  So a `QueryFn` that swallows `CancellationException` in a broad catch still
+  results in a correctly cancelled query. The bug becomes benign rather than
+  silent, which is the outcome lint was wanted for. Documented, and covered by
+  the regression test below.
 
 ## Definition of done
 

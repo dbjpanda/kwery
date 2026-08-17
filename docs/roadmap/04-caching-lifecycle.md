@@ -134,16 +134,31 @@ where the hard part lives.
 
 ## Open questions
 
-- **OQ-1.** Should `gcTime` be enforced as ≥ `staleTime`? A `gcTime` shorter
-  than `staleTime` means data is evicted while still nominally fresh, which is
-  almost always a mistake — but it is legal in TanStack and might have niche
-  uses. Leaning: warn once via a logger, do not throw. (Contrast with the
-  `gcTime` vs persistence `maxAge` check in [15](15-persistence.md), which
-  **does** throw, because there the failure is silent and unrecoverable.)
-- **OQ-2.** Should eviction be purely timer-driven, or should Kwery also support
-  a memory-pressure trigger via `ComponentCallbacks2.onTrimMemory`? Android-only
-  and genuinely useful for image-heavy caches, but it makes eviction
-  non-deterministic. Candidate for `kwery-android` as opt-in, post-v1.
+- **OQ-1.** ~~Should `gcTime` be enforced as ≥ `staleTime`?~~ **Closed: no check
+  at all — not even a warning.** The earlier leaning (warn) was wrong.
+  `StaleTime.Infinite` with a normal `gcTime` is the idiomatic "cache until I
+  invalidate" configuration, and it makes `gcTime < staleTime` **permanently
+  true**. A warning would fire constantly on correct code, which trains users to
+  ignore warnings. The genuinely dangerous case is `gcTime` vs persistence
+  `maxAge` ([15](15-persistence.md)), which still throws, because there the
+  failure is silent and defeats the feature.
+
+- **OQ-2.** ~~Memory-pressure eviction via `onTrimMemory`?~~ **Closed, and the
+  question was too narrow.** `gcTime` bounds the cache by *time* and nothing
+  bounds it by *size*. A browser tab gets reloaded; an Android process can live
+  for days, so an unbounded cache of large responses is a real OOM risk that
+  TanStack never had to solve. Two decisions:
+
+  1. **`kwery-core` gets `maxEntries`, default 500**, with LRU eviction. Only
+     **inactive** entries are ever evicted this way — an entry with a live
+     observer is never dropped, whatever the pressure, because evicting data
+     that is on screen is worse than using the memory.
+  2. **`kwery-android` gets opt-in `onTrimMemory` integration**, dropping
+     inactive entries at `TRIM_MEMORY_RUNNING_CRITICAL`.
+
+  500 is far above any real screen graph's working set and far below anything
+  that threatens a heap. It bounds worst-case memory deterministically instead of
+  hoping `gcTime` is enough.
 
 ## Definition of done
 

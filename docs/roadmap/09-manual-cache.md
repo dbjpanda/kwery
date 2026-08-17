@@ -74,6 +74,8 @@ minutes ago should not be treated as fresh.
 | `placeholderData` | yes | `PlaceholderData` | planned |
 | `keepPreviousData` | yes | `PlaceholderData.KeepPrevious` | planned |
 | `isPlaceholderData` flag | yes | on `QueryState` | planned |
+| Seeded entry can later refetch | no — frozen forever | adopts a fetcher on first observe | divergent (better) |
+| Non-nullable updater | no | `updateQueryData` | divergent (addition) |
 
 ## Deliberate divergences
 
@@ -83,13 +85,32 @@ minutes ago should not be treated as fresh.
 
 ## Open questions
 
-- **OQ-1.** Should `setQueryData` on a key with no cache entry create one?
-  TanStack does, which is how "seed the detail view from the list" works. But
-  a created-by-write entry has no `queryFn`, so it can never refetch — it just
-  sits there until gc. Probably keep parity and document it.
-- **OQ-2.** Should there be a typed `updateQueryData` that only runs when an
-  entry exists, avoiding the nullable receiver in the updater lambda? Nicer for
-  the common optimistic-update case.
+- **OQ-1.** ~~Should `setQueryData` create an entry that does not exist?~~
+  **Closed: yes, it creates one — and unlike TanStack the orphan problem is
+  fixed rather than documented.**
+
+  Seeding a detail view from a list you already fetched is the main reason this
+  method exists, so refusing to create is not an option. TanStack's resulting
+  entry has no query function and can therefore never refetch or revalidate — it
+  is a permanently frozen value that merely looks like a cached query.
+
+  Kwery marks such an entry **seeded**, and when an observer later attaches
+  *with* a query function, the entry **adopts** it and behaves normally from
+  then on. Since the realistic sequence is "seed from the list, then navigate to
+  the detail screen which observes the same key with a real fetcher", adoption
+  turns the frozen value into a properly revalidating entry at exactly the
+  moment it matters.
+
+- **OQ-2.** ~~Add a non-nullable `updateQueryData`?~~ **Closed: yes, ship it.**
+
+  ```kotlin
+  fun <T> QueryClient.updateQueryData(key: QueryKey<T>, update: (T) -> T)
+  ```
+
+  No-ops when the entry is absent. The nullable receiver in `setQueryData`'s
+  updater is noise in the most common optimistic-update path, where the caller
+  has already established the data exists, and `it!!` inside an updater lambda
+  is exactly the kind of thing that becomes a crash after a refactor.
 
 ## Definition of done
 

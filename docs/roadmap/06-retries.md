@@ -73,13 +73,20 @@ RetryPolicy.Times(3).exceptWhen { it is HttpException && it.code in 400..499 }
 to user predicates — getting it wrong turns every screen exit into a retry
 storm.
 
-### Jitter
+### Jitter (on by default)
 
 Exponential backoff without jitter synchronises retries across clients into a
-thundering herd, which matters more on mobile (thousands of devices resuming
-from a network blip simultaneously) than in a browser tab. Kwery offers
-`RetryDelay.ExponentialWithJitter` — full jitter over `[0, computed]` — and
-defaults to plain `Exponential` for parity. See OQ-1.
+thundering herd — thousands of devices resuming from one carrier-level blip and
+retrying in lockstep. Kwery therefore **defaults to jitter**, unlike TanStack
+(see OQ-1 for the full reasoning):
+
+```kotlin
+/** base/2 + random(0, base/2) — decorrelates the fleet, keeps a floor. */
+val Default: RetryDelay = RetryDelay.equalJitter(Exponential)
+```
+
+`RetryDelay.Exponential` remains available for exact TanStack timing. The
+`Random` source is injectable so consumer tests stay deterministic.
 
 ## Parity table
 
@@ -99,7 +106,8 @@ defaults to plain `Exponential` for parity. See OQ-1.
 | Retries pause when offline | yes | see [13](13-network-mode.md) | planned |
 | Cancellation never retried | implicit | **enforced in engine** | divergent (better) |
 | Built-in non-retryable predicate | no | `exceptWhen { … }` | divergent (addition) |
-| Jitter | no | `ExponentialWithJitter` (opt-in) | divergent (addition) |
+| Jitter | no | **on by default** (equal jitter) | divergent (better) |
+| Deterministic retry timing in tests | no | injectable `Random` | divergent (better) |
 
 ## Deliberate divergences
 
@@ -111,14 +119,31 @@ defaults to plain `Exponential` for parity. See OQ-1.
 
 ## Open questions
 
-- **OQ-1.** Should jitter be the *default*? It is better behaviour for mobile
-  fleets, but it breaks exact parity and makes retry timing non-deterministic in
-  consumers' tests unless the `TimeSource`-driven harness also controls the
-  jitter source. Leaning: keep `Exponential` as default, recommend jitter in
-  docs, make the randomness source injectable so tests stay deterministic.
-- **OQ-2.** Should `Retry-After` headers be honoured automatically? It requires
-  the core to know something about HTTP, which it deliberately does not. Better
-  as a documented `RetryDelay` recipe than a built-in.
+- **OQ-1.** ~~Should jitter be the default?~~ **Closed: yes, jitter is ON by
+  default.** The earlier leaning (off, for parity) was wrong — it optimised for
+  matching TanStack over being correct.
+
+  Un-jittered exponential backoff synchronises a fleet: a regional network blip
+  drops thousands of devices simultaneously, and they all retry at t+1s, t+2s,
+  t+4s together, converting one outage into a self-inflicted thundering herd on
+  recovery. Browsers are partly shielded by users being spread across time and
+  tabs; a mobile fleet coming back from a carrier-level event is not. Nobody
+  should have to opt in to not doing this.
+
+  The default is **equal jitter** — `delay = base/2 + random(0, base/2)` —
+  rather than full jitter (`random(0, base)`). Full jitter can produce a
+  near-zero delay that retries almost immediately, defeating the backoff on the
+  first attempt; equal jitter keeps a guaranteed floor while still
+  decorrelating the fleet.
+
+  The divergence is invisible in the API and affects only timing. The `Random`
+  source is injectable, so consumer tests stay deterministic.
+
+- **OQ-2.** ~~Honour `Retry-After` automatically?~~ **Closed: no, and it stays
+  out of core permanently.** `kwery-core` knows nothing about HTTP by design
+  (AD-1), and adding header parsing would put a protocol into a
+  protocol-agnostic module. Ship it as a documented `RetryDelay` recipe instead —
+  it is about six lines in user code and stays correct across HTTP clients.
 
 ## Definition of done
 

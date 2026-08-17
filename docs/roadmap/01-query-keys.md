@@ -152,20 +152,39 @@ that their cache never survives a cold start.
 
 ## Open questions
 
-- **OQ-1.** Should `parts` be a `val` computed once at construction (faster
-  repeat lookups, but data class `copy` would produce a stale `parts`) or a
-  `get()` computed per access (always correct, allocates per lookup)? Leaning
-  toward computed-once via an abstract base class that consumers extend instead
-  of implementing the interface directly.
-- **OQ-2.** Should Kwery ship a `@QueryKey` KSP processor that generates `parts`
-  from constructor parameters, removing the boilerplate entirely? Attractive,
-  but adds a KSP dependency to a library whose selling point is being small.
-  Defer to post-v1 and measure whether the boilerplate actually bothers users.
-- **OQ-3.** Do we allow `@Serializable` data classes directly inside `parts`,
-  encoding via kotlinx-serialization? It removes the "flatten your filter object
-  into a map" chore, at the cost of a hard kotlinx-serialization dependency in
-  `kwery-core`. Alternative: keep core dependency-free and put it in an optional
-  `kwery-key-serialization` artifact.
+- **OQ-1.** ~~`val` computed once, or `get()` per access?~~ **Closed: `get()`,
+  computed on demand.** The premise of the earlier leaning was also wrong —
+  `copy()` returns a *new* instance and re-runs its initialisers, so a stale
+  `parts` was never possible either way.
+
+  The real consideration is allocation, and it points the other way. Keys are
+  constructed constantly — every `client.query(TodoKey(id))` call, on every
+  recomposition — while `parts` is consulted only for prefix matching and
+  persistence encoding. In-memory identity uses the data class's own
+  `equals`/`hashCode` and never touches `parts` at all. An eager `val` would
+  allocate a list on the hottest path in the library to speed up two of the
+  coldest. `get()` allocates nothing until something actually needs the
+  array-shaped view.
+
+  Implementations must therefore keep `parts` pure and cheap; this goes in the
+  KDoc and is the one rule consumers must follow.
+
+- **OQ-2.** ~~Ship a `@QueryKey` KSP processor?~~ **Closed: no, and not
+  post-v1 either without strong demand.** KSP versions are coupled to Kotlin
+  versions, so shipping a processor puts every consumer on an upgrade treadmill
+  tied to Kwery's release cadence — a serious cost for a library whose pitch is
+  being small and unobtrusive. It would save one line per key. Revisit only if
+  issue reports actually ask for it.
+
+- **OQ-3.** ~~Allow `@Serializable` data classes inside `parts`?~~ **Closed via
+  a pluggable codec, keeping core dependency-free.**
+
+  `QueryKeyCodec` is an interface in `kwery-core` with a default implementation
+  covering primitives, `String`, enums, `List`, and `Map`. `kwery-persist`
+  supplies a richer codec that additionally handles `@Serializable` types via
+  kotlinx-serialization. Validation of "is this part encodable" runs through
+  whichever codec is installed, so core never gains the dependency and users who
+  persist get the ergonomics.
 
 ## Definition of done
 

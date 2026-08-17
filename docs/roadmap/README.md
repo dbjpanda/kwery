@@ -131,20 +131,64 @@ Features that exist in TanStack Query and will **not** be ported, with reasons:
 
 ## Improvements over TanStack Query
 
-Places where Kwery should deliberately do better, not just match:
+Places where Kwery deliberately does better, not just match. Each is decided and
+justified in the linked feature file — none is a preference.
 
-1. **Validate `gcTime` ≥ persistence `maxAge` at construction.** TanStack
-   documents this constraint and lets you violate it silently, causing the
-   persisted cache to be garbage collected earlier than expected. Kwery throws.
-2. **Typed query keys.** Compile-time safety on the data type associated with a
-   key, so `setQueryData` and `select` cannot be given the wrong type.
-3. **Durable offline mutation queue.** TanStack's paused mutations live in
-   memory and die with the tab. Kwery persists the queue across process death —
-   the difference between a nice-to-have and something you can ship a
-   write-heavy offline app on.
-4. **Structured concurrency for cancellation.** Cancellation is cooperative and
-   automatic via `CoroutineScope`, rather than TanStack's manual `AbortSignal`
-   threading.
+**Correctness and safety**
+
+1. **Typed query keys** ([01](01-query-keys.md)) — compile-time safety on the
+   data type a key produces, so `setQueryData` and `select` cannot be handed the
+   wrong type. Also deletes TanStack's most common user bug: a query function
+   reading a variable missing from the key cannot compile.
+2. **Validate `gcTime` ≥ persistence `maxAge` at construction**
+   ([15](15-persistence.md)) — TanStack documents this and lets you violate it
+   silently, quietly defeating the persisted cache. Kwery throws.
+3. **`invalidateQueries` cannot nuke the cache by accident**
+   ([08](08-invalidation-filters.md)) — the no-argument form is rejected;
+   invalidating everything requires `QueryFilters.All`.
+4. **No global default query function** ([02](02-query-functions.md)) — it
+   cannot be made type-safe, so it is dropped rather than shipped with an
+   unchecked cast. A deliberate parity gap.
+5. **Swallowed `CancellationException` is contained** ([10](10-cancellation.md)) —
+   a query function with a broad `catch (e: Exception)` still cancels correctly,
+   because the engine re-checks `isActive` rather than trusting user code.
+
+**Behaviour under real Android conditions**
+
+6. **Durable offline mutation queue** ([14](14-offline-mutation-queue.md)) —
+   TanStack's paused mutations die with the tab. Kwery persists them across
+   process death, with idempotency keys, dead-lettering, and expiry.
+7. **Rotation and brief app switches do not refetch**
+   ([05](05-deduplication-observers.md)) — reattaching inside the grace window
+   is a continuation, not a mount. Measured: zero extra requests, where TanStack
+   semantics produce one per rotation.
+8. **Leaving and returning mid-request joins the in-flight fetch**
+   ([10](10-cancellation.md)) rather than cancelling and starting over.
+9. **Retry jitter on by default** ([06](06-retries.md)) — un-jittered backoff
+   synchronises a whole fleet into a thundering herd after a carrier-level blip.
+10. **Connectivity requires a *validated* network**
+    ([07](07-refetch-triggers.md)) — captive portals and connected-but-dead
+    Wi-Fi otherwise report online while every request fails.
+11. **Data Saver suppresses polling and prefetch, never a visible screen's data**
+    ([07](07-refetch-triggers.md)).
+12. **Bounded memory** ([04](04-caching-lifecycle.md)) — `maxEntries` (default
+    500, LRU over inactive entries only) plus opt-in `onTrimMemory`. `gcTime`
+    bounds the cache by time and nothing bounds it by size; a browser tab gets
+    reloaded, an Android process can live for days.
+
+**Ergonomics**
+
+13. **Structured concurrency for cancellation** ([10](10-cancellation.md)) —
+    no manual `AbortSignal` threading.
+14. **Row-based persister option** ([15](15-persistence.md)) — rewriting a
+    multi-MB blob every second is a battery and I/O problem TanStack's
+    whole-cache design does not have to face.
+15. **Seeded cache entries can later refetch** ([09](09-manual-cache.md)) — a
+    `setQueryData`-created entry adopts a query function when first observed,
+    instead of staying frozen forever.
+16. **First-class test client** ([21](21-testing.md)) — virtual clock, request
+    recording, controllable connectivity and focus. TanStack's testing guide is
+    four pieces of configuration you must remember; Kwery's default is correct.
 
 ## How to use these documents
 

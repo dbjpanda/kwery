@@ -107,6 +107,8 @@ client.query(
 | Replaceable online manager | `onlineManager` | `OnlineManager` interface | planned |
 | Only **active** queries refetch on focus | yes | yes | planned |
 | Connectivity requires validated network | n/a | yes | divergent (better) |
+| Brief app switch does not refetch | no — refetches every time | grace-window suppression | divergent (better) |
+| Data Saver suppresses polling/prefetch only | n/a | yes, on by default | divergent (addition) |
 
 ## Deliberate divergences
 
@@ -118,16 +120,32 @@ client.query(
 
 ## Open questions
 
-- **OQ-1.** Should there be a minimum interval between focus-triggered
-  refetches? Rapid app-switching can fire `ON_START` repeatedly. TanStack has no
-  such guard, relying on `staleTime`. With the default `staleTime = 0`, every
-  app switch refetches everything — defensible, but on cellular it is a
-  noticeable battery and data cost. Leaning: no throttle, but make the default
-  `staleTime` prominent in docs, and consider recommending a non-zero default.
-- **OQ-2.** Should Kwery honour Android's Data Saver
-  (`ConnectivityManager.restrictBackgroundStatus`) by suppressing background
-  refetches? Good citizenship, no TanStack analogue, arguably surprising.
-  Post-v1, opt-in.
+- **OQ-1.** ~~Should focus-triggered refetches be throttled?~~ **Closed by
+  [05](05-deduplication-observers.md) OQ-4: no separate throttle.** The grace
+  window already suppresses refetch-on-reattach, and it now applies to focus
+  refetches too. A brief app switch lands inside the grace window and refetches
+  nothing; a genuine return after minutes refetches normally. This reuses one
+  concept instead of introducing a second timing knob that would have to be
+  reasoned about alongside `staleTime` and `gcTime`.
+
+- **OQ-2.** ~~Honour Android's Data Saver?~~ **Closed: yes, for speculative
+  traffic only — shipping in v1, on by default.**
+
+  When the user has explicitly asked the OS to restrict background data, an app
+  that keeps polling is ignoring a direct instruction. But suppressing a refetch
+  that a visible screen is waiting on makes the app look broken, and the user did
+  not ask for that.
+
+  The split is therefore by *who is waiting*:
+
+  | Traffic | Under Data Saver |
+  |---|---|
+  | Query a visible screen is observing | **always runs** |
+  | `refetchInterval` polling | suppressed |
+  | Prefetching ([20](20-prefetching.md)) | suppressed |
+
+  Read via `ConnectivityManager.restrictBackgroundStatus` in `kwery-android`,
+  with a client-level opt-out for apps that genuinely need to poll regardless.
 
 ## Definition of done
 

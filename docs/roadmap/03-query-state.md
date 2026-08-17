@@ -139,14 +139,30 @@ client.query(TodoListKey(filter), enabled = filter.isNotEmpty())
 
 ## Open questions
 
-- **OQ-1.** Should `data` survive a transition to `error`? TanStack keeps the
-  last successful data alongside an error, so a failed background refetch does
-  not blank the screen. Kwery should match this, but it means `status == Error`
-  does **not** imply `data == null`, which is surprising. Needs to be loud in
-  the KDoc.
-- **OQ-2.** Should `dataUpdatedAt` be `Long` epoch millis or `kotlin.time.Instant`?
-  `Instant` is cleaner but drags in a dependency and complicates the virtual
-  clock used in tests. Leaning `Long` in core with an `Instant` extension.
+- **OQ-1.** ~~Should `data` survive a transition to `error`?~~ **Closed: yes,
+  data is always retained.** A background refetch failing must never blank a
+  screen that is currently showing valid data — that turns a transient network
+  error into a total content loss, which is strictly worse than showing slightly
+  stale content with an error indicator.
+
+  The consequence is real and must be stated loudly rather than buried:
+  **`status == Error` does not imply `data == null`.** This goes in the KDoc for
+  both `status` and `data`, and has a dedicated test. It is also why the sealed
+  `QueryUiState` projection carries `Failed` *and* keeps `Content` reachable —
+  a UI showing cached data with an error banner is the correct rendering, not an
+  edge case.
+
+- **OQ-2.** ~~`Long` epoch millis or `kotlin.time.Instant`?~~ **Closed: `Long`
+  epoch millis throughout the public API.**
+
+  `kotlin.time.Instant` is the nicer type, but exposing it in a public API means
+  every consumer inherits whatever opt-in and stability status it carries in
+  their Kotlin version. Forcing an `@OptIn` on users of a library is a real
+  adoption cost paid for cosmetics. `Long` has no dependency, no opt-in, and is
+  what `TimeSource` and the virtual test clock use internally anyway.
+
+  If `Instant` is wanted later it can be added as extension properties without
+  a breaking change — the reverse is not true, which is the decisive asymmetry.
 
 ## Definition of done
 

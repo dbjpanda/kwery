@@ -207,16 +207,33 @@ bespoke mechanism.
 
 - **OQ-1.** ~~Which approach, and what grace default?~~ **Closed by the spike:
   approach C′, 5-second default.** See Decision above.
-- **OQ-2.** Should the grace period be configurable per query, or client-wide
-  only? Now more consequential than when first written, since grace also
-  controls reattach suppression: a per-query grace would mean per-query rotation
-  behaviour. Leaning client-wide only, to keep it one comprehensible knob.
-- **OQ-3.** Does an observer that has been collected but is suspended in
-  backpressure count as active? Almost certainly yes, but it needs a test.
-- **OQ-4.** *(new, from the spike)* Should reattach suppression apply to
-  `refetchOnWindowFocus` as well as `refetchOnMount`? Foregrounding the app
-  within the grace window would otherwise refetch immediately after a
-  suppression-avoided rotation. Probably yes, but it needs its own scenario.
+- **OQ-2.** ~~Per-query grace, or client-wide?~~ **Closed: client-wide only.**
+  Since C′ makes the grace window define what counts as "the same mount",
+  a per-query grace would mean rotation behaves differently on different screens
+  of the same app — an inconsistency users would experience as flakiness and
+  never be able to explain. One knob, one behaviour.
+
+- **OQ-3.** ~~Does a backpressure-suspended observer count as active?~~
+  **Closed: yes.** It is still collecting and `onCompletion` has not fired;
+  anything else would evict data belonging to a slow consumer. This is the
+  implementation doing the obvious thing, but it gets an explicit test because
+  it is the kind of invariant that breaks silently under refactoring.
+
+- **OQ-4.** *(raised by the spike)* ~~Should suppression apply to
+  `refetchOnWindowFocus` too?~~ **Closed: yes** — and this resolves
+  [07](07-refetch-triggers.md) OQ-1 as well.
+
+  A brief app switch (notification shade, replying to a message, checking the
+  app switcher) produces `ON_STOP`/`ON_START` within a couple of seconds. With
+  `collectAsStateWithLifecycle` that is also a detach/reattach. Without
+  suppression, every such switch refetches every visible query — the refetch
+  storm flagged in 07, on cellular, repeatedly.
+
+  Applying the same grace window to focus-triggered refetches fixes it with the
+  concept already in the design, rather than adding a bespoke focus throttle
+  with its own separate tuning knob. Returning **after** the grace window still
+  refetches normally, which is the behaviour users actually want from
+  foregrounding.
 
 ## Definition of done
 

@@ -43,11 +43,12 @@ enum class QueryType { Active, Inactive, All }
 ```
 
 ```kotlin
-suspend fun QueryClient.invalidateQueries(filters: QueryFilters = QueryFilters())
-suspend fun QueryClient.refetchQueries(filters: QueryFilters = QueryFilters())
-fun QueryClient.removeQueries(filters: QueryFilters = QueryFilters())
-suspend fun QueryClient.cancelQueries(filters: QueryFilters = QueryFilters())
-fun QueryClient.resetQueries(filters: QueryFilters = QueryFilters())
+// No default argument — invalidating everything must be spelled out (OQ-1).
+suspend fun QueryClient.invalidateQueries(filters: QueryFilters)
+suspend fun QueryClient.refetchQueries(filters: QueryFilters)
+fun QueryClient.removeQueries(filters: QueryFilters)
+suspend fun QueryClient.cancelQueries(filters: QueryFilters)
+fun QueryClient.resetQueries(filters: QueryFilters)
 
 // sugar
 suspend fun QueryClient.invalidateQueries(key: QueryKey<*>)      // exact
@@ -82,6 +83,7 @@ predicates that mutate cache state as a side effect.
 | Skips queries with `enabled = false` | yes | yes | planned |
 | Skips `staleTime: 'static'` queries | yes | yes | planned |
 | `matchQuery` / `matchMutation` utilities | yes | `QueryFilters.matches(…)` | planned |
+| No-arg call invalidates everything | yes | **rejected** — requires `QueryFilters.All` | divergent (better) |
 
 ## Deliberate divergences
 
@@ -92,12 +94,31 @@ predicates that mutate cache state as a side effect.
 
 ## Open questions
 
-- **OQ-1.** `invalidateQueries()` with no arguments invalidates *everything*.
-  That is TanStack's behaviour and a common accident. Should Kwery require an
-  explicit `QueryFilters.All` to express it? Leaning yes — make the destructive
-  default opt-in, at the cost of a small parity divergence.
-- **OQ-2.** Should invalidation of a `Static` query log a warning? It is
-  silently ignored today, which is correct but confusing when debugging.
+- **OQ-1.** ~~Should the no-argument form be allowed to invalidate everything?~~
+  **Closed: no. `QueryFilters.All` must be passed explicitly.**
+
+  In TanStack, `invalidateQueries()` invalidates the entire cache. The intended
+  meaning at almost every call site is "the thing I just changed", and the
+  no-argument form reads exactly like that while doing something far broader. It
+  is a footgun whose cost — refetching every query in the app — is invisible in
+  development and expensive on cellular.
+
+  ```kotlin
+  client.invalidateQueries(TodoKey("5"))        // exact
+  client.invalidateQueries("todos")             // prefix
+  client.invalidateQueries(QueryFilters.All)    // everything, and it says so
+  ```
+
+  The destructive operation costs four extra characters and is now impossible to
+  perform by accident. This is a deliberate parity divergence.
+
+- **OQ-2.** ~~Warn when invalidating a `Static` query?~~ **Closed: no runtime
+  warning.** Any broad prefix invalidation will legitimately match `Static`
+  entries as a matter of course, so a warning would fire on correct code — the
+  same failure mode that killed the `gcTime` warning in
+  [04](04-caching-lifecycle.md) OQ-1. The information is genuinely useful when
+  debugging, so it is surfaced as a **reason on the devtools event stream**
+  ([22](22-devtools.md)) rather than as log noise.
 
 ## Definition of done
 
