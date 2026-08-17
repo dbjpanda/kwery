@@ -12,15 +12,26 @@ migrating from it needs the comparison.
 
 ## Pages
 
-- [Offline writes](offline.md) — durable writes that survive process death
+- [Query state](query-state.md) — the two status axes, and why one enum is not enough
+- [Mutations](mutations.md) — writes, their lifecycle, and scopes
+- [Optimistic updates](optimistic-updates.md) — showing a write before it lands
+- [Offline writes](offline.md) — durable writes that survive process death *(feature still open)*
+- [Persistence](persistence.md) — the query cache across process death *(feature still open)*
+- [Infinite queries](infinite-queries.md) — accumulating pages
 
 Pages land as features pass gate 2, named after the feature rather than its
-roadmap number since readers do not care about build order. Still to write:
+roadmap number since readers do not care about build order. Still to write, and
+each blocked on its feature's gate 2:
 
 `queries.md` · `query-keys.md` · `caching.md` · `retries.md` ·
-`refetching.md` · `invalidation.md` · `mutations.md` ·
-`optimistic-updates.md` · `persistence.md` · `infinite-queries.md` ·
-`compose.md` · `viewmodels.md` · `prefetching.md` · `testing.md`
+`refetching.md` · `invalidation.md` · `compose.md` · `viewmodels.md` ·
+`prefetching.md` · `testing.md`
+
+Two pages are marked *feature still open*: everything they describe is tested,
+but their features have gate-2 items outstanding (a Room-backed store, device
+tests), so neither counts as gate 3 passed. A page describing proven behaviour
+is useful before the feature is finished; the gate is what says the feature is
+done.
 
 Writing `offline.md` immediately justified the ordering rule: the page's
 idempotency example referenced a value the API did not expose, which made the

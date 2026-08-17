@@ -64,6 +64,11 @@ documentation published. See [`CLAUDE.md`](../../CLAUDE.md) for the rules.
 
 Gate status: ○ not started · ◐ in progress · ● done · — not applicable
 
+A docs page may be **drafted** while its feature's gate 2 is still open, but
+gate 3 is only ● once gate 2 is. Features 14 and 15 have pages written and show
+◐ for both: what is documented is tested, but each still has open gate-2 items
+(a Room-backed store, device tests) so neither feature is closed.
+
 The "Port tests from" column names the file in
 `.reference/tanstack-query/packages/query-core/src/__tests__/` (fetch with
 `./scripts/vendor-reference.sh`) whose cases should be ported for gate 2. Cases deliberately not ported must be recorded in
@@ -75,7 +80,7 @@ that feature's parity table with a reason.
 |---|---|---|:--:|:--:|:--:|
 | 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ◐ | ○ |
 | 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ◐ | ○ |
-| 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ● | ○ |
+| 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ● | ● |
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ◐ | ○ |
 | 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ◐ | ○ |
 | 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ◐ | ○ |
@@ -88,12 +93,12 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ● | ○ |
-| 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ● | ○ |
+| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ● | ● |
+| 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ● | ● |
 | 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ◐ | ○ |
-| 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ● |
-| 15 | [Persistence & hydration](15-persistence.md) | `hydration.test.tsx` | ● | ◐ | ○ |
-| 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ● | ○ |
+| 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ◐ |
+| 15 | [Persistence & hydration](15-persistence.md) | `hydration.test.tsx` | ● | ◐ | ◐ |
+| 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ● | ● |
 
 ### Tier 3 — v1 integration surfaces
 
