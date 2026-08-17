@@ -71,8 +71,8 @@ minutes ago should not be treated as fresh.
 | `initialData` | yes | yes | planned |
 | `initialData` as a function | yes | yes | planned |
 | `initialDataUpdatedAt` | yes | yes | planned |
-| `placeholderData` | yes | `PlaceholderData` | planned |
-| `keepPreviousData` | yes | `PlaceholderData.KeepPrevious` | planned |
+| `placeholderData` | yes | `keepPreviousData()` operator | divergent (see below) |
+| `keepPreviousData` | yes | `Flow.keepPreviousData()` | done |
 | `isPlaceholderData` flag | yes | on `QueryState` | planned |
 | Seeded entry can later refetch | no — frozen forever | adopts a fetcher on first observe | divergent (better) |
 | Non-nullable updater | no | `updateQueryData` | divergent (addition) |
@@ -80,8 +80,16 @@ minutes ago should not be treated as fresh.
 ## Deliberate divergences
 
 1. **Typed reads and writes.** The single clearest ergonomic win of AD-3.
-2. **`initialData` and `placeholderData` are different types**, not two options
+2. **`initialData` and `placeholderData` are different things**, not two options
    of the same shape.
+
+3. **`keepPreviousData` is a `Flow` operator, not a query option.** "Previous"
+   is a property of an *observer's history*, not of the cache entry: two screens
+   paging independently have different previous values, and the cache has no
+   opinion about either. Modelling it as an option would push per-observer state
+   into shared state. As an operator it composes with `flatMapLatest` over a
+   changing key, which is how paginated lists are written anyway, and nothing is
+   ever written to the cache.
 
 ## Open questions
 
@@ -120,6 +128,9 @@ minutes ago should not be treated as fresh.
       does neither — asserted by inspecting the dehydrated state.
 - [ ] Test: with `staleTime` set, `initialData` suppresses the initial fetch;
       `placeholderData` never does.
-- [ ] Test: `KeepPrevious` shows the old key's data with `isPlaceholderData`
-      true while the new key loads.
+- [x] Test: `keepPreviousData()` shows the old key's data with
+      `isPlaceholderData` true while the new key loads.
+- [x] Test: an error is surfaced rather than hidden behind a stale page.
+- [x] Test: the placeholder is never written to the cache.
+- [x] Test: paging back to a cached page is real data, not a placeholder.
 - [ ] Test: `initialDataUpdatedAt` in the past makes the entry immediately stale.

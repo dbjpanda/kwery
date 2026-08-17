@@ -127,9 +127,10 @@ items out of a page, so it takes the accessor:
 state.data?.flatten { it.items }
 ```
 
-**Paged is not infinite.** If page 2 should *replace* page 1, do not use this —
-use an ordinary query with the page in the key, and `PlaceholderData.KeepPrevious`
-so the list does not flash empty on the way.
+**Paged is not infinite.** If page 2 should *replace* page 1, do not use this.
+Use an ordinary query with the page in the key, plus
+[`keepPreviousData()`](paginated-queries.md) so the list does not flash empty on
+the way.
 
 ## Related
 

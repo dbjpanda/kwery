@@ -18,6 +18,7 @@ migrating from it needs the comparison.
 - [Offline writes](offline.md) — durable writes that survive process death *(feature still open)*
 - [Persistence](persistence.md) — the query cache across process death *(feature still open)*
 - [Infinite queries](infinite-queries.md) — accumulating pages
+- [Paginated queries](paginated-queries.md) — pages that replace each other
 
 Pages land as features pass gate 2, named after the feature rather than its
 roadmap number since readers do not care about build order. Still to write, and

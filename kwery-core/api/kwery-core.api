@@ -76,6 +76,10 @@ public final class dev/kwery/InfiniteQueryOptions {
 	public final fun getRefetchStrategy ()Ldev/kwery/RefetchStrategy;
 }
 
+public final class dev/kwery/KeepPreviousDataKt {
+	public static final fun keepPreviousData (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+}
+
 public final class dev/kwery/Mutation {
 	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
 	public final fun mutate (Ljava/lang/Object;)Lkotlinx/coroutines/Job;
