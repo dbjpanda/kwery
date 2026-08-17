@@ -94,21 +94,21 @@ client.query(
 
 | Capability | TanStack | Kwery | Status |
 |---|---|---|---|
-| `refetchOnMount` | `true` \| `false` \| `"always"` | `RefetchOn` enum | planned |
-| `refetchOnWindowFocus` | as above | as above, foreground events | planned |
-| `refetchOnReconnect` | as above | as above | planned |
-| `"always"` ignores staleness | yes | yes | planned |
-| `"always"` blocked by `staleTime: 'static'` | yes | yes | planned |
+| `refetchOnMount` | `true` \| `false` \| `"always"` | `RefetchOn` enum | done |
+| `refetchOnWindowFocus` | as above | as above, foreground events | done |
+| `refetchOnReconnect` | as above | as above | done |
+| `"always"` ignores staleness | yes | yes | done |
+| `"always"` blocked by `staleTime: 'static'` | yes | yes | done |
 | `refetchInterval` constant | yes | yes | done |
 | `refetchInterval` as a function of state | yes | re-read each tick | done |
 | `refetchIntervalInBackground` | yes | yes | done |
 | Polling pauses when unfocused | yes | pauses and resumes, no reattach needed | done |
-| Replaceable focus manager | `focusManager` | `FocusManager` interface | planned |
-| Replaceable online manager | `onlineManager` | `OnlineManager` interface | planned |
-| Only **active** queries refetch on focus | yes | yes | planned |
+| Replaceable focus manager | `focusManager` | `FocusManager` interface | done |
+| Replaceable online manager | `onlineManager` | `OnlineManager` interface | done |
+| Only **active** queries refetch on focus | yes | yes | done |
 | Connectivity requires validated network | n/a | yes | divergent (better) |
 | Brief app switch does not refetch | no — refetches every time | grace-window suppression | divergent (better) |
-| Data Saver suppresses polling/prefetch only | n/a | yes, on by default | divergent (addition) |
+| Data Saver suppresses polling/prefetch only | n/a | **not yet built** — decided in OQ-2 | planned |
 
 ## Deliberate divergences
 
@@ -149,11 +149,11 @@ client.query(
 
 ## Definition of done
 
-- [ ] `FocusManager` / `OnlineManager` contracts with JVM defaults.
-- [ ] `AndroidFocusManager` / `AndroidOnlineManager` implemented.
-- [ ] Test: stale active query refetches on focus regain; fresh one does not.
-- [ ] Test: **inactive** queries do not refetch on focus.
-- [ ] Test: `"always"` refetches a fresh query, but not under `StaleTime.Static`.
+- [x] `FocusManager` / `OnlineManager` contracts with JVM defaults.
+- [x] `AndroidFocusManager` / `AndroidOnlineManager` implemented.
+- [x] Test: a stale active query refetches on focus regain; a fresh one does not.
+- [x] Test: **inactive** queries do not refetch on focus.
+- [x] Test: `Always` refetches a fresh query, but not under `StaleTime.Static`.
 - [x] Test: adaptive `refetchInterval` is re-read each tick, so it can slow
       down once a job finishes without restarting the query.
 - [x] Test: returning null from the interval stops the loop — and takes effect

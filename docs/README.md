@@ -12,6 +12,8 @@ migrating from it needs the comparison.
 
 ## Pages
 
+- [Caching](caching.md) — staleTime, gcTime, and why they are different clocks
+- [Invalidation](invalidation.md) — making writes visible to reads
 - [Query state](query-state.md) — the two status axes, and why one enum is not enough
 - [Mutations](mutations.md) — writes, their lifecycle, and scopes
 - [Optimistic updates](optimistic-updates.md) — showing a write before it lands
@@ -24,9 +26,8 @@ Pages land as features pass gate 2, named after the feature rather than its
 roadmap number since readers do not care about build order. Still to write, and
 each blocked on its feature's gate 2:
 
-`queries.md` · `query-keys.md` · `caching.md` · `retries.md` ·
-`refetching.md` · `invalidation.md` · `compose.md` · `viewmodels.md` ·
-`prefetching.md` · `testing.md`
+`queries.md` · `query-keys.md` · `retries.md` · `refetching.md` ·
+`compose.md` · `viewmodels.md` · `prefetching.md` · `testing.md`
 
 Two pages are marked *feature still open*: everything they describe is tested,
 but their features have gate-2 items outstanding (a Room-backed store, device
