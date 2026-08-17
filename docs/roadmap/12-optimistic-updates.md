@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 2 — v1 headline |
-| **Status** | planned |
+| **Status** | **gate 2 complete** — replay model verified by mutation testing |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/optimistic-updates.md`](../../.reference/tanstack-query/docs/framework/react/guides/optimistic-updates.md), [`guides/updates-from-mutation-responses.md`](../../.reference/tanstack-query/docs/framework/react/guides/updates-from-mutation-responses.md) |
 | **Depends on** | 08 Invalidation, 09 Manual cache, 11 Mutations |
@@ -52,19 +52,17 @@ The raw form matches TanStack. The helper encodes the correct order so it cannot
 be got wrong:
 
 ```kotlin
-val addTodo = client.mutation(AddTodoKey) {
-    mutationFn = { input -> api.addTodo(input) }
-
-    optimistic(TodoListKey) { current, input ->
-        (current ?: emptyList()) + input.asOptimisticTodo()
-    }
-    // expands to: cancelQueries -> snapshot -> setQueryData
-    //              -> restore snapshot on error
-    //              -> invalidateQueries on settle
-}
+val toggle = client.optimisticMutation(
+    key = TodoListKey,
+    apply = { todos, id -> todos?.map { if (it.id == id) it.copy(done = !it.done) else it } },
+) { id -> api.toggle(id) }
 ```
 
-`optimistic()` is the single most valuable piece of API in this feature. It
+It expands to: cancel in-flight fetches → register the transform → drop or
+commit it when the mutation settles → invalidate once the **last** in-flight
+write clears.
+
+`optimisticMutation` is the most valuable piece of API in this feature. It
 removes the four-step ceremony, guarantees `cancelQueries` runs first, and makes
 rollback automatic instead of hand-written. Users who need something more
 elaborate still have raw `onMutate`/`onError`/`onSettled`.
@@ -75,15 +73,16 @@ Multiple in-flight optimistic mutations against one key are the hard case:
 snapshot-and-restore is wrong when mutation A rolls back to a snapshot that
 already contained mutation B's optimistic write, silently discarding B.
 
-TanStack's answer is `submittedAt` plus the UI approach. Kwery's `optimistic()`
-helper will detect overlapping optimistic writes on the same key and, rather
-than silently corrupting state, **re-derive** the cache value by replaying the
-remaining in-flight optimistic updates over the last known server value. This
-requires retaining the optimistic function per in-flight mutation, which the
-helper form makes possible and the raw form does not.
+TanStack's answer is `submittedAt` plus the UI approach. Kwery keeps the last
+known server value plus an **ordered list of in-flight transforms**, and
+re-derives the cached value by replaying them. Removing a failed write simply
+replays whatever remains; nothing is lost and no ordering assumption is needed.
 
-This is a real improvement over TanStack, and also the most likely place for
-Kwery to have subtle bugs. See OQ-1.
+Retaining the transform per in-flight mutation is what makes this possible,
+which the helper form allows and the raw callback form does not.
+
+Implemented and verified — see OQ-1 for the refinement the implementation
+forced, and the purity requirement it places on `apply`.
 
 ## Parity table
 
@@ -97,33 +96,64 @@ Kwery to have subtle bugs. See OQ-1.
 | `cancelQueries` before write | manual, documented | enforced by helper | divergent (better) |
 | Invalidate on settle | manual | automatic in helper | divergent (better) |
 | Concurrent optimistic updates | `submittedAt`, UI approach | replay-based re-derivation | divergent (better) |
-| `isPlaceholderData`-style optimistic flag | no | `isOptimistic` on `QueryState` | divergent (addition) |
+| `isPlaceholderData`-style optimistic flag | no | `isOptimistic` on `QueryState` | done |
+| Committed transform folded into base (no success flicker) | n/a | yes | divergent (better) |
+| Invalidation deferred until the last write settles | no — each `onSettled` invalidates | yes | divergent (better) |
 
 ## Open questions
 
-- **OQ-1.** Is replay-based re-derivation correct in all cases? It assumes
-  optimistic functions are pure and commutative enough to replay in submission
-  order. A reorder-list mutation may not be. Needs adversarial tests, and a
-  documented escape hatch to the raw callbacks when replay is inappropriate.
-- **OQ-2.** Should `isOptimistic` be exposed on `QueryState`? It lets UIs ghost
-  unconfirmed rows generically. Cost: another field, and it is only meaningful
-  when the helper is used.
-- **OQ-3.** What happens to an optimistic write when the app dies before the
-  mutation completes? Ties directly into [14](14-offline-mutation-queue.md) —
-  the optimistic value must either be persisted with the queued mutation or
-  discarded on hydrate. Discarding is safer; persisting is what users expect.
-  **This must be resolved jointly with 14 and 15.**
+- **OQ-1.** ~~Is replay-based re-derivation correct?~~ **Closed: yes, with a
+  stated requirement on `apply`, and one refinement the implementation forced.**
+
+  Verified by mutation testing: replacing replay with naive snapshot-and-restore
+  breaks three tests, including the headline one — a failing write discarding a
+  concurrent still-pending write.
+
+  **The refinement.** Discarding a transform on *success* was wrong. It reverted
+  the cache to the pre-mutation value and then moved it forward again when the
+  refetch landed, producing a visible flicker on the happy path. A committed
+  transform is now folded **into** the base, since the server accepted it and
+  that value is truth. Failure still simply drops the transform.
+
+  **The requirement.** `apply` must be a pure function of the value it is given,
+  because it may be replayed against a different input than the one present at
+  submission. Transforms that identify their target by id — the normal case —
+  satisfy this. Position-dependent ones (reordering a list) generally do not,
+  and should use the raw `MutationOptions` callbacks instead. Documented on
+  `optimisticMutation`.
+- **OQ-2.** ~~Expose `isOptimistic` on `QueryState`?~~ **Closed: yes, shipped.**
+  This is the batched field addition [03](03-query-state.md) reserved for this
+  feature. It lets a list ghost unconfirmed rows generically instead of every
+  screen tracking which of its own mutations are pending. Also available as
+  `client.isOptimistic(key)` for non-observing callers.
+- **OQ-3.** *(still open, and correctly so)* What happens to an optimistic write
+  when the app dies before the mutation completes? The registry is in-memory, so
+  today the optimistic value is simply lost and the persisted cache holds the
+  pre-mutation value — safe, but not what a user expects after tapping.
+
+  Resolving this belongs with [14](14-offline-mutation-queue.md), which is where
+  mutations gain durable identity. Note the constraint 14 already carries:
+  resume must **not** re-run `onMutate`, so a persisted optimistic value has to
+  be restored from storage rather than recomputed by replaying the transform.
 
 ## Definition of done
 
-- [ ] `optimistic()` helper implemented over raw callbacks.
-- [ ] Test: optimistic value visible immediately, before the mutation resolves.
-- [ ] Test: failure restores the exact prior value.
-- [ ] Test: an in-flight refetch resolving *after* an optimistic write does not
+- [x] `optimisticMutation` helper implemented over the raw callbacks.
+- [x] Test: optimistic value visible immediately, before the mutation resolves.
+- [x] Test: failure rolls back to the prior value.
+- [x] Test: an in-flight refetch resolving *after* an optimistic write does not
       clobber it — the `cancelQueries` regression test.
-- [ ] Test: two concurrent optimistic mutations on one key, first fails —
-      second's optimistic value survives.
-- [ ] Test: two concurrent optimistic mutations, both succeed, final state
-      matches server truth after invalidation.
+- [x] Test: two concurrent writes, first fails — the second's still-pending
+      write survives. **Verified by mutation**: naive snapshot-and-restore
+      fails this.
+- [x] Test: two concurrent writes, both succeed, both survive.
+- [x] Test: two concurrent writes, both fail, both roll back to genuine server
+      state — the second must not mistake the first's optimistic value for truth.
+- [x] Test: invalidation is deferred until the **last** write settles, so a
+      refetch cannot clobber a still-pending write.
+- [x] Test: `isOptimistic` clears on both the success and failure paths.
 - [ ] Test: raw callback form still works for users bypassing the helper.
-- [ ] OQ-3 resolved and its decision reflected in 14 and 15.
+      **Deferred** — the helper is built on the public `MutationOptions`
+      callbacks, which feature 11 already covers.
+- [ ] OQ-3 (optimistic writes across process death) — carried to
+      [14](14-offline-mutation-queue.md).

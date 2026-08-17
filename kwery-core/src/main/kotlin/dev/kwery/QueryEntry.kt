@@ -381,6 +381,10 @@ internal class QueryEntry<T>(
         )
     }
 
+    suspend fun markOptimistic(optimistic: Boolean) = mutex.withLock {
+        state.value = state.value.copy(isOptimistic = optimistic)
+    }
+
     suspend fun reset() = mutex.withLock {
         inFlight?.cancel()
         inFlight = null

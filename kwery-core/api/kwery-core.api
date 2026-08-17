@@ -105,6 +105,11 @@ public final class dev/kwery/OnlineManager$Companion {
 	public final fun getAlwaysOnline ()Ldev/kwery/OnlineManager;
 }
 
+public final class dev/kwery/OptimisticKt {
+	public static final fun optimisticMutation (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Lkotlin/jvm/functions/Function2;Ldev/kwery/RetryPolicy;Ldev/kwery/MutationScope;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun optimisticMutation$default (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Lkotlin/jvm/functions/Function2;Ldev/kwery/RetryPolicy;Ldev/kwery/MutationScope;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class dev/kwery/QueryClient {
 	public fun <init> ()V
 	public fun <init> (Lkotlinx/coroutines/CoroutineScope;Ldev/kwery/QueryClientConfig;)V
@@ -118,6 +123,7 @@ public final class dev/kwery/QueryClient {
 	public final fun invalidateQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun invalidateQueries (Ldev/kwery/QueryKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun invalidateQueries ([Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun isOptimistic (Ldev/kwery/QueryKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun mutation (Ldev/kwery/MutationOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
 	public final fun query (Ldev/kwery/QueryKey;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
@@ -259,10 +265,11 @@ public final class dev/kwery/QueryOptions {
 
 public final class dev/kwery/QueryState {
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZ)V
-	public synthetic fun <init> (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZZ)V
+	public synthetic fun <init> (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/Object;
 	public final fun component10 ()Z
+	public final fun component11 ()Z
 	public final fun component2 ()Ljava/lang/Throwable;
 	public final fun component3 ()Ldev/kwery/QueryStatus;
 	public final fun component4 ()Ldev/kwery/FetchStatus;
@@ -271,8 +278,8 @@ public final class dev/kwery/QueryState {
 	public final fun component7 ()Ljava/lang/Long;
 	public final fun component8 ()Ljava/lang/Long;
 	public final fun component9 ()Z
-	public final fun copy (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZ)Ldev/kwery/QueryState;
-	public static synthetic fun copy$default (Ldev/kwery/QueryState;Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZILjava/lang/Object;)Ldev/kwery/QueryState;
+	public final fun copy (Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZZ)Ldev/kwery/QueryState;
+	public static synthetic fun copy$default (Ldev/kwery/QueryState;Ljava/lang/Object;Ljava/lang/Throwable;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;ILjava/lang/Throwable;Ljava/lang/Long;Ljava/lang/Long;ZZZILjava/lang/Object;)Ldev/kwery/QueryState;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getData ()Ljava/lang/Object;
 	public final fun getDataUpdatedAt ()Ljava/lang/Long;
@@ -287,6 +294,7 @@ public final class dev/kwery/QueryState {
 	public final fun isFetching ()Z
 	public final fun isInvalidated ()Z
 	public final fun isLoading ()Z
+	public final fun isOptimistic ()Z
 	public final fun isPaused ()Z
 	public final fun isPending ()Z
 	public final fun isPlaceholderData ()Z

@@ -105,6 +105,52 @@ public class QueryClient(
 
     // ---- Mutations -------------------------------------------------------
 
+    private val optimisticRegistry = OptimisticRegistry()
+
+    /**
+     * Register an optimistic write and apply it to the cache.
+     *
+     * Cancels in-flight fetches first: a refetch resolving after the write
+     * would overwrite it with stale server data.
+     */
+    @Suppress("UNCHECKED_CAST")
+    internal suspend fun <V, T> beginOptimistic(
+        key: QueryKey<T>,
+        variables: V,
+        apply: (T?, V) -> T?,
+    ): Long {
+        cancelQueries(QueryFilters(exactKey = key))
+        val id = optimisticRegistry.nextId()
+        val transform: (Any?) -> Any? = { current -> apply(current as T?, variables) }
+        val next = optimisticRegistry.begin(key, id, getQueryData(key), transform)
+        entryFor(key)?.markOptimistic(true)
+        setQueryData(key) { next as T? }
+        return id
+    }
+
+    /** Drop an optimistic write, re-deriving the cached value from what remains. */
+    @Suppress("UNCHECKED_CAST")
+    internal suspend fun <T> endOptimistic(
+        key: QueryKey<T>,
+        id: Long,
+        committed: Boolean,
+        invalidate: Boolean,
+    ) {
+        val (value, wasLast) = optimisticRegistry.end(key, id, committed)
+        setQueryData(key) { value as T? }
+        if (wasLast) {
+            entryFor(key)?.markOptimistic(false)
+            // Invalidate only once the LAST in-flight optimistic write clears.
+            // Invalidating earlier would refetch server truth while another
+            // optimistic write is still pending, clobbering it.
+            if (invalidate) invalidateQueries(QueryFilters(exactKey = key))
+        }
+    }
+
+    /** True while any optimistic write against [key] is in flight. */
+    public suspend fun isOptimistic(key: QueryKey<*>): Boolean =
+        optimisticRegistry.isOptimistic(key)
+
     /** One lock per [MutationScope.id]; mutations sharing a scope share a lock. */
     private val mutationLocks = mutableMapOf<String, Mutex>()
     private val mutationLocksGuard = Mutex()

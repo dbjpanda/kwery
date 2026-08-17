@@ -84,6 +84,15 @@ public data class QueryState<T>(
 
     /** True while showing `placeholderData` rather than real cached data. */
     val isPlaceholderData: Boolean = false,
+
+    /**
+     * True while an optimistic write against this key is in flight — the data
+     * shown has not been confirmed by the server.
+     *
+     * Lets a list ghost unconfirmed rows generically, without each screen
+     * tracking which of its own mutations are pending.
+     */
+    val isOptimistic: Boolean = false,
 ) {
     public val isPending: Boolean get() = status == QueryStatus.Pending
     public val isError: Boolean get() = status == QueryStatus.Error
