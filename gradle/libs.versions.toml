@@ -1,16 +1,23 @@
 [versions]
-# The version main builds as, which is deliberately not the last released one:
-# a commit after v0.1.0 is not v0.1.0, and artifacts that claim otherwise are a
-# small lie that costs someone an afternoon. Drop -SNAPSHOT only in the release
-# commit itself — see CONTRIBUTING.md.
+# Managed by release-please: it reads the Conventional Commits since the last
+# release, works out the next version and bumps this line in the Release PR.
+# Do not edit it by hand — the marker comment is how the tool finds it.
+#
+# This holds the LAST RELEASED version rather than a -SNAPSHOT, which is the
+# release-please convention: the bump and the tag happen together when the
+# Release PR merges, so there is no window where the branch claims a version
+# that was never cut.
 #
 # Pre-1.0: the API may still change, and apiCheck makes every change to it a
 # reviewed diff rather than a surprise.
-kwery = "0.2.0-SNAPSHOT"
+kwery = "0.1.1" # x-release-please-version
 kotlin = "2.2.20"
 coroutines = "1.10.2"
 serialization = "1.9.0"
 bcv = "0.18.1"
+# Handles POM, sources, javadoc, signing and Central Portal upload in one task,
+# replacing about forty lines of hand-rolled publishing config.
+mavenPublish = "0.33.0"
 
 # Android. Verified by building: Gradle 9.5.1 + AGP 8.13.2 is the newest
 # combination where the classic Kotlin plugin, KSP (Room codegen) and
@@ -53,6 +60,7 @@ compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeB
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "bcv" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

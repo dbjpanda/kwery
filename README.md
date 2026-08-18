@@ -11,9 +11,8 @@ process death.
 A [TanStack Query](https://tanstack.com/query/latest) equivalent for Kotlin,
 built for how Android actually behaves.
 
-> **Status: `v0.1.1`, early but real.** 19 of 24 features are specified, tested
-> and documented, with 367 tests behind them. Installable via JitPack today;
-> not yet on Maven Central.
+> **Status: `0.1.1`, early but real.** 19 of 24 features are specified, tested
+> and documented, with 367 tests behind them. On Maven Central.
 > See [RELEASE.md](RELEASE.md) for exactly what is built, what was deliberately
 > not built and why, and what still needs a device.
 
@@ -97,41 +96,24 @@ observer model in particular — including the measurements that chose it — is
 
 ## Installing
 
-Kwery is not on Maven Central yet. Until it is, JitPack builds it straight from
-this repository.
-
-`settings.gradle.kts`:
-
-```kotlin
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://jitpack.io")
-    }
-}
-```
-
-`build.gradle.kts`:
-
 ```kotlin
 dependencies {
-    implementation("com.github.dbjpanda.kwery:kwery-core:v0.1.1")
-    implementation("com.github.dbjpanda.kwery:kwery-android:v0.1.1")   // focus + connectivity
-    implementation("com.github.dbjpanda.kwery:kwery-compose:v0.1.1")   // rememberQuery
-    implementation("com.github.dbjpanda.kwery:kwery-persist:v0.1.1")   // cache across process death
-    testImplementation("com.github.dbjpanda.kwery:kwery-test:v0.1.1")  // TestQueryClient
+    implementation("io.github.dbjpanda:kwery-core:0.1.1")
+    implementation("io.github.dbjpanda:kwery-android:0.1.1")   // focus + connectivity
+    implementation("io.github.dbjpanda:kwery-compose:0.1.1")   // rememberQuery
+    implementation("io.github.dbjpanda:kwery-persist:0.1.1")   // cache across process death
+    testImplementation("io.github.dbjpanda:kwery-test:0.1.1")  // TestQueryClient
 }
 ```
 
-The badge at the top shows the current version; the block above may lag it by a
-release. A tag is immutable, so `v0.1.1` will not change under you. Use `main-SNAPSHOT`
-instead if you want to track the branch while evaluating — it is the right thing
-to depend on while looking and the wrong thing to ship against.
+On Maven Central, so `mavenCentral()` is all you need. The badge at the top
+shows the current version; the block above may lag it by a release.
 
-**Coordinates differ by source.** JitPack serves everything under
-`com.github.dbjpanda.kwery`; the artifacts themselves are built as
-`io.github.dbjpanda`, which is the namespace Maven Central publication will use.
+Snapshots are not published. To try unreleased work, JitPack builds any branch
+or tag straight from this repository — add `maven("https://jitpack.io")` and
+depend on `com.github.dbjpanda.kwery:kwery-core:main-SNAPSHOT`. Note the
+coordinates differ: JitPack serves under `com.github.dbjpanda.kwery`, Maven
+Central under `io.github.dbjpanda`.
 
 ## Building
 

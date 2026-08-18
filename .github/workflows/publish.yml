@@ -1,0 +1,58 @@
+# Publishes to Maven Central when release-please cuts a release.
+#
+# automaticRelease is on, so this publishes for real rather than staging for a
+# human to approve — a Central release cannot be deleted or overwritten, which
+# is why everything below runs BEFORE the upload.
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The tag is the thing being published, so it has to agree with the
+      # version the build will stamp on the artifacts. Under automatic release
+      # a mismatch here is permanent — v0.2.0 publishing artifacts labelled
+      # 0.1.1 cannot be taken back.
+      - name: Tag and build version must match
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          BUILD=$(grep -E '^kwery = ' gradle/libs.versions.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "tag=$TAG build=$BUILD"
+          if [ "$TAG" != "v$BUILD" ]; then
+            echo "::error::Tag $TAG does not match version $BUILD in libs.versions.toml"
+            exit 1
+          fi
+          case "$BUILD" in
+            *SNAPSHOT*) echo "::error::Refusing to publish a snapshot"; exit 1 ;;
+          esac
+
+      # A failing test after publication is unfixable, so the whole suite and
+      # the API check run first rather than in a parallel job.
+      - name: Verify
+        run: ./gradlew build apiCheck --no-daemon
+
+      - name: Publish to Maven Central
+        run: ./gradlew publishToMavenCentral --no-daemon
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}

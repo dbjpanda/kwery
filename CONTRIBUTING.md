@@ -68,63 +68,51 @@ completed features lives in [README.md](README.md), so it is stated once.
 
 ## Releasing
 
-A tag is immutable, so everything that names the version has to be right before
-it is pushed, not after.
+Releases are automated. You do not pick a version number, write a changelog, or
+tag anything.
 
-1. `./gradlew clean` then `./gradlew build apiCheck` — and read the output. The
-   build cache can return a full green in two seconds, which looks identical to
-   a stale result; `--rerun-tasks` if you want to be certain the suite actually
-   ran.
-2. Drop `-SNAPSHOT` from `kwery` in `gradle/libs.versions.toml`.
-3. Update the version in the README's install block. The JitPack badge tracks
-   the latest tag on its own; the code block does not.
-4. Update `RELEASE.md` if what is done, deferred or device-blocked has changed.
-5. Commit, then `git tag -a vX.Y.Z` with notes saying what is in it **and what
-   is not** — a version number is a promise.
-6. Push the branch and the tag.
-7. Trigger the JitPack build so the first person to depend on it does not wait
-   three minutes for a cold build:
-   `curl -s https://jitpack.io/com/github/dbjpanda/kwery/kwery-core/vX.Y.Z/kwery-core-vX.Y.Z.pom -o /dev/null`
-8. `gh release create vX.Y.Z --notes-file <file>`.
-9. Bump `kwery` to the next `-SNAPSHOT` and commit. A commit after v0.1.0 is not
-   v0.1.0, and leaving the released version on the branch means every build
-   between now and the next tag claims to be a release it is not.
+1. Merge work to `main` using Conventional Commit subjects — `feat:`, `fix:`,
+   `docs:`, `build:`, `test:`, `chore:`, and `feat!:` or a `BREAKING CHANGE:`
+   footer for anything incompatible.
+2. **release-please** keeps a Release PR open, accumulating every change since
+   the last release. It derives the next version from those commit types
+   (`fix` → patch, `feat` → minor, breaking → major while pre-1.0 it bumps the
+   minor), rewrites `CHANGELOG.md`, and bumps `kwery` in
+   `gradle/libs.versions.toml`.
+3. **Merging that PR is the release.** It tags, creates the GitHub Release, and
+   the tag triggers `publish.yml`, which verifies and pushes to Maven Central.
 
-## Publishing to Maven Central
+The Release PR is the review gate. Nothing reaches Central without it being
+merged deliberately.
 
-Not done yet — this is what it needs. Steps 1 to 3 are one-off and need a
-browser; the rest is `./gradlew`.
+### Why the version file holds a released version, not a snapshot
 
-1. **Register the namespace.** Create an account at
-   [central.sonatype.com](https://central.sonatype.com) and add the namespace
-   `io.github.dbjpanda`. It is verified from GitHub account ownership, which is
-   why the group is `io.github.<user>` and not a domain — a domain-based group
-   such as `dev.kwery` would require proving control of `kwery.dev` by DNS
-   record.
-2. **Generate a signing key** and publish the public half, or nothing can
-   verify the artifacts:
-   ```sh
-   gpg --full-generate-key                  # RSA 4096, no expiry is fine
-   gpg --list-secret-keys --keyid-format=long
-   gpg --keyserver keyserver.ubuntu.com --send-keys <KEY_ID>
-   gpg --armor --export-secret-keys <KEY_ID> # the value for signingInMemoryKey
-   ```
-3. **Generate a Portal token** (Account → Generate User Token).
-4. **Build a signed bundle:**
-   ```sh
-   ./gradlew centralBundle \
-     -PsigningInMemoryKey="$(gpg --armor --export-secret-keys <KEY_ID>)" \
-     -PsigningInMemoryKeyPassword=<passphrase>
-   ```
-   The task warns if the bundle contains no signatures. Central rejects an
-   unsigned bundle *after* upload, which is a slow way to discover it.
-5. **Upload** `build/central/kwery-<version>-bundle.zip` through the Portal UI,
-   or with its API, and release the deployment once validation passes.
+`kwery = "0.1.1"` on `main` is the last **released** version, and that is the
+release-please convention rather than an oversight. The bump and the tag happen
+in the same merge, so there is no window in which the branch claims a version
+that was never cut. Do not edit that line by hand; the
+`# x-release-please-version` marker is how the tool finds it.
 
-Keep the key out of the repository and out of shell history — pass it through an
-environment variable or a `~/.gradle/gradle.properties` that is not in a
-project directory. Signing is skipped entirely when no key is present, so
-`./gradlew build` works for everyone else.
+### What runs before anything is published
+
+`publish.yml` uses automatic release, so an upload is permanent the moment it
+succeeds. Two checks run first, in this order and in the same job:
+
+- **the tag must match the version in `libs.versions.toml`**, and must not be a
+  snapshot. Under automatic release a mismatch is unfixable — a `v0.2.0` tag
+  publishing artifacts labelled `0.1.1` cannot be taken back.
+- **the whole suite and `apiCheck`**, because a failing test discovered after
+  publication has no remedy.
+
+### Secrets it needs
+
+Set once, on the repository:
+
+| Secret | What |
+|---|---|
+| `SIGNING_KEY` | armoured GPG private key: `gpg --armor --export-secret-keys <KEY_ID>` |
+| `SIGNING_KEY_PASSWORD` | the passphrase, empty if the key has none |
+| `MAVEN_CENTRAL_USERNAME` / `MAVEN_CENTRAL_PASSWORD` | a Central Portal user token, from Account → Generate User Token |
 
 ## Writing tests
 

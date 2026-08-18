@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.binary.compatibility.validator)
+    alias(libs.plugins.maven.publish) apply false
 }
 
 // The .api dumps are the public surface. Any change to them must appear as a
@@ -41,112 +42,43 @@ subprojects {
     version = kweryVersion
 
     if (name in publishedModules) {
-        apply(plugin = "maven-publish")
-        apply(plugin = "signing")
+        apply(plugin = "com.vanniktech.maven.publish")
 
-        // Maven Central requires every artifact to be signed. The key is read
-        // from properties rather than a keyring file so the same configuration
-        // works locally and in CI, and signing is skipped entirely when no key
-        // is present — a contributor running `build` should not need one.
-        extensions.configure<SigningExtension> {
-            val key = providers.gradleProperty("signingInMemoryKey").orNull
-            val password = providers.gradleProperty("signingInMemoryKeyPassword").orNull
-            isRequired = key != null
-            if (key != null) {
-                useInMemoryPgpKeys(key, password)
-                sign(extensions.getByType<PublishingExtension>().publications)
+        // The plugin handles sources, javadoc, signing and the Central Portal
+        // upload. Signing is skipped when no key is present, so a contributor
+        // running `build` needs nothing.
+        extensions.configure<com.vanniktech.maven.publish.MavenPublishBaseExtension> {
+            publishToMavenCentral(automaticRelease = true)
+            if (providers.gradleProperty("signingInMemoryKey").isPresent) {
+                signAllPublications()
             }
-        }
 
-        // Central takes a zip of a Maven repository layout, uploaded to its
-        // Portal API, rather than a `publish` to a URL. Staging locally first
-        // means the exact bytes that will be uploaded can be inspected before
-        // anything leaves the machine.
-        // One shared directory across every module: Central takes a single
-        // bundle containing all of them, not one upload per artifact.
-        val stagingDir = rootProject.layout.buildDirectory.dir("central-staging")
-        afterEvaluate {
-            extensions.configure<PublishingExtension> {
-                repositories.maven {
-                    name = "centralStaging"
-                    url = uri(stagingDir)
-                }
-            }
-        }
+            coordinates(groupId = "io.github.dbjpanda", artifactId = name, version = kweryVersion)
 
-        // An Android library has no publishable component until a variant is
-        // nominated. Publishing `release` only: a debug artifact on Maven
-        // Central is a support burden with no audience.
-        plugins.withId("com.android.library") {
-            extensions.configure<com.android.build.gradle.LibraryExtension> {
-                publishing {
-                    singleVariant("release") {
-                        withSourcesJar()
-                        withJavadocJar()
-                    }
-                }
-            }
-        }
-
-        plugins.withId("org.jetbrains.kotlin.jvm") {
-            extensions.configure<org.gradle.api.plugins.JavaPluginExtension> {
-                // Sources and javadoc jars are not decoration: without sources
-                // a consumer stepping into Kwery in a debugger sees bytecode,
-                // and the KDoc explaining staleTime versus gcTime — the two
-                // things every user misreads — never reaches them.
-                withSourcesJar()
-                withJavadocJar()
-            }
-        }
-
-        // The publishable component is named differently per plugin, and it
-        // does not exist until the plugin has finished configuring — hence
-        // afterEvaluate, and hence registering per plugin rather than probing
-        // for whichever component happens to be there.
-        fun MavenPublication.describe(project: Project) = pom {
-            name.set(project.name)
-            description.set(
-                project.description ?: "Async server-state management for Android.",
-            )
-            url.set("https://github.com/dbjpanda/kwery")
-            licenses {
-                license {
-                    name.set("The Apache License, Version 2.0")
-                    url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                }
-            }
-            developers {
-                developer {
-                    id.set("dbjpanda")
-                    name.set("Dibyajyoti")
-                    url.set("https://github.com/dbjpanda")
-                }
-            }
-            scm {
+            pom {
+                name.set(this@subprojects.name)
+                description.set(
+                    this@subprojects.description
+                        ?: "Async server-state management for Android.",
+                )
                 url.set("https://github.com/dbjpanda/kwery")
-                connection.set("scm:git:https://github.com/dbjpanda/kwery.git")
-                developerConnection.set("scm:git:ssh://git@github.com/dbjpanda/kwery.git")
-            }
-        }
-
-        plugins.withId("com.android.library") {
-            afterEvaluate {
-                extensions.configure<PublishingExtension> {
-                    publications.create<MavenPublication>("maven") {
-                        from(components["release"])
-                        describe(this@subprojects)
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
                     }
                 }
-            }
-        }
-
-        plugins.withId("org.jetbrains.kotlin.jvm") {
-            afterEvaluate {
-                extensions.configure<PublishingExtension> {
-                    publications.create<MavenPublication>("maven") {
-                        from(components["java"])
-                        describe(this@subprojects)
+                developers {
+                    developer {
+                        id.set("dbjpanda")
+                        name.set("Dibyajyoti")
+                        url.set("https://github.com/dbjpanda")
                     }
+                }
+                scm {
+                    url.set("https://github.com/dbjpanda/kwery")
+                    connection.set("scm:git:https://github.com/dbjpanda/kwery.git")
+                    developerConnection.set("scm:git:ssh://git@github.com/dbjpanda/kwery.git")
                 }
             }
         }
@@ -188,52 +120,6 @@ subprojects {
             events("failed")
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
             showStackTraces = true
-        }
-    }
-}
-
-// ---- Maven Central bundle ------------------------------------------------
-
-val centralStage by tasks.registering {
-    group = "publishing"
-    description = "Stages every published module into build/central-staging."
-    dependsOn(
-        publishedModules.map { ":$it:publishAllPublicationsToCentralStagingRepository" },
-    )
-}
-
-val centralBundle by tasks.registering(Zip::class) {
-    group = "publishing"
-    description = "Builds the zip to upload to the Maven Central Portal."
-    dependsOn(centralStage)
-
-    val staging = layout.buildDirectory.dir("central-staging")
-    from(staging)
-    destinationDirectory.set(layout.buildDirectory.dir("central"))
-    // kweryVersion rather than rootProject.version: the version is set on the
-    // subprojects, so the root project's is still "unspecified".
-    archiveFileName.set("kwery-$kweryVersion-bundle.zip")
-
-    // Captured at configuration time. Reaching for `project` or a script
-    // reference inside doLast breaks the configuration cache, which this build
-    // has enabled — the failure is a serialization error rather than anything
-    // that names the real cause.
-    val signatureCount = providers.provider {
-        staging.get().asFile.walkTopDown().count { it.isFile && it.extension == "asc" }
-    }
-
-    doLast {
-        // A bundle without signatures is rejected by the Portal after upload,
-        // which is a slow way to find out. Say so here instead.
-        val count = signatureCount.get()
-        if (count == 0) {
-            logger.warn(
-                "\ncentralBundle: no .asc signatures in the bundle. Maven Central " +
-                    "will reject it.\nPass -PsigningInMemoryKey=... to sign; see " +
-                    "CONTRIBUTING.md.",
-            )
-        } else {
-            logger.lifecycle("centralBundle: $count signatures included.")
         }
     }
 }
