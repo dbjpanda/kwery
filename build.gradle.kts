@@ -16,7 +16,93 @@ apiValidation {
     ignoredProjects += listOf("sample", "docs-lint")
 }
 
+// Modules that are published. The sample app and the docs lint are tools, not
+// products, and listing publishable modules explicitly means adding a new one
+// is a deliberate act rather than a side effect of creating a directory.
+val kweryVersion = libs.versions.kwery.get()
+
+val publishedModules = setOf(
+    "kwery-core",
+    "kwery-test",
+    "kwery-persist",
+    "kwery-android",
+    "kwery-compose",
+)
+
 subprojects {
+    group = "dev.kwery"
+    version = kweryVersion
+
+    if (name in publishedModules) {
+        apply(plugin = "maven-publish")
+
+        // An Android library has no publishable component until a variant is
+        // nominated. Publishing `release` only: a debug artifact on Maven
+        // Central is a support burden with no audience.
+        plugins.withId("com.android.library") {
+            extensions.configure<com.android.build.gradle.LibraryExtension> {
+                publishing {
+                    singleVariant("release") {
+                        withSourcesJar()
+                        withJavadocJar()
+                    }
+                }
+            }
+        }
+
+        plugins.withId("org.jetbrains.kotlin.jvm") {
+            extensions.configure<org.gradle.api.plugins.JavaPluginExtension> {
+                // Sources and javadoc jars are not decoration: without sources
+                // a consumer stepping into Kwery in a debugger sees bytecode,
+                // and the KDoc explaining staleTime versus gcTime — the two
+                // things every user misreads — never reaches them.
+                withSourcesJar()
+                withJavadocJar()
+            }
+        }
+
+        // The publishable component is named differently per plugin, and it
+        // does not exist until the plugin has finished configuring — hence
+        // afterEvaluate, and hence registering per plugin rather than probing
+        // for whichever component happens to be there.
+        fun MavenPublication.describe(project: Project) = pom {
+            name.set(project.name)
+            description.set(
+                project.description ?: "Async server-state management for Android.",
+            )
+            url.set("https://github.com/kwery/kwery")
+            licenses {
+                license {
+                    name.set("The Apache License, Version 2.0")
+                    url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                }
+            }
+            scm { url.set("https://github.com/kwery/kwery") }
+        }
+
+        plugins.withId("com.android.library") {
+            afterEvaluate {
+                extensions.configure<PublishingExtension> {
+                    publications.create<MavenPublication>("maven") {
+                        from(components["release"])
+                        describe(this@subprojects)
+                    }
+                }
+            }
+        }
+
+        plugins.withId("org.jetbrains.kotlin.jvm") {
+            afterEvaluate {
+                extensions.configure<PublishingExtension> {
+                    publications.create<MavenPublication>("maven") {
+                        from(components["java"])
+                        describe(this@subprojects)
+                    }
+                }
+            }
+        }
+    }
+
     plugins.withId("org.jetbrains.kotlin.jvm") {
         extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
             // Every public declaration must state its visibility and return type.
