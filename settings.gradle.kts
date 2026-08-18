@@ -28,3 +28,4 @@ include(":kwery-compose")
 
 // Not published. Exists so documentation examples must actually compile.
 include(":sample")
+include(":docs-lint")

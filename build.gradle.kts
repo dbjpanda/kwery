@@ -13,7 +13,7 @@ plugins {
 // reviewed diff, never as a side effect of an unrelated edit.
 apiValidation {
     // The sample app is not published, so it has no public API to guard.
-    ignoredProjects += listOf("sample")
+    ignoredProjects += listOf("sample", "docs-lint")
 }
 
 subprojects {

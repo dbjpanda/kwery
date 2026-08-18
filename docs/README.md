@@ -64,6 +64,20 @@ at-least-once guarantee unusable from the one place that needs it. That gap was
 invisible from the tests, which never had to *write the call*. `DurableMutationScope`
 exists because of it.
 
+## How these pages are kept honest
+
+Examples rot silently: nothing compiles a fenced code block, so a renamed
+parameter or a method that only ever existed in a design sketch sits here
+looking authoritative. That has happened three times in this project — a
+`currentQueuedMutationId` that did not exist, a `PlaceholderData.KeepPrevious`
+that was never built, and a `prefetchQuery(key, staleTime, fetcher)` overload
+lifted from a roadmap file rather than the code.
+
+`docs-lint` now checks every Kwery identifier in these pages against the
+committed `.api` dumps — the same files `apiCheck` enforces — and runs as part
+of the normal build. It is a lint, not a compiler: it catches a name that does
+not exist, not a wrong argument order.
+
 ## Writing a page
 
 Each page should answer, in order:
