@@ -11,7 +11,7 @@ process death.
 A [TanStack Query](https://tanstack.com/query/latest) equivalent for Kotlin,
 built for how Android actually behaves.
 
-> **Status: `v0.1.0`, early but real.** 19 of 24 features are specified, tested
+> **Status: `v0.1.1`, early but real.** 19 of 24 features are specified, tested
 > and documented, with 367 tests behind them. Installable via JitPack today;
 > not yet on Maven Central.
 > See [RELEASE.md](RELEASE.md) for exactly what is built, what was deliberately
@@ -116,16 +116,16 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.dbjpanda.kwery:kwery-core:v0.1.0")
-    implementation("com.github.dbjpanda.kwery:kwery-android:v0.1.0")   // focus + connectivity
-    implementation("com.github.dbjpanda.kwery:kwery-compose:v0.1.0")   // rememberQuery
-    implementation("com.github.dbjpanda.kwery:kwery-persist:v0.1.0")   // cache across process death
-    testImplementation("com.github.dbjpanda.kwery:kwery-test:v0.1.0")  // TestQueryClient
+    implementation("com.github.dbjpanda.kwery:kwery-core:v0.1.1")
+    implementation("com.github.dbjpanda.kwery:kwery-android:v0.1.1")   // focus + connectivity
+    implementation("com.github.dbjpanda.kwery:kwery-compose:v0.1.1")   // rememberQuery
+    implementation("com.github.dbjpanda.kwery:kwery-persist:v0.1.1")   // cache across process death
+    testImplementation("com.github.dbjpanda.kwery:kwery-test:v0.1.1")  // TestQueryClient
 }
 ```
 
 The badge at the top shows the current version; the block above may lag it by a
-release. A tag is immutable, so `v0.1.0` will not change under you. Use `main-SNAPSHOT`
+release. A tag is immutable, so `v0.1.1` will not change under you. Use `main-SNAPSHOT`
 instead if you want to track the branch while evaluating — it is the right thing
 to depend on while looking and the wrong thing to ship against.
 
