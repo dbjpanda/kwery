@@ -126,7 +126,7 @@ This is a deliberate parity gap, recorded as such.
 | `submittedAt` | yes | yes | planned |
 | Mutation scopes run serially | yes | `MutationScope` | planned |
 | `setMutationDefaults` | yes | see [14](14-offline-mutation-queue.md) | planned |
-| `isMutating` / mutation filters | yes | yes | planned |
+| `isMutating` / mutation filters | yes | **not built** | gap — see below |
 | Observe others' mutations (`useMutationState`) | yes | `client.mutationStates(filters)` | planned |
 | Throwing `onSettled` promotes success → error | yes | yes | done |
 | Throwing `onError` loses the original error | yes — unhandled rejection | **no** — original stays primary, callback attached as suppressed | divergent (better) |
@@ -189,9 +189,27 @@ would double it.
   `mutate(v).join()` or observe `state`. Adding a second callback channel to
   cover a case already served by two mechanisms is API surface for its own sake.
 
+### Gap: no global mutation count
+
+`QueryClient` exposes `isFetching: StateFlow<Int>` but has no `isMutating`
+counterpart, so TanStack's `useIsMutating` has no Kwery equivalent — found while
+closing [17](17-compose-bindings.md) gate 2, where `rememberIsMutating` was
+specified next to two helpers that do exist and turned out to have nothing to
+wrap.
+
+The parity table claimed this was built. It was not, and "planned" in a status
+column is exactly how a false parity claim survives review.
+
+The fix belongs here rather than in the bindings: a global indicator that a
+write is in flight is client state, and adding it to `kwery-compose` alone would
+put behaviour in the adapter that the core lacks, which AD-2 forbids.
+
 ## Definition of done
 
 - [x] `Mutation`, `MutationState`, `MutationOptions` implemented.
+- [ ] `isMutating: StateFlow<Int>` on `QueryClient`, with a test that it counts
+      concurrent mutations and returns to zero (see the gap above), and
+      `rememberIsMutating` in `kwery-compose` once it exists.
 - [x] Test: callbacks fire in documented order and each is awaited.
 - [x] Test: `onMutate` result reaches `onError` and `onSettled`, typed.
 - [x] Test: mutations do not retry by default; `retry` opts in.
