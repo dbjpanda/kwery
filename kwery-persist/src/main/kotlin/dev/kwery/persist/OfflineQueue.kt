@@ -191,7 +191,14 @@ public class OfflineQueue(
 
     private val handlers: Map<String, Handler<*>> = Registrar().apply(register).handlers
 
-    private val scopeLocks = mutableMapOf<String, Mutex>()
+    /**
+     * Held weakly, for the reason given on `QueryClient.mutationLocks`: a
+     * durable queue of per-entity writes produces an unbounded number of scope
+     * ids over a long session, and the lock only matters while a delivery is
+     * actually using it. A delivery in flight holds its lock in a local, so it
+     * cannot be collected mid-use.
+     */
+    private val scopeLocks = mutableMapOf<String, java.lang.ref.WeakReference<Mutex>>()
     private val scopeLockGuard = Mutex()
 
     private val pendingCount = MutableStateFlow(0)
@@ -335,7 +342,13 @@ public class OfflineQueue(
      */
     private suspend fun withScopeTurn(scopeId: String?, body: suspend () -> Unit) {
         if (scopeId == null) return body()
-        val lock = scopeLockGuard.withLock { scopeLocks.getOrPut(scopeId) { Mutex() } }
+        val lock = scopeLockGuard.withLock {
+            scopeLocks[scopeId]?.get()
+                ?: Mutex().also { fresh ->
+                    scopeLocks.values.removeAll { it.get() == null }
+                    scopeLocks[scopeId] = java.lang.ref.WeakReference(fresh)
+                }
+        }
         lock.withLock { body() }
     }
 

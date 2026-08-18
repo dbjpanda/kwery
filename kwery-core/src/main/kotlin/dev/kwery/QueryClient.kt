@@ -158,9 +158,28 @@ public class QueryClient(
     public suspend fun isOptimistic(key: QueryKey<*>): Boolean =
         optimisticRegistry.isOptimistic(key)
 
-    /** One lock per [MutationScope.id]; mutations sharing a scope share a lock. */
-    private val mutationLocks = mutableMapOf<String, Mutex>()
+    /**
+     * One lock per [MutationScope.id]; mutations sharing a scope share a lock.
+     *
+     * Held **weakly**. A strong map would grow for the life of the process with
+     * every distinct scope id ever used, and per-entity scopes — `"todo-$id"`,
+     * which is a natural way to serialise edits to one item — make that
+     * unbounded. An Android process lives for days; a browser tab gets
+     * reloaded. This is the same argument that put a `maxEntries` bound on the
+     * query cache.
+     *
+     * Weak values are not merely a size trick, they are the correct lifetime:
+     * the lock matters exactly while some [Mutation] holding it is alive. A
+     * mutation mid-flight is strongly reachable from its own running coroutine,
+     * so a lock can never be collected out from under one.
+     */
+    private val mutationLocks = mutableMapOf<String, java.lang.ref.WeakReference<Mutex>>()
     private val mutationLocksGuard = Mutex()
+
+    /** Live entries in [mutationLocks]. For tests asserting it does not grow. */
+    internal suspend fun mutationLockCount(): Int = mutationLocksGuard.withLock {
+        mutationLocks.count { it.value.get() != null }
+    }
 
     /**
      * Create a mutation.
@@ -171,8 +190,18 @@ public class QueryClient(
      * though they are separate objects.
      */
     public suspend fun <V, R, C> mutation(options: MutationOptions<V, R, C>): Mutation<V, R> {
-        val lock = options.scope?.let { scope ->
-            mutationLocksGuard.withLock { mutationLocks.getOrPut(scope.id) { Mutex() } }
+        val lock = options.scope?.let { declared ->
+            mutationLocksGuard.withLock {
+                mutationLocks[declared.id]?.get()
+                    ?: Mutex().also { fresh ->
+                        // Drop keys whose lock has been collected. Done on
+                        // insert rather than on a timer: it only ever runs when
+                        // the map is about to grow, and never on the hot path
+                        // of an existing scope.
+                        mutationLocks.values.removeAll { it.get() == null }
+                        mutationLocks[declared.id] = java.lang.ref.WeakReference(fresh)
+                    }
+            }
         }
         return Mutation(
             options = options,

@@ -209,11 +209,42 @@ TanStack's mutation *filters* (`useIsMutating({ mutationKey })`) remain
 unimplemented; Kwery mutations have no key to filter on, which is a design
 question rather than an oversight.
 
+### Scope locks are held weakly
+
+`QueryClient` keeps one `Mutex` per `MutationScope.id`. The obvious
+implementation — a `mutableMapOf<String, Mutex>` with `getOrPut` — grows for the
+life of the process with every distinct scope id ever used, and never shrinks.
+
+That is fine for the ids the KDoc suggests (`"uploads"`, a handful of
+constants). It is unbounded for per-entity scopes such as `"todo-$id"`, which
+are a natural way to serialise edits to a single item. An Android process lives
+for days; this is the same argument that put `maxEntries` on the query cache.
+
+Nothing misbehaves when it grows, which is why it survived: every mutation still
+serialises correctly and every existing test passed. Catching it needed a test
+that **counts** rather than one that checks a result.
+
+The map now holds weak references. That is not merely a size trick — it is the
+correct lifetime. The lock matters exactly while some `Mutation` holding it is
+alive, and a mutation in flight is strongly reachable from its own running
+coroutine, so a lock can never be collected out from under one. Dead keys are
+pruned on insert, which only runs when the map is about to grow and never on the
+hot path of an existing scope.
+
+`OfflineQueue.scopeLocks` had the identical shape and the identical fix.
+
+**Verified by mutation** from both directions: making the values strong again
+fails the accumulation test, and never reusing an existing lock fails three
+serialisation tests.
+
 ## Definition of done
 
 - [x] `Mutation`, `MutationState`, `MutationOptions` implemented.
 - [x] `isMutating: StateFlow<Int>` on `QueryClient`, and `rememberIsMutating`
       in `kwery-compose`.
+- [x] Test: mutations sharing a scope share one lock; distinct scopes held at
+      once each get one; locks for scopes no longer in use do not accumulate.
+      **All verified by mutation.**
 - [x] Test: counts concurrent mutations and returns to zero.
 - [x] Test: a mutation queued behind its scope still counts.
       **Verified by mutation** — counting only after the lock fails it.
