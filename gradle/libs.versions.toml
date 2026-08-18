@@ -10,7 +10,7 @@
 #
 # Pre-1.0: the API may still change, and apiCheck makes every change to it a
 # reviewed diff rather than a surprise.
-kwery = "0.3.0" # x-release-please-version
+kwery = "0.3.1" # x-release-please-version
 kotlin = "2.2.20"
 coroutines = "1.10.2"
 serialization = "1.9.0"

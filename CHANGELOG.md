@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/dbjpanda/kwery/compare/v0.3.0...v0.3.1) (2026-08-18)
+
+
+### Documentation
+
+* fix the one install snippet I missed ([c09be29](https://github.com/dbjpanda/kwery/commit/c09be2935ca2cc1a59c3caa33a085248bdb8a363))
+* update install to 0.3.0, and the facts around it ([6839024](https://github.com/dbjpanda/kwery/commit/68390249772572d6812e548a49ab17d1d019e7f2))
+
 ## [0.3.0](https://github.com/dbjpanda/kwery/compare/v0.2.1...v0.3.0) (2026-08-18)
 
 
