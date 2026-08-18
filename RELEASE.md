@@ -4,7 +4,7 @@ Where Kwery actually stands, checked against the repository rather than
 remembered. Every claim here is traceable to a test or a
 `./gradlew build apiCheck` run.
 
-**Status: publishable as `0.1.0-SNAPSHOT`, with one scope decision outstanding.**
+**Status: released as `v0.1.0` via JitPack. Not yet on Maven Central.**
 See [Blockers](#blockers).
 
 ## What is done
@@ -28,7 +28,7 @@ them checked against the `.api` dumps on every build.
 ## Blockers
 
 **~~1. There is no publishing configuration.~~ Done.** All five library modules
-publish to `dev.kwery` at `0.1.0-SNAPSHOT`, each with a sources jar, a javadoc
+publish to `io.github.dbjpanda` at `0.1.0`, each with a sources jar, a javadoc
 jar and a POM carrying the Apache-2.0 licence. Verified by publishing to Maven
 Local and reading the artifacts back.
 

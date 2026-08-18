@@ -7,8 +7,9 @@ process death.
 A [TanStack Query](https://tanstack.com/query/latest) equivalent for Kotlin,
 built for how Android actually behaves.
 
-> **Status: pre-alpha, not yet released.** 19 of 24 features are specified,
-> tested and documented; nothing is published to Maven Central yet.
+> **Status: `v0.1.0`, early but real.** 19 of 24 features are specified, tested
+> and documented, with 367 tests behind them. Installable via JitPack today;
+> not yet on Maven Central.
 > See [RELEASE.md](RELEASE.md) for exactly what is built, what was deliberately
 > not built and why, and what still needs a device.
 
@@ -111,17 +112,17 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.dbjpanda.kwery:kwery-core:main-SNAPSHOT")
-    implementation("com.github.dbjpanda.kwery:kwery-android:main-SNAPSHOT")   // focus + connectivity
-    implementation("com.github.dbjpanda.kwery:kwery-compose:main-SNAPSHOT")   // rememberQuery
-    implementation("com.github.dbjpanda.kwery:kwery-persist:main-SNAPSHOT")   // cache across process death
-    testImplementation("com.github.dbjpanda.kwery:kwery-test:main-SNAPSHOT")  // TestQueryClient
+    implementation("com.github.dbjpanda.kwery:kwery-core:v0.1.0")
+    implementation("com.github.dbjpanda.kwery:kwery-android:v0.1.0")   // focus + connectivity
+    implementation("com.github.dbjpanda.kwery:kwery-compose:v0.1.0")   // rememberQuery
+    implementation("com.github.dbjpanda.kwery:kwery-persist:v0.1.0")   // cache across process death
+    testImplementation("com.github.dbjpanda.kwery:kwery-test:v0.1.0")  // TestQueryClient
 }
 ```
 
-`main-SNAPSHOT` tracks this branch and will change under you. Pin a tag once one
-exists — a snapshot is the right thing to depend on while evaluating and the
-wrong thing to ship against.
+A tag is immutable, so `v0.1.0` will not change under you. Use `main-SNAPSHOT`
+instead if you want to track the branch while evaluating — it is the right thing
+to depend on while looking and the wrong thing to ship against.
 
 **Coordinates differ by source.** JitPack serves everything under
 `com.github.dbjpanda.kwery`; the artifacts themselves are built as
