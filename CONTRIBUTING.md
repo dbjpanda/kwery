@@ -86,6 +86,9 @@ it is pushed, not after.
    three minutes for a cold build:
    `curl -s https://jitpack.io/com/github/dbjpanda/kwery/kwery-core/vX.Y.Z/kwery-core-vX.Y.Z.pom -o /dev/null`
 8. `gh release create vX.Y.Z --notes-file <file>`.
+9. Bump `kwery` to the next `-SNAPSHOT` and commit. A commit after v0.1.0 is not
+   v0.1.0, and leaving the released version on the branch means every build
+   between now and the next tag claims to be a release it is not.
 
 ## Publishing to Maven Central
 
