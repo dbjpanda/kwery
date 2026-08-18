@@ -23,6 +23,15 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests {
+            // Compose's runtime logs composition errors through android.util.Log.
+            // Without this the stub throws, and the RuntimeException it raises
+            // replaces the actual composition failure in the report.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 kotlin {
@@ -44,4 +53,12 @@ dependencies {
     api("androidx.compose.runtime:runtime")
     // For the lazy-list paging helper.
     implementation("androidx.compose.foundation:foundation")
+
+    // Composition is driven by hand (see TestComposition) rather than through
+    // Robolectric or an emulator: these bindings are an adapter over a Flow,
+    // and everything worth asserting about them — resubscription, lambda
+    // stability, observer detach — is composition behaviour, not rendering.
+    testImplementation(project(":kwery-test"))
+    testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
 }

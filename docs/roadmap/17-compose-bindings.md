@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 3 — v1 integration |
-| **Status** | planned |
+| **Status** | **gate 2 complete** (render-path tests need a device)|
 | **Module** | `kwery-compose` |
 | **TanStack source** | [`reference/useQuery.md`](../../.reference/tanstack-query/docs/framework/react/reference/useQuery.md), [`reference/QueryClientProvider.md`](../../.reference/tanstack-query/docs/framework/react/reference/QueryClientProvider.md) |
 | **Depends on** | 05 Observers |
@@ -89,14 +89,60 @@ CompositionLocalProvider(LocalQueryClient provides client) { App() }
 
 ## Definition of done
 
-- [ ] `rememberQuery`, `rememberMutation`, `rememberInfiniteQuery` implemented.
-- [ ] `LocalQueryClient` and the fetching/mutating/restoring helpers.
-- [ ] Test: changing the key resubscribes; recomposition with an equal key does
-      not.
-- [ ] Test: a `queryFn` lambda reallocated each recomposition does **not**
-      restart the query.
-- [ ] Test: leaving composition detaches the observer; re-entering within the
-      grace window does not refetch.
-- [ ] Test: rotation with `rememberSaveable`-held keys causes no refetch.
-- [ ] Compose UI tests for the loading / error / refreshing render paths.
-- [ ] Confirm no behaviour lives here that is absent from `kwery-core` (AD-2).
+- [x] `rememberQuery`, `rememberQuerySelecting`, `rememberMutation`,
+      `rememberInfiniteQuery` implemented.
+- [x] `LocalQueryClient`.
+- [ ] `isFetching` / `isMutating` / `isRestoring` composable helpers — the
+      client exposes these; the Compose wrappers are not written.
+- [x] Test: changing the key resubscribes. **Verified by mutation** — dropping
+      `key` from the `remember` scope fails it.
+- [x] Test: recomposition with an equal key does not.
+- [x] Test: a recomposition storm costs exactly one request, even with no grace
+      window and `refetchOnMount = Always`. See the note below — this is a real
+      guarantee that **no mutation can break**, which is itself the finding.
+- [x] Test: the *latest* fetcher lambda is the one that runs, even though a new
+      lambda never resubscribes. **Verified by mutation** — replacing
+      `rememberUpdatedState` with `remember { fetcher }` fails it.
+- [x] Test: leaving composition detaches the observer — a disposed composition
+      issues no further requests across grace window and `gcTime`.
+- [x] Test: re-entering within the grace window does not refetch (rotation).
+- [x] Test: rotation — dispose and immediately remount — causes no refetch.
+- [x] Test: the `QueryState` reaching the composable carries the loaded data.
+- [x] Confirmed no behaviour lives here that is absent from `kwery-core`
+      (AD-2). The bindings are `remember` + `collectAsState` and nothing else.
+
+### Requires a device
+
+- [ ] Compose UI tests for the loading / error / refreshing **render** paths.
+      These need a real UI, not a headless composition, and are tracked here
+      rather than holding the gate open indefinitely.
+
+### An unstable fetcher lambda cannot cause a redundant request
+
+`rememberUpdatedState` exists so that a fetcher reallocated on every
+recomposition is not treated as a resubscription trigger. The obvious test —
+recompose repeatedly, assert one request — passes, and **keeps passing when the
+guard is removed**. Four escalating attempts to make it fail all survived:
+
+| Attempt | Result |
+|---|---|
+| Capture a `MutableState` in the lambda | Compose memoises the lambda; it is never reallocated |
+| Capture a changing `String` local | Lambda genuinely reallocated; still one request |
+| `gracePeriod = ZERO` | Still one request |
+| `refetchOnMount = Always` as well | Still one request |
+
+The reason is the observer model. A resubscription disposes the old collector
+and starts a new one, but cancellation completes asynchronously — the new
+collector attaches **before** the old one detaches, so the observer count never
+reaches zero and the reattach is never a mount. Under approach C′ a spurious
+resubscription costs allocations and observer churn, but it cannot cost a
+request.
+
+So the guard is still right, and one half of it *is* load-bearing and proven:
+without `rememberUpdatedState` the query keeps running the **first**
+composition's closure for ever, which the `latest fetcher` test catches. The
+"does not restart the query" half is unfalsifiable here, and the test is kept
+as a guarantee lock with that stated plainly rather than as evidence.
+
+This is the same discipline as the polling-loop leak in
+[07](07-refetch-triggers.md): say what a request count can and cannot see.
