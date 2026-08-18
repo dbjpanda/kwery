@@ -30,7 +30,14 @@ val publishedModules = setOf(
 )
 
 subprojects {
-    group = "dev.kwery"
+    // io.github.<user> is the namespace Maven Central verifies from GitHub
+    // account ownership, so it needs no domain. A domain-based group such as
+    // dev.kwery would require proving control of kwery.dev by DNS record.
+    //
+    // JitPack ignores this and serves everything under com.github.dbjpanda —
+    // it is here for Maven Central, and for anyone publishing to their own
+    // repository.
+    group = "io.github.dbjpanda"
     version = kweryVersion
 
     if (name in publishedModules) {
@@ -70,14 +77,25 @@ subprojects {
             description.set(
                 project.description ?: "Async server-state management for Android.",
             )
-            url.set("https://github.com/kwery/kwery")
+            url.set("https://github.com/dbjpanda/kwery")
             licenses {
                 license {
                     name.set("The Apache License, Version 2.0")
                     url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
                 }
             }
-            scm { url.set("https://github.com/kwery/kwery") }
+            developers {
+                developer {
+                    id.set("dbjpanda")
+                    name.set("Dibyajyoti")
+                    url.set("https://github.com/dbjpanda")
+                }
+            }
+            scm {
+                url.set("https://github.com/dbjpanda/kwery")
+                connection.set("scm:git:https://github.com/dbjpanda/kwery.git")
+                developerConnection.set("scm:git:ssh://git@github.com/dbjpanda/kwery.git")
+            }
         }
 
         plugins.withId("com.android.library") {

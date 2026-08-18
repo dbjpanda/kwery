@@ -90,6 +90,43 @@ in [RELEASE.md](RELEASE.md#deliberately-not-built). The reasoning behind the
 observer model in particular — including the measurements that chose it — is in
 [docs/deduplication.md](docs/deduplication.md).
 
+## Installing
+
+Kwery is not on Maven Central yet. Until it is, JitPack builds it straight from
+this repository.
+
+`settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
+}
+```
+
+`build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.dbjpanda.kwery:kwery-core:main-SNAPSHOT")
+    implementation("com.github.dbjpanda.kwery:kwery-android:main-SNAPSHOT")   // focus + connectivity
+    implementation("com.github.dbjpanda.kwery:kwery-compose:main-SNAPSHOT")   // rememberQuery
+    implementation("com.github.dbjpanda.kwery:kwery-persist:main-SNAPSHOT")   // cache across process death
+    testImplementation("com.github.dbjpanda.kwery:kwery-test:main-SNAPSHOT")  // TestQueryClient
+}
+```
+
+`main-SNAPSHOT` tracks this branch and will change under you. Pin a tag once one
+exists — a snapshot is the right thing to depend on while evaluating and the
+wrong thing to ship against.
+
+**Coordinates differ by source.** JitPack serves everything under
+`com.github.dbjpanda.kwery`; the artifacts themselves are built as
+`io.github.dbjpanda`, which is the namespace Maven Central publication will use.
+
 ## Building
 
 ```sh

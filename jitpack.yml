@@ -1,0 +1,10 @@
+# JitPack builds this repository on demand when someone requests a version.
+#
+# The toolchain needs JDK 17 (see CONTRIBUTING.md); JitPack's default is older,
+# and without this the Kotlin jvmToolchain(17) fails to resolve on their
+# builders rather than downloading a JDK.
+jdk:
+  - openjdk17
+
+install:
+  - ./gradlew publishToMavenLocal -x test --no-daemon
