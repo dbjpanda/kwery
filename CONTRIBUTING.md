@@ -87,6 +87,42 @@ it is pushed, not after.
    `curl -s https://jitpack.io/com/github/dbjpanda/kwery/kwery-core/vX.Y.Z/kwery-core-vX.Y.Z.pom -o /dev/null`
 8. `gh release create vX.Y.Z --notes-file <file>`.
 
+## Publishing to Maven Central
+
+Not done yet — this is what it needs. Steps 1 to 3 are one-off and need a
+browser; the rest is `./gradlew`.
+
+1. **Register the namespace.** Create an account at
+   [central.sonatype.com](https://central.sonatype.com) and add the namespace
+   `io.github.dbjpanda`. It is verified from GitHub account ownership, which is
+   why the group is `io.github.<user>` and not a domain — a domain-based group
+   such as `dev.kwery` would require proving control of `kwery.dev` by DNS
+   record.
+2. **Generate a signing key** and publish the public half, or nothing can
+   verify the artifacts:
+   ```sh
+   gpg --full-generate-key                  # RSA 4096, no expiry is fine
+   gpg --list-secret-keys --keyid-format=long
+   gpg --keyserver keyserver.ubuntu.com --send-keys <KEY_ID>
+   gpg --armor --export-secret-keys <KEY_ID> # the value for signingInMemoryKey
+   ```
+3. **Generate a Portal token** (Account → Generate User Token).
+4. **Build a signed bundle:**
+   ```sh
+   ./gradlew centralBundle \
+     -PsigningInMemoryKey="$(gpg --armor --export-secret-keys <KEY_ID>)" \
+     -PsigningInMemoryKeyPassword=<passphrase>
+   ```
+   The task warns if the bundle contains no signatures. Central rejects an
+   unsigned bundle *after* upload, which is a slow way to discover it.
+5. **Upload** `build/central/kwery-<version>-bundle.zip` through the Portal UI,
+   or with its API, and release the deployment once validation passes.
+
+Keep the key out of the repository and out of shell history — pass it through an
+environment variable or a `~/.gradle/gradle.properties` that is not in a
+project directory. Signing is skipped entirely when no key is present, so
+`./gradlew build` works for everyone else.
+
 ## Writing tests
 
 - **Start from TanStack's tests**, not from the design document. Read the test

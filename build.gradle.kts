@@ -42,6 +42,37 @@ subprojects {
 
     if (name in publishedModules) {
         apply(plugin = "maven-publish")
+        apply(plugin = "signing")
+
+        // Maven Central requires every artifact to be signed. The key is read
+        // from properties rather than a keyring file so the same configuration
+        // works locally and in CI, and signing is skipped entirely when no key
+        // is present — a contributor running `build` should not need one.
+        extensions.configure<SigningExtension> {
+            val key = providers.gradleProperty("signingInMemoryKey").orNull
+            val password = providers.gradleProperty("signingInMemoryKeyPassword").orNull
+            isRequired = key != null
+            if (key != null) {
+                useInMemoryPgpKeys(key, password)
+                sign(extensions.getByType<PublishingExtension>().publications)
+            }
+        }
+
+        // Central takes a zip of a Maven repository layout, uploaded to its
+        // Portal API, rather than a `publish` to a URL. Staging locally first
+        // means the exact bytes that will be uploaded can be inspected before
+        // anything leaves the machine.
+        // One shared directory across every module: Central takes a single
+        // bundle containing all of them, not one upload per artifact.
+        val stagingDir = rootProject.layout.buildDirectory.dir("central-staging")
+        afterEvaluate {
+            extensions.configure<PublishingExtension> {
+                repositories.maven {
+                    name = "centralStaging"
+                    url = uri(stagingDir)
+                }
+            }
+        }
 
         // An Android library has no publishable component until a variant is
         // nominated. Publishing `release` only: a debug artifact on Maven
@@ -157,6 +188,52 @@ subprojects {
             events("failed")
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
             showStackTraces = true
+        }
+    }
+}
+
+// ---- Maven Central bundle ------------------------------------------------
+
+val centralStage by tasks.registering {
+    group = "publishing"
+    description = "Stages every published module into build/central-staging."
+    dependsOn(
+        publishedModules.map { ":$it:publishAllPublicationsToCentralStagingRepository" },
+    )
+}
+
+val centralBundle by tasks.registering(Zip::class) {
+    group = "publishing"
+    description = "Builds the zip to upload to the Maven Central Portal."
+    dependsOn(centralStage)
+
+    val staging = layout.buildDirectory.dir("central-staging")
+    from(staging)
+    destinationDirectory.set(layout.buildDirectory.dir("central"))
+    // kweryVersion rather than rootProject.version: the version is set on the
+    // subprojects, so the root project's is still "unspecified".
+    archiveFileName.set("kwery-$kweryVersion-bundle.zip")
+
+    // Captured at configuration time. Reaching for `project` or a script
+    // reference inside doLast breaks the configuration cache, which this build
+    // has enabled — the failure is a serialization error rather than anything
+    // that names the real cause.
+    val signatureCount = providers.provider {
+        staging.get().asFile.walkTopDown().count { it.isFile && it.extension == "asc" }
+    }
+
+    doLast {
+        // A bundle without signatures is rejected by the Portal after upload,
+        // which is a slow way to find out. Say so here instead.
+        val count = signatureCount.get()
+        if (count == 0) {
+            logger.warn(
+                "\ncentralBundle: no .asc signatures in the bundle. Maven Central " +
+                    "will reject it.\nPass -PsigningInMemoryKey=... to sign; see " +
+                    "CONTRIBUTING.md.",
+            )
+        } else {
+            logger.lifecycle("centralBundle: $count signatures included.")
         }
     }
 }

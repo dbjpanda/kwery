@@ -21,3 +21,6 @@ local.properties
 # and the reasoning behind decisions. Useful while building, noise for someone
 # consuming the library.
 docs/roadmap/
+
+# Maven Central staging output; regenerate with ./gradlew centralBundle
+build/central*/
