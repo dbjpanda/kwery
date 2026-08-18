@@ -23,7 +23,9 @@ migrating from it needs the comparison.
 - [Deduplication and observers](deduplication.md) — sharing, the grace window, eviction
 - [Caching](caching.md) — staleTime, gcTime, and why they are different clocks
 - [Invalidation](invalidation.md) — making writes visible to reads
+- [Reading and writing the cache](manual-cache.md) — the escape hatches, and when not to reach for them
 - [Retries](retries.md) — what to retry, what never to retry, and jitter
+- [Cancellation](cancellation.md) — what happens when a screen goes away
 - [Refetching](refetching.md) — the four automatic triggers
 - [Prefetching](prefetching.md) — starting the request before the screen opens
 

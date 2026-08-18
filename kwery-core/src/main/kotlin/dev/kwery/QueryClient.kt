@@ -243,6 +243,35 @@ public class QueryClient(
     }
 
     /**
+     * Update every cached entry matching [filters], through [updater].
+     *
+     * For a change that lands across a whole family of keys at once — marking
+     * every list as read, clearing a flag on every page of a paginated query.
+     * The alternative is enumerating the keys yourself, which means knowing
+     * every page number and filter combination currently cached.
+     *
+     * ```kotlin
+     * client.setQueriesData<List<Todo>>(QueryFilters(keyPrefix = listOf("todos"))) { todos ->
+     *     todos?.map { it.copy(read = true) }
+     * }
+     * ```
+     *
+     * **Unchecked by nature.** A filter selects entries by key shape, not by
+     * type, so [T] is asserted rather than proven — an entry matching the
+     * filter but holding a different type will fail at the cast. Prefer a
+     * prefix narrow enough that every match really is a [T]; that is a property
+     * of how you name keys, which is why [QueryKey.parts] is hierarchical.
+     */
+    @Suppress("UNCHECKED_CAST")
+    public suspend fun <T> setQueriesData(filters: QueryFilters, updater: (T?) -> T?) {
+        val now = config.timeSource.nowMillis()
+        matching(filters).forEach { entry ->
+            val typed = entry as QueryEntry<T>
+            typed.setData(updater(typed.state.value.data), now)
+        }
+    }
+
+    /**
      * Update cached data only if an entry already exists.
      *
      * Removes the nullable receiver from the common optimistic-update path,

@@ -123,8 +123,23 @@ minutes ago should not be treated as fresh.
   has already established the data exists, and `it!!` inside an updater lambda
   is exactly the kind of thing that becomes a crash after a refactor.
 
+### `setQueriesData` was claimed and missing
+
+This file's parity table said `setQueriesData` was done. It did not exist. The
+gap surfaced when `docs-lint` refused `docs/manual-cache.md` — the identifier
+check reading a page written straight from the parity table, which is exactly
+the loop a lint is supposed to break.
+
+It exists now, with the caveat its shape forces: a filter selects entries by key
+*shape*, not by type, so the element type is asserted rather than proven. Keep
+the prefix narrow enough that every match really holds a `T`. That is a property
+of how keys are named, and part of why `parts` is hierarchical.
+
 ## Definition of done
 
+- [x] `setQueriesData` implemented, with tests: it updates every match, leaves
+      siblings and unrelated families alone, treats matching nothing as a no-op,
+      clears on null, reaches observers, and accepts a predicate filter.
 - [x] All read/write methods implemented and typed.
 - [x] Test: `setQueryData` seeds an entry that later adopts a fetcher.
 - [x] Test: `initialData` enters the cache and appears in the dehydrated state;

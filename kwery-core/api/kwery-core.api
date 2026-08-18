@@ -252,6 +252,7 @@ public final class dev/kwery/QueryClient {
 	public final fun refetchQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun removeQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun resetQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setQueriesData (Ldev/kwery/QueryFilters;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun setQueryData (Ldev/kwery/QueryKey;Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun setQueryData (Ldev/kwery/QueryKey;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun updateQueryData (Ldev/kwery/QueryKey;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
