@@ -152,8 +152,13 @@ forced, and the purity requirement it places on `apply`.
 - [x] Test: invalidation is deferred until the **last** write settles, so a
       refetch cannot clobber a still-pending write.
 - [x] Test: `isOptimistic` clears on both the success and failure paths.
-- [ ] Test: raw callback form still works for users bypassing the helper.
+- [x] Test: the raw callback form gives the same rollback as the helper, and
+      its `onMutate` context reaches `onSettled` typed. `optimisticMutation` is
+      sugar; the hand-written path is what every unusual case falls back to.
       **Deferred** — the helper is built on the public `MutationOptions`
       callbacks, which feature 11 already covers.
-- [ ] OQ-3 (optimistic writes across process death) — carried to
-      [14](14-offline-mutation-queue.md).
+- [ ] ~~OQ-3 (optimistic writes across process death).~~ **Owned by
+      [14](14-offline-mutation-queue.md), not here.** An optimistic write
+      that must survive the process is a durable write, and that feature
+      already handles it — including never persisting an unconfirmed one.
+      Left as a pointer so the question is not asked twice.

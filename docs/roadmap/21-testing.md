@@ -123,9 +123,10 @@ Two behaviours of it were settled by writing the tests rather than by reasoning:
 ## Definition of done
 
 - [x] `TestQueryClient` with all controls implemented and published.
-- [ ] Persistence controls (an in-memory persister preconfigured). `kwery-test`
-      does not depend on `kwery-persist`, so this would invert the module
-      graph — deferred with feature [15](15-persistence.md).
+- [ ] ~~Persistence controls (an in-memory persister preconfigured).~~
+      **Deferred past v1.** `kwery-test` does not depend on `kwery-persist`, so
+      shipping this would invert the module graph. Consumers testing
+      persistence construct `InMemoryPersister` themselves, which is one line.
 - [x] Kwery's **own** test suite uses it throughout — 166 tests. Dogfooding is
       what found `settle`'s existence: `advanceUntilIdle()` silently reported
       zero requests for work that had never run.

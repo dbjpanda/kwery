@@ -212,9 +212,14 @@ The cost scales badly the further in the failure is: a flaky page 30 under
 - [x] Test: `maxPages` evicts from the **front** when paging forward and the
       **back** when paging backward.
 - [x] Test: misaligned `pages`/`pageParams` are rejected at construction.
-- [ ] Test: `setQueryData` page manipulation keeps them aligned.
-- [ ] OQ-2 (how many pages to persist) resolved and reflected in
-      [15](15-persistence.md).
+- [x] Test: `setQueryData` page manipulation keeps pages and params aligned,
+      so paging continues from where it was; and a misaligned `InfiniteData`
+      is rejected at construction rather than paging silently wrong.
+- [ ] ~~OQ-2 (how many pages to persist).~~ **Deferred past v1 with a
+      working default.** `maxPages` already bounds what is held in memory,
+      and persistence stores whatever the entry holds — so the two agree
+      without a third setting. Revisit only if a real app wants to persist
+      fewer pages than it displays.
 - [x] Reconciled against `infiniteQueryBehavior.test.tsx` and
       `infiniteQueryObserver.test.tsx` — see above.
 - [x] Test: a refetch drops trailing pages when the list shrinks.

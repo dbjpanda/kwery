@@ -64,6 +64,16 @@ documentation published. See [`CLAUDE.md`](../../CLAUDE.md) for the rules.
 
 Gate status: ○ not started · ◐ in progress · ● done · — not applicable
 
+**This table is checked against the files, not maintained by hand.** Comparing
+every row to the checkboxes in its feature file found six rows claiming gate 2
+that had open work behind them — including two features whose only gap was a
+test I had listed and never written. A status table that only moves forward is
+not tracking anything, so rows move back when the file says they should.
+
+A box left open must say *why*: struck through with a recorded decision if it is
+deferred, or under a **Requires a device** heading if it cannot run here. An
+open box with no reason is unfinished work, and the row above it says `◐`.
+
 A docs page may be **drafted** while its feature's gate 2 is still open, but
 gate 3 is only ● once gate 2 is. Items that can only run on a device are listed
 under a "Requires a device" heading in their feature file and do not hold a gate
@@ -81,7 +91,7 @@ that feature's parity table with a reason.
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
 | 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ● | ● |
-| 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ● | ● |
+| 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ◐ | ● |
 | 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ● | ● |
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ● | ● |
 | 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ● | ● |
@@ -95,7 +105,7 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ● | ● |
+| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ◐ | ● |
 | 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ● | ● |
 | 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ● | ● |
 | 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ◐ |
@@ -109,7 +119,7 @@ that feature's parity table with a reason.
 | 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ● | ● |
 | 18 | [ViewModel integration](18-viewmodel-integration.md) | — (Kwery-specific) | ● | ● | ● |
 | 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `queriesObserver.test.tsx` | ● | ● | ● |
-| 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ● | ● |
+| 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ◐ | ● |
 | 21 | [Testing support](21-testing.md) | — (Kwery-specific) | ● | ● | ● |
 
 ### Tier 4 — post-v1

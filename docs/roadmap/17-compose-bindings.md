@@ -94,11 +94,10 @@ CompositionLocalProvider(LocalQueryClient provides client) { App() }
 - [x] `LocalQueryClient`, `rememberIsFetching`, `rememberIsRestoring`.
 - [x] Test: `rememberIsFetching` counts in-flight queries and returns to zero;
       `rememberIsRestoring` follows the client. **Both verified by mutation.**
-- [ ] `rememberIsMutating` — **blocked, and not on this module.** TanStack has
-      `useIsMutating`, but `QueryClient` tracks no mutation count for it to
-      read. A Compose wrapper over a signal that does not exist would put
-      behaviour in the bindings that is absent from the core, which AD-2
-      forbids. Belongs in [11](11-mutations.md) first.
+- [x] `rememberIsMutating` — was blocked on the core having no mutation count.
+      [11](11-mutations.md) now has `QueryClient.isMutating`, so the binding
+      exists and is tested. Recorded here because the block was real and the
+      order it forced — core first, adapter second — is AD-2 working.
 - [x] Test: changing the key resubscribes. **Verified by mutation** — dropping
       `key` from the `remember` scope fails it.
 - [x] Test: recomposition with an equal key does not.

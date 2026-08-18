@@ -115,7 +115,7 @@ Semantics, chosen deliberately:
 ## Definition of done
 
 - [x] `aggregate()` implemented, returning an `AggregateState`.
-- [ ] Typed `combineQueries(a, b) { … }` arity overloads — **deferred past v1**
+- [ ] ~~Typed `combineQueries(a, b) { … }` arity overloads.~~ **Deferred past v1**
       (OQ-2). `combine` plus destructuring already works; the overloads remove
       casts rather than enabling anything, so they are an ergonomics addition
       and not a parity gap. Recorded here rather than silently dropped.
