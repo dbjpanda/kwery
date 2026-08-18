@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/dbjpanda/kwery/compare/v0.2.1...v0.3.0) (2026-08-18)
+
+
+### Features
+
+* **core:** QueryEvent stream, so the cache can explain itself ([766a64b](https://github.com/dbjpanda/kwery/commit/766a64b6645ce833e1018f9f1d854c3bc14d29b2))
+* **persist-room:** Room-backed stores that write only what changed ([a1d3609](https://github.com/dbjpanda/kwery/commit/a1d36090a1b0b6696b02b5dfeb37701aa9dd68de))
+
+
+### Fixes
+
+* **persist:** concurrent writers broke persistence permanently ([53571d6](https://github.com/dbjpanda/kwery/commit/53571d6ddccb65a1157522d412f40a4f825707f7))
+
+
+### Documentation
+
+* give Kwery its own identity, and use terms people search for ([983bf60](https://github.com/dbjpanda/kwery/commit/983bf60cab259530af7c984f82b87fe8babadfa2))
+* hero banner, and positioning that argues from measurements ([ce923ac](https://github.com/dbjpanda/kwery/commit/ce923ac457d6296719fc1c0b69a55ddad06d3e93))
+* rewrite the README shorter, and add a flow diagram ([77ccac7](https://github.com/dbjpanda/kwery/commit/77ccac7442b2b7b2f2fa431f74533d5cc5bb72a6))
+
 ## [0.2.1](https://github.com/dbjpanda/kwery/compare/v0.2.0...v0.2.1) (2026-08-18)
 
 
