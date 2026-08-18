@@ -116,6 +116,8 @@ CompositionLocalProvider(LocalQueryClient provides client) { App() }
 - [x] Confirmed no behaviour lives here that is absent from `kwery-core`
       (AD-2). The bindings are `remember` + `collectAsState` and nothing else.
 
+- [x] Documented in [`docs/compose.md`](../compose.md).
+
 ### Requires a device
 
 - [ ] Compose UI tests for the loading / error / refreshing **render** paths.

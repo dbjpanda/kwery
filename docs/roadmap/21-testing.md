@@ -144,6 +144,6 @@ Two behaviours of it were settled by writing the tests rather than by reasoning:
 - [x] Test: each `TestQueryClient` has its own cache — no cross-test leakage.
 - [x] Test: retries are off by default, so an error state is reachable without
       waiting through backoffs. **Verified by mutation.**
-- [ ] Documentation page with recipes (gate 3 — `docs/testing.md`).
+- [x] Documentation page with recipes — [`docs/testing.md`](../testing.md).
 - [x] Whole Kwery suite runs with no real `delay()` and no flaky retries — 166
       tests in roughly a second.

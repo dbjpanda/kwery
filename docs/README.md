@@ -32,16 +32,19 @@ migrating from it needs the comparison.
 - [Optimistic updates](optimistic-updates.md) — showing a write before it lands
 - [Offline writes](offline.md) — durable writes that survive process death *(feature still open)*
 - [Persistence](persistence.md) — the query cache across process death *(feature still open)*
+**Using it from your app**
+
+- [Compose](compose.md) — `rememberQuery` and friends
+- [ViewModels](viewmodels.md) — the `stateIn` pattern, measured
+- [Testing](testing.md) — `TestQueryClient`, and why request counts are the assertion
+
 **Lists**
 
 - [Infinite queries](infinite-queries.md) — accumulating pages
 - [Paginated queries](paginated-queries.md) — pages that replace each other
 
-Pages land as features pass gate 2, named after the feature rather than its
-roadmap number since readers do not care about build order. Still to write, and
-each blocked on its feature's gate 2:
-
-`compose.md` · `viewmodels.md` · `testing.md`
+Pages are named after the feature rather than its roadmap number, since readers
+do not care about build order.
 
 Two pages are marked *feature still open*: everything they describe is tested,
 but their features have gate-2 items outstanding (a Room-backed store, device

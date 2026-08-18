@@ -116,8 +116,8 @@ Not applicable — no TanStack equivalent. Tracking the deliverables instead:
 
 ## Definition of done
 
-- [ ] Recipe documented with a real, compiling sample in the sample app
-      (gate 3 — `docs/viewmodels.md`).
+- [x] Recipe documented in [`docs/viewmodels.md`](../viewmodels.md), with the
+      measured request counts rather than prose reassurance.
 - [x] Test: five rotations cost zero refetches and zero evictions — under
       `WhileSubscribed` the cache never even sees a detach.
 - [x] Test: backstack navigation evicts exactly once after all three timers
