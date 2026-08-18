@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/dbjpanda/kwery/compare/v0.3.1...v0.3.2) (2026-08-18)
+
+
+### Documentation
+
+* fix RELEASE.md drift on Maven Central and device-test status ([66fab78](https://github.com/dbjpanda/kwery/commit/66fab787d19b2652c22e60926d2e366b31e3e680))
+
 ## [0.3.1](https://github.com/dbjpanda/kwery/compare/v0.3.0...v0.3.1) (2026-08-18)
 
 
