@@ -57,6 +57,22 @@ driven by `LazyListState`.
 
 **Deep links** — prefetch while the destination screen is being constructed.
 
+## Infinite queries
+
+```kotlin
+client.prefetchInfiniteQuery(FeedKey, feedOptions) { page -> api.feed(page) }
+client.ensureInfiniteQueryData(FeedKey, feedOptions, pages = 3) { page -> api.feed(page) }
+```
+
+`pages` defaults to **1**, because the destination screen shows one page. Ask
+for more only when you know the user will scroll — every extra page is a request
+for data nobody has looked at yet. The walk stops early when
+`getNextPageParam` returns null, so asking for ten when the source has five
+fetches five.
+
+Retry is applied **per page**, exactly as it is for a live infinite query: a
+failing page 2 is retried on its own and does not refetch page 1.
+
 ## The `gcTime` trap
 
 A prefetched entry has **no observer**, so it is inactive from the moment it
@@ -85,9 +101,9 @@ they might.
 **Errors are silent by design.** If a prefetch is failing consistently you will
 not see it at the prefetch site; you will see it when a screen observes that key.
 
-**Not yet built:** `prefetchInfiniteQuery` / `ensureInfiniteQueryData`, and
-suppression under Data Saver — a user who asked the OS to restrict background
-data has not asked for speculative traffic. Tracked in the roadmap.
+**Not yet built:** suppression under Data Saver — a user who asked the OS to
+restrict background data has not asked for speculative traffic. Tracked in the
+roadmap.
 
 ## Related
 

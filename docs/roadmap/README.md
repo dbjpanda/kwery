@@ -119,7 +119,7 @@ that feature's parity table with a reason.
 | 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ● | ● |
 | 18 | [ViewModel integration](18-viewmodel-integration.md) | — (Kwery-specific) | ● | ● | ● |
 | 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `queriesObserver.test.tsx` | ● | ● | ● |
-| 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ◐ | ● |
+| 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ● | ● |
 | 21 | [Testing support](21-testing.md) | — (Kwery-specific) | ● | ● | ● |
 
 ### Tier 4 — post-v1

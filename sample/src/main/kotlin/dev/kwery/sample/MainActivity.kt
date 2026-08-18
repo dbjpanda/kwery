@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.kwery.QueryState
+import dev.kwery.prefetchQuery
 import dev.kwery.compose.LocalQueryClient
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -85,6 +86,7 @@ private fun TodoScreen(api: FakeApi) {
         }
 
         DetailFromViewModel(api)
+        PrefetchOnNavigate(api)
 
         Row(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -180,6 +182,53 @@ private fun DetailFromViewModel(api: FakeApi) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { viewModel.select("2") }) { Text("Select #2") }
                 Button(onClick = { viewModel.refresh() }) { Text("Refresh") }
+            }
+        }
+    }
+}
+
+/**
+ * Prefetch in the click handler, before navigating.
+ *
+ * The request overlaps the transition animation — usually 200-300ms of latency
+ * you get for free — and the destination renders with data already in the
+ * cache. Two details make this safe rather than clever:
+ *
+ * - it is `launch`ed, so prefetching never delays the navigation itself;
+ * - `prefetchQuery` respects `staleTime` and never throws, so calling it on
+ *   every tap costs nothing when the data is warm and cannot crash the handler
+ *   when the network is down.
+ */
+@Composable
+private fun PrefetchOnNavigate(api: FakeApi) {
+    val client = LocalQueryClient.current
+    val scope = rememberCoroutineScope()
+    var opened by remember { mutableStateOf<String?>(null) }
+
+    Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Prefetch before navigating", style = MaterialTheme.typography.titleSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("1", "2").forEach { id ->
+                    Button(
+                        onClick = {
+                            scope.launch { client.prefetchQuery(TodoKey(id)) { api.todo(id) } }
+                            opened = id
+                        },
+                    ) { Text("Open #" + id) }
+                }
+            }
+            val id = opened
+            if (id != null) {
+                val state = rememberQuery(TodoKey(id)) { api.todo(id) }
+                Text(
+                    text = if (state.isLoading) "Loading…" else state.data?.title ?: "—",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Opened with no spinner if the prefetch had landed.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
     }

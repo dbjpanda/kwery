@@ -81,6 +81,13 @@ public final class dev/kwery/InfiniteData {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/kwery/InfinitePrefetchKt {
+	public static final fun ensureInfiniteQueryData (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/InfiniteQueryOptions;Ldev/kwery/QueryOptions;ILkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun ensureInfiniteQueryData$default (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/InfiniteQueryOptions;Ldev/kwery/QueryOptions;ILkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun prefetchInfiniteQuery (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/InfiniteQueryOptions;Ldev/kwery/QueryOptions;ILkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun prefetchInfiniteQuery$default (Ldev/kwery/QueryClient;Ldev/kwery/QueryKey;Ldev/kwery/InfiniteQueryOptions;Ldev/kwery/QueryOptions;ILkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class dev/kwery/InfiniteQuery {
 	public final fun fetchNextPage (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun fetchPreviousPage (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

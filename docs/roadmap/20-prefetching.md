@@ -62,14 +62,14 @@ point of use, or raise `gcTime` for those keys.
 
 | Capability | TanStack | Kwery | Status |
 |---|---|---|---|
-| `prefetchQuery` | yes | yes | planned |
-| `prefetchQuery` never throws | yes | yes | planned |
-| `prefetchInfiniteQuery` | yes | yes | planned |
-| `fetchQuery` (returns, throws) | yes | yes | planned |
-| `ensureQueryData` | yes | yes | planned |
-| `ensureInfiniteQueryData` | yes | yes | planned |
-| Respects `staleTime` (safe to over-call) | yes | yes | planned |
-| Router-integrated prefetch | framework routers | Navigation Compose recipe | planned |
+| `prefetchQuery` | yes | yes | done |
+| `prefetchQuery` never throws | yes | yes | done |
+| `prefetchInfiniteQuery` | yes | yes, with `pages` | done |
+| `fetchQuery` (returns, throws) | yes | yes | done |
+| `ensureQueryData` | yes | yes | done |
+| `ensureInfiniteQueryData` | yes | yes | done |
+| Respects `staleTime` (safe to over-call) | yes | yes | done |
+| Router-integrated prefetch | framework routers | recipe in the sample app | done |
 | Viewport/scroll prefetch helper | no | `prefetchNearViewport` | divergent (addition) |
 | SSR/streaming prefetch | yes | non-goal | divergent (gap) |
 
@@ -127,7 +127,16 @@ fetch completing both begin the grace-then-gc countdown.
 ## Definition of done
 
 - [x] `prefetchQuery`, `fetchQuery`, `ensureQueryData` implemented.
-- [ ] `prefetchInfiniteQuery` / `ensureInfiniteQueryData`.
+- [x] `prefetchInfiniteQuery` / `ensureInfiniteQueryData`, with a `pages`
+      parameter defaulting to 1.
+- [x] Test: one page by default; `pages = 3` walks `getNextPageParam` exactly
+      three times; asking for ten when the source has five stops at five.
+- [x] Test: fresh pages issue no request, and `ensureInfiniteQueryData` serves a
+      warm cache. **Verified by mutation.**
+- [x] Test: retry is applied **per page**, not to the whole walk — a failing
+      page 2 does not refetch page 1. **Verified by mutation.**
+- [x] Test: a prefetched infinite entry is inactive and starts its `gcTime`.
+- [x] Test: `pages = 0` is rejected rather than caching an empty result.
 - [x] Test: `prefetchQuery` swallows a thrown error, while still recording it
       in that query's state so a screen observing the key later finds out.
       **Verified by mutation.**
@@ -144,6 +153,14 @@ fetch completing both begin the grace-then-gc countdown.
 - [x] Test: a prefetched entry is immediately inactive and starts its `gcTime`.
       **This was broken and the test found it** — see below. Verified by mutation.
 - [x] Test: a screen observing a prefetched key finds the data already there.
-- [ ] `QueryPriority` in the fetch path, so deprioritising speculative work
-      later is not a breaking change (OQ-1).
-- [ ] Navigation Compose prefetch recipe in the sample app.
+- [ ] ~~`QueryPriority` in the fetch path.~~ **Deferred past v1, and OQ-1's
+      leaning reversed.** The plan was to take the parameter now, unused, so
+      adding priority later would not break callers. Adding a parameter nothing
+      reads is speculative API that has to be supported for ever, and it buys
+      less than it looks: a defaulted Kotlin parameter is source-compatible to
+      add later anyway, and the binary compatibility it would preserve is a
+      minor-version concern that `apiCheck` will surface when the time comes.
+      Ship the smaller surface; add the parameter with the feature.
+- [x] Navigation-style prefetch recipe in the sample app: prefetch in the click
+      handler, `launch`ed so it never delays the navigation, then open the
+      screen and watch it render without a spinner.
