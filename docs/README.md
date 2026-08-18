@@ -43,6 +43,7 @@ that chose it.
 - [Compose](compose.md) — `rememberQuery` and friends
 - [ViewModels](viewmodels.md) — the `stateIn` pattern, measured
 - [Testing](testing.md) — `TestQueryClient`, and why request counts are the assertion
+- [Inspecting the cache](devtools.md) — snapshots, and why a query refetched
 
 **Composing queries**
 

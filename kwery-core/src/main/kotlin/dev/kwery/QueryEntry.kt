@@ -53,6 +53,12 @@ internal class QueryEntry<T>(
      * the client never takes them the other way round, so there is no inversion.
      */
     private val onEvict: suspend (QueryEntry<*>) -> Unit,
+    /**
+     * Publishes a transition. Must never suspend or block: it runs while the
+     * entry's lock is held, and a slow consumer must not be able to stall the
+     * cache.
+     */
+    private val emit: (QueryEvent) -> Unit = {},
 ) {
     val state: MutableStateFlow<QueryState<T>> = MutableStateFlow(QueryState())
 
@@ -153,6 +159,7 @@ internal class QueryEntry<T>(
     suspend fun attach() = mutex.withLock {
         observers++
         lastAccessMillis = timeSource.nowMillis()
+        emit(QueryEvent.ObserverAttached(key, lastAccessMillis, observers))
         if (observers == 1) observedSinceMillis = timeSource.nowMillis()
 
         // A reattach landing inside the grace window is a continuation of the
@@ -168,7 +175,7 @@ internal class QueryEntry<T>(
 
         if (withinGrace) return@withLock
         if (!options.enabled) return@withLock
-        if (shouldRefetchFor(options.refetchOnMount)) startFetchLocked()
+        if (shouldRefetchFor(options.refetchOnMount)) startFetchLocked(FetchReason.Mount)
     }
 
     /**
@@ -178,6 +185,7 @@ internal class QueryEntry<T>(
      */
     suspend fun detach() = mutex.withLock {
         observers--
+        emit(QueryEvent.ObserverDetached(key, timeSource.nowMillis(), observers))
         if (observers > 0) return@withLock
         observedSinceMillis = null
 
@@ -251,7 +259,7 @@ internal class QueryEntry<T>(
                 if (!options.refetchIntervalInBackground && !isFocused()) continue
 
                 mutex.withLock {
-                    if (observers > 0 && options.enabled) startFetchLocked()
+                    if (observers > 0 && options.enabled) startFetchLocked(FetchReason.Interval)
                 }
             }
         }
@@ -266,7 +274,7 @@ internal class QueryEntry<T>(
     }
 
     /** Fetch if not already in flight. Caller must hold [mutex]. */
-    private fun startFetchLocked() {
+    private fun startFetchLocked(reason: FetchReason) {
         val fetch = fetcher ?: return // seeded entry: nothing to call
         // Hold off while a restore is running: the data may be about to arrive
         // from disk, and fetching now would race it.
@@ -280,6 +288,8 @@ internal class QueryEntry<T>(
         )
 
         onFetchStarted()
+        val startedAt = timeSource.nowMillis()
+        emit(QueryEvent.FetchStarted(key, startedAt, reason))
         val attempt: Deferred<FetchOutcome<T>> = scope.async {
             // The failure is caught INSIDE the async body and carried out as a
             // value. Letting it propagate would hand the user a
@@ -318,6 +328,13 @@ internal class QueryEntry<T>(
                         failureReason = null,
                     )
                 }
+                emit(
+                    QueryEvent.FetchSucceeded(
+                        key,
+                        timeSource.nowMillis(),
+                        durationMillis = timeSource.nowMillis() - startedAt,
+                    ),
+                )
                 onFetchSettled()
             } catch (cancellation: CancellationException) {
                 // Cancellation is not failure. The query reverts to its prior
@@ -351,6 +368,14 @@ internal class QueryEntry<T>(
 
     /** Record a failure carrying the user's original throwable. */
     private suspend fun recordFailure(attempt: Deferred<FetchOutcome<T>>, error: Throwable) {
+        emit(
+            QueryEvent.FetchFailed(
+                key,
+                timeSource.nowMillis(),
+                error,
+                attempts = state.value.failureCount + 1,
+            ),
+        )
         mutex.withLock {
             if (inFlight === attempt) inFlight = null
             state.value = state.value.copy(
@@ -416,10 +441,12 @@ internal class QueryEntry<T>(
         mutex.withLock {
             state.value = state.value.copy(fetchStatus = FetchStatus.Paused)
         }
+        emit(QueryEvent.Paused(key, timeSource.nowMillis()))
         onlineManager.isOnline.first { it }
         mutex.withLock {
             state.value = state.value.copy(fetchStatus = FetchStatus.Fetching)
         }
+        emit(QueryEvent.Resumed(key, timeSource.nowMillis()))
     }
 
     /** True when [policy] permits a fetch right now. Caller must hold [mutex]. */
@@ -440,12 +467,14 @@ internal class QueryEntry<T>(
     }
 
     /** The app returned to the foreground. */
-    suspend fun onFocusRegained(): Unit = onEnvironmentTrigger(options.refetchOnFocus)
+    suspend fun onFocusRegained(): Unit =
+        onEnvironmentTrigger(options.refetchOnFocus, FetchReason.FocusRegained)
 
     /** Connectivity returned. */
-    suspend fun onReconnected(): Unit = onEnvironmentTrigger(options.refetchOnReconnect)
+    suspend fun onReconnected(): Unit =
+        onEnvironmentTrigger(options.refetchOnReconnect, FetchReason.Reconnected)
 
-    private suspend fun onEnvironmentTrigger(policy: RefetchOn) = mutex.withLock {
+    private suspend fun onEnvironmentTrigger(policy: RefetchOn, reason: FetchReason) = mutex.withLock {
         if (!options.enabled) return@withLock
         // Only queries something is actually watching refetch on these triggers.
         if (observers == 0) return@withLock
@@ -456,7 +485,7 @@ internal class QueryEntry<T>(
         // *while* the app was away sets its continuation stamp at the moment of
         // return, which would suppress a refetch the user genuinely wants —
         // depending on whether attach or the focus event happens to land first.
-        if (shouldRefetchFor(policy)) startFetchLocked()
+        if (shouldRefetchFor(policy)) startFetchLocked(reason)
     }
 
     // ---- External operations --------------------------------------------
@@ -480,14 +509,15 @@ internal class QueryEntry<T>(
         // restates a structural property reads as though it is load-bearing.
 
         state.value = state.value.copy(isInvalidated = true)
+        emit(QueryEvent.Invalidated(key, timeSource.nowMillis(), refetching = observers > 0))
         if (observers == 0) return@withLock null
-        startFetchLocked()
+        startFetchLocked(FetchReason.Invalidated)
         inFlight
     }
 
     suspend fun refetch(): Deferred<*>? = mutex.withLock {
         if (!options.enabled) return@withLock null
-        startFetchLocked()
+        startFetchLocked(FetchReason.Manual)
         inFlight
     }
 
@@ -503,7 +533,7 @@ internal class QueryEntry<T>(
         val pending = mutex.withLock {
             if (!options.enabled) return@withLock null
             if (!force && !isStaleNow()) return@withLock null
-            startFetchLocked()
+            startFetchLocked(FetchReason.Prefetch)
             inFlight
         }
         if (pending == null) return state.value.data as T
@@ -526,6 +556,7 @@ internal class QueryEntry<T>(
     }
 
     suspend fun setData(value: T?, updatedAt: Long) = mutex.withLock {
+        emit(QueryEvent.DataSet(key, updatedAt))
         state.value = state.value.copy(
             data = value,
             status = if (value != null) QueryStatus.Success else state.value.status,

@@ -13,6 +13,10 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -331,6 +335,7 @@ public class QueryClient(
             doomed.forEach {
                 entries.remove(it.key)
                 it.dispose()
+                publish(QueryEvent.Evicted(it.key, config.timeSource.nowMillis(), EvictReason.Removed))
             }
         }
     }
@@ -390,6 +395,39 @@ public class QueryClient(
         } finally {
             restoringState.value = false
         }
+    }
+
+    /**
+     * Every transition the cache makes, with the reason where there is one.
+     *
+     * The surface devtools are built on. It is here from the start because a
+     * cache whose transitions were never observable cannot be given devtools
+     * later without breaking changes, and because "why did this refetch?"
+     * cannot be answered after the fact from state alone.
+     *
+     * ```kotlin
+     * scope.launch {
+     *     client.events.collect { event ->
+     *         if (event is QueryEvent.FetchStarted) log("${'$'}{event.key} <- ${'$'}{event.reason}")
+     *     }
+     * }
+     * ```
+     *
+     * Replay is zero and the buffer drops oldest under pressure: a slow or
+     * absent collector must never stall the cache, and diagnostics are not
+     * worth backpressure on real work. Nothing is emitted when nobody is
+     * listening beyond a cheap `tryEmit`.
+     */
+    public val events: SharedFlow<QueryEvent> get() = eventFlow.asSharedFlow()
+
+    private val eventFlow = MutableSharedFlow<QueryEvent>(
+        replay = 0,
+        extraBufferCapacity = 256,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    private fun publish(event: QueryEvent) {
+        eventFlow.tryEmit(event)
     }
 
     private val fetchingCount = MutableStateFlow(0)
@@ -568,7 +606,15 @@ public class QueryClient(
                     if (entries[evicted.key] === evicted) entries.remove(evicted.key)
                 }
                 evicted.dispose()
+                publish(
+                    QueryEvent.Evicted(
+                        evicted.key,
+                        config.timeSource.nowMillis(),
+                        EvictReason.GarbageCollected,
+                    ),
+                )
             },
+            emit = ::publish,
         )
         if (seedFrom != null) {
             entry.state.value = seedFrom.state.value
@@ -591,6 +637,9 @@ public class QueryClient(
             if (overflow <= 0) break
             entries.remove(entry.key)
             entry.dispose()
+            publish(
+                QueryEvent.Evicted(entry.key, config.timeSource.nowMillis(), EvictReason.OverCapacity),
+            )
             overflow--
         }
     }

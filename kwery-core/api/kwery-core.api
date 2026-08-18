@@ -49,6 +49,28 @@ public final class dev/kwery/DehydratedEntry {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/kwery/EvictReason : java/lang/Enum {
+	public static final field GarbageCollected Ldev/kwery/EvictReason;
+	public static final field OverCapacity Ldev/kwery/EvictReason;
+	public static final field Removed Ldev/kwery/EvictReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/EvictReason;
+	public static fun values ()[Ldev/kwery/EvictReason;
+}
+
+public final class dev/kwery/FetchReason : java/lang/Enum {
+	public static final field FocusRegained Ldev/kwery/FetchReason;
+	public static final field Interval Ldev/kwery/FetchReason;
+	public static final field Invalidated Ldev/kwery/FetchReason;
+	public static final field Manual Ldev/kwery/FetchReason;
+	public static final field Mount Ldev/kwery/FetchReason;
+	public static final field Prefetch Ldev/kwery/FetchReason;
+	public static final field Reconnected Ldev/kwery/FetchReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/kwery/FetchReason;
+	public static fun values ()[Ldev/kwery/FetchReason;
+}
+
 public final class dev/kwery/FetchStatus : java/lang/Enum {
 	public static final field Fetching Ldev/kwery/FetchStatus;
 	public static final field Idle Ldev/kwery/FetchStatus;
@@ -242,6 +264,7 @@ public final class dev/kwery/QueryClient {
 	public final fun cancelQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun close ()V
 	public final fun getConfig ()Ldev/kwery/QueryClientConfig;
+	public final fun getEvents ()Lkotlinx/coroutines/flow/SharedFlow;
 	public final fun getQueryData (Ldev/kwery/QueryKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getQueryState (Ldev/kwery/QueryKey;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun invalidateQueries (Ldev/kwery/QueryFilters;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -312,6 +335,157 @@ public final class dev/kwery/QueryEntrySnapshot {
 	public final fun isActive ()Z
 	public final fun isInvalidated ()Z
 	public final fun isStale ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/kwery/QueryEvent {
+	public abstract fun getAtMillis ()J
+	public abstract fun getKey ()Ldev/kwery/QueryKey;
+}
+
+public final class dev/kwery/QueryEvent$DataSet : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;J)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun copy (Ldev/kwery/QueryKey;J)Ldev/kwery/QueryEvent$DataSet;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$DataSet;Ldev/kwery/QueryKey;JILjava/lang/Object;)Ldev/kwery/QueryEvent$DataSet;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$Evicted : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;JLdev/kwery/EvictReason;)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun component3 ()Ldev/kwery/EvictReason;
+	public final fun copy (Ldev/kwery/QueryKey;JLdev/kwery/EvictReason;)Ldev/kwery/QueryEvent$Evicted;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$Evicted;Ldev/kwery/QueryKey;JLdev/kwery/EvictReason;ILjava/lang/Object;)Ldev/kwery/QueryEvent$Evicted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public final fun getReason ()Ldev/kwery/EvictReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$FetchFailed : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;JLjava/lang/Throwable;I)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/Throwable;
+	public final fun component4 ()I
+	public final fun copy (Ldev/kwery/QueryKey;JLjava/lang/Throwable;I)Ldev/kwery/QueryEvent$FetchFailed;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$FetchFailed;Ldev/kwery/QueryKey;JLjava/lang/Throwable;IILjava/lang/Object;)Ldev/kwery/QueryEvent$FetchFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public final fun getAttempts ()I
+	public final fun getError ()Ljava/lang/Throwable;
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$FetchStarted : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;JLdev/kwery/FetchReason;)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun component3 ()Ldev/kwery/FetchReason;
+	public final fun copy (Ldev/kwery/QueryKey;JLdev/kwery/FetchReason;)Ldev/kwery/QueryEvent$FetchStarted;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$FetchStarted;Ldev/kwery/QueryKey;JLdev/kwery/FetchReason;ILjava/lang/Object;)Ldev/kwery/QueryEvent$FetchStarted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public final fun getReason ()Ldev/kwery/FetchReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$FetchSucceeded : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;JJ)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun copy (Ldev/kwery/QueryKey;JJ)Ldev/kwery/QueryEvent$FetchSucceeded;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$FetchSucceeded;Ldev/kwery/QueryKey;JJILjava/lang/Object;)Ldev/kwery/QueryEvent$FetchSucceeded;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public final fun getDurationMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$Invalidated : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;JZ)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun component3 ()Z
+	public final fun copy (Ldev/kwery/QueryKey;JZ)Ldev/kwery/QueryEvent$Invalidated;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$Invalidated;Ldev/kwery/QueryKey;JZILjava/lang/Object;)Ldev/kwery/QueryEvent$Invalidated;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public final fun getRefetching ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$ObserverAttached : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;JI)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun component3 ()I
+	public final fun copy (Ldev/kwery/QueryKey;JI)Ldev/kwery/QueryEvent$ObserverAttached;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$ObserverAttached;Ldev/kwery/QueryKey;JIILjava/lang/Object;)Ldev/kwery/QueryEvent$ObserverAttached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public final fun getObserverCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$ObserverDetached : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;JI)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun component3 ()I
+	public final fun copy (Ldev/kwery/QueryKey;JI)Ldev/kwery/QueryEvent$ObserverDetached;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$ObserverDetached;Ldev/kwery/QueryKey;JIILjava/lang/Object;)Ldev/kwery/QueryEvent$ObserverDetached;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public final fun getObserverCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$Paused : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;J)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun copy (Ldev/kwery/QueryKey;J)Ldev/kwery/QueryEvent$Paused;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$Paused;Ldev/kwery/QueryKey;JILjava/lang/Object;)Ldev/kwery/QueryEvent$Paused;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/kwery/QueryEvent$Resumed : dev/kwery/QueryEvent {
+	public fun <init> (Ldev/kwery/QueryKey;J)V
+	public final fun component1 ()Ldev/kwery/QueryKey;
+	public final fun component2 ()J
+	public final fun copy (Ldev/kwery/QueryKey;J)Ldev/kwery/QueryEvent$Resumed;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEvent$Resumed;Ldev/kwery/QueryKey;JILjava/lang/Object;)Ldev/kwery/QueryEvent$Resumed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAtMillis ()J
+	public fun getKey ()Ldev/kwery/QueryKey;
+	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
