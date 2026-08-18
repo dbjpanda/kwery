@@ -26,6 +26,7 @@ val publishedModules = setOf(
     "kwery-core",
     "kwery-test",
     "kwery-persist",
+    "kwery-persist-room",
     "kwery-android",
     "kwery-compose",
 )

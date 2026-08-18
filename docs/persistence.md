@@ -67,6 +67,41 @@ so the cache is written on every change and almost never read — the feature
 quietly does nothing. other libraries documents this constraint and lets you violate
 it; Kwery refuses to start.
 
+## Which store to use
+
+Two backends. The choice is about **writes**, not reads.
+
+```kotlin
+// File-backed: one file, rewritten whenever the cache changes.
+FilePersister(File(context.filesDir, "kwery-cache.json"))
+
+// Room-backed: one row per entry, so a change touches only that row.
+val storage = KweryRoomStorage.at(File(context.filesDir, "kwery.db").absolutePath)
+storage.persister
+storage.queueStore
+```
+
+Add the module for the Room option:
+
+```kotlin
+implementation("io.github.dbjpanda:kwery-persist-room:0.2.1")
+```
+
+| | File | Room |
+|---|---|---|
+| Setup | one line, no schema | one line, brings in Room |
+| Restore 10k entries | 3 to 5 ms | comparable |
+| One entry changes | rewrites everything | writes that row |
+| Extra dependency | none | Room and SQLite |
+
+Measured on a 181 KB cache of 2,000 entries: changing one entry wrote **16 KB**
+with Room. Removing the row diff so every row is written takes the same change
+to **148 KB**, which is roughly what the file store does every time.
+
+Use the file store unless your cache is large **and** changes often. If it is,
+the flash writes add up, and that is a battery and wear cost rather than
+anything you will see go wrong.
+
 ## How much can it hold?
 
 Measured, with entries the size of a typical list row:

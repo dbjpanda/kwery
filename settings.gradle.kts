@@ -21,6 +21,7 @@ dependencyResolutionManagement {
 include(":kwery-core")
 include(":kwery-test")
 include(":kwery-persist")
+include(":kwery-persist-room")
 
 // Android modules. kwery-core must never depend on these (AD-1).
 include(":kwery-android")

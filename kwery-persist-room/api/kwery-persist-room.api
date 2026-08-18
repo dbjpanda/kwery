@@ -1,0 +1,13 @@
+public final class dev/kwery/persist/room/KweryRoomStorage {
+	public static final field Companion Ldev/kwery/persist/room/KweryRoomStorage$Companion;
+	public synthetic fun <init> (Ldev/kwery/persist/room/KweryDatabase;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun close ()V
+	public final fun getPersister ()Ldev/kwery/persist/QueryPersister;
+	public final fun getQueueStore ()Ldev/kwery/persist/MutationQueueStore;
+}
+
+public final class dev/kwery/persist/room/KweryRoomStorage$Companion {
+	public final fun at (Ljava/lang/String;)Ldev/kwery/persist/room/KweryRoomStorage;
+	public final fun inMemory ()Ldev/kwery/persist/room/KweryRoomStorage;
+}
+
