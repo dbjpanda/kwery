@@ -80,7 +80,7 @@ tag anything.
    minor), rewrites `CHANGELOG.md`, and bumps `kwery` in
    `gradle/libs.versions.toml`.
 3. **Merging that PR is the release.** It tags, creates the GitHub Release, and
-   the tag triggers `publish.yml`, which verifies and pushes to Maven Central.
+   the same workflow run then verifies and publishes to Maven Central.
 
 The Release PR is the review gate. Nothing reaches Central without it being
 merged deliberately.
@@ -93,10 +93,19 @@ in the same merge, so there is no window in which the branch claims a version
 that was never cut. Do not edit that line by hand; the
 `# x-release-please-version` marker is how the tool finds it.
 
+### Why publishing lives in the release-please workflow
+
+Not in its own workflow triggered by `on: release`. **GitHub does not trigger
+workflows from events created with `GITHUB_TOKEN`**, and a release-please
+release is authored by `github-actions[bot]` — so an `on: release` workflow
+never fires. It does not fail; it simply never runs, which is a much worse way
+to find out, and is exactly what happened on the first attempt. Chaining the
+publish job off the action's own `release_created` output avoids it without
+needing a personal access token.
+
 ### What runs before anything is published
 
-`publish.yml` uses automatic release, so an upload is permanent the moment it
-succeeds. Two checks run first, in this order and in the same job:
+Publishing is automatic, so an upload is permanent the moment it succeeds. Two checks run first, in this order and in the same job:
 
 - **the tag must match the version in `libs.versions.toml`**, and must not be a
   snapshot. Under automatic release a mismatch is unfixable — a `v0.2.0` tag

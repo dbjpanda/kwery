@@ -1,6 +1,13 @@
 # Keeps a Release PR open that accumulates every change since the last release,
 # derives the next version from Conventional Commits, and writes the CHANGELOG.
-# Merging that PR is what cuts a release: it tags, and the tag triggers publish.
+# Merging that PR cuts the release — and publishes it, in the job below.
+#
+# The publish job lives HERE rather than in its own workflow triggered by
+# `on: release`, because GitHub does not trigger workflows from events created
+# with GITHUB_TOKEN. A release-please release is authored by github-actions[bot],
+# so a separate `on: release` workflow never fires — it does not fail, it simply
+# never runs, which is a considerably worse way to find out. Chaining off the
+# action's own output avoids the problem without needing a PAT.
 name: Release Please
 
 on:
@@ -14,8 +21,58 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Publishing is automatic, so an upload is permanent the moment it
+      # succeeds. The tag is the thing being published and has to agree with the
+      # version the build stamps on the artifacts — a v0.2.0 tag publishing
+      # artifacts labelled 0.1.1 cannot be taken back.
+      - name: Tag and build version must match
+        run: |
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          BUILD=$(grep -E '^kwery = ' gradle/libs.versions.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "tag=$TAG build=$BUILD"
+          if [ "$TAG" != "v$BUILD" ]; then
+            echo "::error::Tag $TAG does not match version $BUILD in libs.versions.toml"
+            exit 1
+          fi
+          case "$BUILD" in
+            *SNAPSHOT*) echo "::error::Refusing to publish a snapshot"; exit 1 ;;
+          esac
+
+      # A failing test discovered after publication has no remedy, so the whole
+      # suite and the API check run before the upload rather than beside it.
+      - name: Verify
+        run: ./gradlew build apiCheck --no-daemon
+
+      - name: Publish to Maven Central
+        run: ./gradlew publishToMavenCentral --no-daemon
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
