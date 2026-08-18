@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 560" width="1280" height="560" role="img" aria-label="Two screens, one request: how Kwery serves fresh, stale and offline states">
+  <title>Two screens, one request</title>
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#12132A"/><stop offset="100%" stop-color="#1D1A3A"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8B5CF6"/><stop offset="50%" stop-color="#C13FA6"/><stop offset="100%" stop-color="#F0803C"/>
+    </linearGradient>
+    <marker id="a-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#34D399"/>
+    </marker>
+    <marker id="a-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#FBBF24"/>
+    </marker>
+    <marker id="a-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#A78BFA"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="560" fill="url(#bg2)"/>
+  <rect width="1280" height="3" fill="url(#bar)"/>
+
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif">
+    <text x="64" y="62" font-size="30" font-weight="700" fill="#F6F7FB">Two screens. One request.</text>
+    <text x="64" y="92" font-size="17" fill="#9199BE">Both ask for the same key. Kwery shares the entry and the in-flight call.</text>
+
+    <!-- Screens -->
+    <rect x="64" y="132" width="186" height="86" rx="14" fill="#232647" stroke="#3B3F6B" stroke-width="1.5"/>
+    <text x="86" y="166" font-size="16" font-weight="600" fill="#E8EAF6">List screen</text>
+    <text x="86" y="192" font-size="14" fill="#8E96BC" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">query(TodoKey)</text>
+
+    <rect x="64" y="240" width="186" height="86" rx="14" fill="#232647" stroke="#3B3F6B" stroke-width="1.5"/>
+    <text x="86" y="274" font-size="16" font-weight="600" fill="#E8EAF6">Detail screen</text>
+    <text x="86" y="300" font-size="14" fill="#8E96BC" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">query(TodoKey)</text>
+
+    <path d="M 250 175 C 300 175 300 215 344 224" stroke="#6E75A0" stroke-width="2" fill="none"/>
+    <path d="M 250 283 C 300 283 300 245 344 236" stroke="#6E75A0" stroke-width="2" fill="none"/>
+
+    <!-- Cache -->
+    <rect x="348" y="150" width="238" height="160" rx="18" fill="#1B1E3D" stroke="#8B5CF6" stroke-opacity="0.6" stroke-width="2"/>
+    <text x="372" y="184" font-size="17" font-weight="700" fill="#C4B5FD">Kwery cache</text>
+    <text x="372" y="212" font-size="14" fill="#9199BE">one entry per key</text>
+    <rect x="372" y="228" width="190" height="30" rx="8" fill="#8B5CF6" fill-opacity="0.16"/>
+    <text x="386" y="248" font-size="13" fill="#CDBEFF" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">TodoKey("1")</text>
+    <text x="372" y="284" font-size="13" fill="#7C84AC">observers: 2 · one in-flight call</text>
+
+    <!-- API -->
+    <rect x="1054" y="184" width="162" height="92" rx="14" fill="#232647" stroke="#3B3F6B" stroke-width="1.5"/>
+    <text x="1080" y="222" font-size="16" font-weight="600" fill="#E8EAF6">Your API</text>
+    <text x="1080" y="248" font-size="13" fill="#8E96BC">Retrofit / Ktor</text>
+
+    <!-- Three outcomes. Only STALE reaches the API: that is the whole point,
+         so the arrows have to show it rather than the labels claiming it. -->
+    <g>
+      <path d="M 586 196 C 620 196 626 178 656 178" stroke="#34D399" stroke-width="2.5" fill="none" marker-end="url(#a-green)"/>
+      <rect x="664" y="158" width="342" height="40" rx="20" fill="#34D399" fill-opacity="0.14"/>
+      <circle cx="688" cy="178" r="6" fill="#34D399"/>
+      <text x="706" y="184" font-size="15" font-weight="600" fill="#6EE7B7">FRESH · served instantly, no call</text>
+
+      <path d="M 586 230 L 656 230" stroke="#FBBF24" stroke-width="2.5" fill="none"/>
+      <rect x="664" y="210" width="342" height="40" rx="20" fill="#FBBF24" fill-opacity="0.14"/>
+      <circle cx="688" cy="230" r="6" fill="#FBBF24"/>
+      <text x="706" y="236" font-size="15" font-weight="600" fill="#FCD34D">STALE · shows cached, refetches</text>
+      <path d="M 1006 230 L 1046 230" stroke="#FBBF24" stroke-width="2.5" fill="none" marker-end="url(#a-amber)"/>
+
+      <path d="M 586 264 C 620 264 626 282 656 282" stroke="#A78BFA" stroke-width="2.5" fill="none" stroke-dasharray="5 6" marker-end="url(#a-violet)"/>
+      <rect x="664" y="262" width="342" height="40" rx="20" fill="#A78BFA" fill-opacity="0.14"/>
+      <circle cx="688" cy="282" r="6" fill="#A78BFA"/>
+      <text x="706" y="288" font-size="15" font-weight="600" fill="#C4B5FD">OFFLINE · paused, data stays put</text>
+    </g>
+
+    <!-- Bottom strip -->
+    <rect x="64" y="424" width="1152" height="86" rx="16" fill="#FFFFFF" fill-opacity="0.04"/>
+    <text x="96" y="458" font-size="15" font-weight="700" fill="#E8EAF6">Rotate the phone</text>
+    <text x="96" y="484" font-size="14" fill="#9199BE">0 extra requests</text>
+    <text x="392" y="458" font-size="15" font-weight="700" fill="#E8EAF6">Write while offline</text>
+    <text x="392" y="484" font-size="14" fill="#9199BE">queued, survives process death</text>
+    <text x="760" y="458" font-size="15" font-weight="700" fill="#E8EAF6">Cold start</text>
+    <text x="760" y="484" font-size="14" fill="#9199BE">restores from disk, keeps its age</text>
+  </g>
+</svg>
