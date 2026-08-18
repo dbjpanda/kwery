@@ -24,3 +24,6 @@ docs/roadmap/
 
 # Maven Central staging output; regenerate with ./gradlew centralBundle
 build/central*/
+
+# Go-to-market planning. Working material, not published.
+gtm.md
