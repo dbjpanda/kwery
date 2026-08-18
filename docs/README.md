@@ -73,10 +73,22 @@ looking authoritative. That has happened three times in this project — a
 that was never built, and a `prefetchQuery(key, staleTime, fetcher)` overload
 lifted from a roadmap file rather than the code.
 
-`docs-lint` now checks every Kwery identifier in these pages against the
-committed `.api` dumps — the same files `apiCheck` enforces — and runs as part
-of the normal build. It is a lint, not a compiler: it catches a name that does
-not exist, not a wrong argument order.
+`docs-lint` runs as part of the normal build and checks two things:
+
+- **Every Kwery identifier** in these pages exists — methods called on a client
+  or query, enum constants, and Kwery's own type names — against the committed
+  `.api` dumps and the sources. Capitalisation counts, which the dumps alone
+  cannot tell you: `val Exponential` and `val exponential` compile to the same
+  getter.
+- **Every named argument** names a real parameter, with the accepted list shown
+  when one does not. Parameter names live only in the sources, so this reads
+  those; it is what would have caught
+  `prefetchQuery(key, staleTime, fetcher)`, a signature taken from a design
+  sketch that never existed in the code.
+
+It is still a lint rather than a compiler — it will not catch a wrong argument
+*order*, or a type error — but the two classes it does catch are the two that
+have actually bitten this project.
 
 ## Writing a page
 

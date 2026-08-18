@@ -33,4 +33,12 @@ tasks.withType<Test>().configureEach {
         listOf("kwery-core", "kwery-test", "kwery-persist", "kwery-android", "kwery-compose")
             .map { fileTree(rootDir.resolve("$it/api")) },
     ).withPropertyName("apiDumps").withPathSensitivity(PathSensitivity.RELATIVE)
+
+    // Parameter names exist only in the sources — a JVM dump does not record
+    // them — so the argument lint must re-run when a signature changes, not
+    // only when a doc does.
+    inputs.files(
+        listOf("kwery-core", "kwery-test", "kwery-persist", "kwery-android", "kwery-compose")
+            .map { fileTree(rootDir.resolve("$it/src/main")) { include("**/*.kt") } },
+    ).withPropertyName("sources").withPathSensitivity(PathSensitivity.RELATIVE)
 }
