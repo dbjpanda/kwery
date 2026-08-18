@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 3 — v1 integration |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-test` |
 | **TanStack source** | [`guides/testing.md`](../../.reference/tanstack-query/docs/framework/react/guides/testing.md) |
 | **Depends on** | 04 Caching lifecycle, 07 Refetch triggers, 13 Network mode |
@@ -32,16 +32,26 @@ client that is already correct:
 ```kotlin
 @Test
 fun `shows cached data while refetching`() = runTest {
-    val client = TestQueryClient()      // no retries, virtual clock, controllable
-                                        //  focus/connectivity, isolated cache
+    // Takes the TestScope: the virtual clock and the cache's coroutine scope
+    // both come from it, which is what keeps the cache isolated per test
+    // without any teardown.
+    val kwery = TestQueryClient(this)
 
-    client.setQueryData(TodoListKey(All), listOf(todo))
-    client.advanceTimeBy(10.minutes)    // deterministic staleness, no real delay
+    kwery.client.setQueryData(TodoListKey(All)) { listOf(todo) }
+    kwery.settle(10.minutes)            // deterministic staleness, no real delay
 
-    val state = client.query(TodoListKey(All)) { api.todos() }.first()
-    assertTrue(state.isRefreshing)
+    val job = backgroundScope.launch { kwery.query(TodoListKey(All)) { api.todos() }.collect { } }
+    kwery.awaitIdle()
+    assertEquals(1, kwery.requestCount)
 }
 ```
+
+**Corrected from the original sketch**, which described an API that was never
+built: there is no no-argument constructor (the `TestScope` supplies both the
+clock and the cache's scope), and the time control is `settle(duration)` rather
+than `advanceTimeBy`. `settle` is the honest name — it advances virtual time
+*and* runs what became due, which is the part that matters and the part
+`advanceUntilIdle` gets wrong for `backgroundScope` coroutines.
 
 `TestQueryClient` defaults: `RetryPolicy.Never`, virtual `TimeSource`,
 `TestFocusManager`, `TestOnlineManager`, in-memory persister, and a cache scoped
@@ -50,11 +60,16 @@ to the test.
 ### Controls
 
 ```kotlin
-client.advanceTimeBy(5.minutes)      // drive staleTime / gcTime deterministically
-client.setOnline(false)              // exercise paused states
-client.setFocused(false)             // exercise focus refetching
-client.awaitIdle()                   // suspend until no query is fetching
-client.recordedRequests              // assert request counts — the dedup test primitive
+kwery.settle(5.minutes)          // drive staleTime / gcTime deterministically
+kwery.setOnline(false)           // exercise paused states
+kwery.setFocused(false)          // exercise focus refetching
+kwery.awaitIdle()                // advance until nothing is fetching or mutating
+kwery.recordedRequests           // assert request counts — the dedup test primitive
+kwery.requestCount               // …and the count on its own
+kwery.requestCountFor(key)       // …per key
+kwery.clearRecordedRequests()    // ignore setup traffic
+kwery.currentTimeMillis          // the virtual clock
+kwery.client                     // the real QueryClient; nothing here is a fake but the environment
 ```
 
 `recordedRequests` deserves emphasis: nearly every meaningful assertion about a
@@ -64,7 +79,18 @@ strategies are all request-count assertions, and without a first-class recorder
 every consumer builds a counting fake by hand.
 
 `awaitIdle()` replaces the `waitFor`/`eventually` polling that makes async tests
-flaky.
+flaky. Because time is virtual it does not *wait* — it advances, so a query
+sleeping through a 30-second retry backoff settles instantly.
+
+Two behaviours of it were settled by writing the tests rather than by reasoning:
+
+- **A polling query does not block it.** Between ticks a `refetchInterval` query
+  is genuinely idle, so `awaitIdle` returns in the gap. The first version of the
+  test assumed the opposite and failed; treating polling as "never idle" would
+  have made the control unusable in exactly the tests that need it.
+- **It fails loudly rather than hanging.** A fetcher that never completes — most
+  often a `CompletableDeferred` the test forgot to complete — throws with that
+  named as the likely cause, instead of timing out much later with no clue.
 
 ## Parity table
 
@@ -73,9 +99,9 @@ flaky.
 | Guidance to disable retries | docs | **default in `TestQueryClient`** | divergent (better) |
 | Fresh client per test | docs | default | divergent (better) |
 | Neutralise gc timers | `gcTime: Infinity` | virtual clock | divergent (better) |
-| Silence expected-error logging | docs | default | planned |
-| Mock offline | devtools toggle | `setOnline(false)` | planned |
-| Mock focus | manual | `setFocused(false)` | planned |
+| Silence expected-error logging | docs | n/a — Kwery logs nothing | divergent |
+| Mock offline | devtools toggle | `setOnline(false)` | done |
+| Mock focus | manual | `setFocused(false)` | done |
 | Deterministic time control | no | `advanceTimeBy` | divergent (better) |
 | Request recording | no | `recordedRequests` | divergent (addition) |
 | Idle await | `waitFor` polling | `awaitIdle()` | divergent (better) |
@@ -96,12 +122,28 @@ flaky.
 
 ## Definition of done
 
-- [ ] `TestQueryClient` with all controls implemented and published.
-- [ ] Kwery's **own** test suite uses it — dogfooding is the real validation.
-- [ ] Test: `advanceTimeBy` drives staleness and gc without real delays.
-- [ ] Test: `setOnline(false)` produces `FetchStatus.Paused`.
-- [ ] Test: `recordedRequests` correctly counts deduplicated requests as one.
-- [ ] Test: `awaitIdle()` returns only when all queries have settled.
-- [ ] Documentation page with recipes for ViewModel tests, Compose UI tests, and
-      repository tests.
-- [ ] Whole Kwery suite runs with no real `delay()` and no flaky retries.
+- [x] `TestQueryClient` with all controls implemented and published.
+- [ ] Persistence controls (an in-memory persister preconfigured). `kwery-test`
+      does not depend on `kwery-persist`, so this would invert the module
+      graph — deferred with feature [15](15-persistence.md).
+- [x] Kwery's **own** test suite uses it throughout — 166 tests. Dogfooding is
+      what found `settle`'s existence: `advanceUntilIdle()` silently reported
+      zero requests for work that had never run.
+- [x] Test: virtual time drives staleness and gc without real delays, asserted
+      on both sides of the boundary.
+- [x] Test: `setOnline(false)` produces `Paused` and issues no request;
+      reconnecting releases it. `setFocused` likewise drives focus refetching.
+- [x] Test: ten concurrent observers of one key record **one** request, while
+      three retry attempts record **three**. **Verified by mutation**: recording
+      on collection instead of on fetch fails 35 tests across the suite — the
+      recorder is load-bearing for nearly every claim Kwery makes.
+- [x] Test: `awaitIdle()` returns only once queries **and mutations** have
+      settled, advancing virtual time to get there. **Verified by mutation.**
+- [x] Test: `awaitIdle()` returns between polling ticks rather than blocking.
+- [x] Test: `awaitIdle()` throws a diagnostic on a fetcher that never completes.
+- [x] Test: each `TestQueryClient` has its own cache — no cross-test leakage.
+- [x] Test: retries are off by default, so an error state is reachable without
+      waiting through backoffs. **Verified by mutation.**
+- [ ] Documentation page with recipes (gate 3 — `docs/testing.md`).
+- [x] Whole Kwery suite runs with no real `delay()` and no flaky retries — 166
+      tests in roughly a second.

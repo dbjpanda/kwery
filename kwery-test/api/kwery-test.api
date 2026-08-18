@@ -1,6 +1,8 @@
 public final class dev/kwery/test/TestQueryClient {
 	public synthetic fun <init> (Lkotlinx/coroutines/test/TestScope;JILdev/kwery/QueryOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lkotlinx/coroutines/test/TestScope;JILdev/kwery/QueryOptions;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun awaitIdle-VtjQ1oo (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun awaitIdle-VtjQ1oo$default (Ldev/kwery/test/TestQueryClient;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun clearRecordedRequests ()V
 	public final fun getClient ()Ldev/kwery/QueryClient;
 	public final fun getCurrentTimeMillis ()J

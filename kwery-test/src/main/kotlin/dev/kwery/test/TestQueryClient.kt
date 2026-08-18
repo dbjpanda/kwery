@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.TestScope
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -126,6 +127,53 @@ public class TestQueryClient(
             testScope.testScheduler.advanceTimeBy(duration.inWholeMilliseconds)
         }
         testScope.testScheduler.runCurrent()
+    }
+
+    /**
+     * Suspend until nothing is fetching or mutating.
+     *
+     * The replacement for the `waitFor` / `eventually` polling that makes async
+     * tests flaky. Because time here is virtual, this does not wait — it
+     * *advances*, so a query sleeping through a retry backoff settles instantly.
+     *
+     * ```kotlin
+     * val job = backgroundScope.launch { kwery.query(key) { api.todo() }.collect { } }
+     * kwery.awaitIdle()
+     * assertEquals(1, kwery.requestCount)
+     * ```
+     *
+     * A polling query does **not** block this: between ticks it is genuinely
+     * idle, so `awaitIdle` returns in the gap. What does block it is a fetcher
+     * that never completes — most often a `CompletableDeferred` the test forgot
+     * to complete. That throws with a message saying so, rather than hanging
+     * until the framework's timeout with no clue why.
+     */
+    public suspend fun awaitIdle(limit: Duration = 10.minutes) {
+        val scheduler = testScope.testScheduler
+        val deadline = scheduler.currentTime + limit.inWholeMilliseconds
+        var step = 1L
+        scheduler.runCurrent()
+        while (client.isFetching.value > 0 || client.isMutating.value > 0) {
+            if (scheduler.currentTime >= deadline) {
+                error(
+                    "awaitIdle: still busy after $limit of virtual time " +
+                        "(${client.isFetching.value} fetching, " +
+                        "${client.isMutating.value} mutating). " +
+                        "The usual cause is a fetcher that never completes — a " +
+                        "CompletableDeferred the test never completed, or a " +
+                        "suspending call with no virtual-time equivalent.",
+                )
+            }
+            // The step grows so that fine-grained ordering is resolved first
+            // and long waits are then crossed quickly: a 30-second retry
+            // backoff costs a handful of iterations, not thirty thousand.
+            val before = scheduler.currentTime
+            scheduler.advanceTimeBy(step)
+            scheduler.runCurrent()
+            if (scheduler.currentTime == before) break
+            step = (step * 2).coerceAtMost(1_000)
+        }
+        scheduler.runCurrent()
     }
 
     /** Current virtual time in millis. */
