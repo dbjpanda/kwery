@@ -247,7 +247,11 @@ Scenario IDs refer to the spike harness; each becomes a real test.
 - [x] (S9) Leaving and returning inside grace joins the existing request.
 - [x] (S10) Abandoning past grace cancels the in-flight request at grace expiry.
 - [x] (S5) Eviction occurs at `grace + gcTime` after the last observer leaves.
-- [ ] (S8) `SharingStarted.Lazily` detection and warning.
+- [ ] ~~(S8) `SharingStarted.Lazily` detection and warning.~~ **Dropped**, for
+      the reason recorded in [18](18-viewmodel-integration.md): the cache cannot
+      distinguish a leaked collector from a screen left open all afternoon, so
+      any heuristic fires on correct code. `QueryEntrySnapshot.observedSinceMillis`
+      exposes the data instead, and is tested there.
 - [x] Test: cancelling one of two observers does not cancel the shared request.
 - [x] Test: `select` suppresses emissions when the projection is unchanged.
 - [x] Stress test: 500 observers across 100 keys — one entry and one request

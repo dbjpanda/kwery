@@ -92,12 +92,12 @@ Semantics, chosen deliberately:
 
 | Capability | TanStack | Kwery | Status |
 |---|---|---|---|
-| Dependent via `enabled` | yes | `enabled` param | planned |
+| Dependent via `enabled` | yes | `enabled` param | done |
 | Dependent via composition | n/a | `flatMapLatest` | divergent (addition) |
-| Static parallel queries | automatic | automatic | planned |
+| Static parallel queries | automatic | automatic | done |
 | Dynamic parallel queries | `useQueries` | `combine` over a list | divergent (simpler) |
-| `combine` result aggregation | `useQueries({combine})` | `aggregate()` | planned |
-| Waterfall avoidance guidance | docs | docs | planned |
+| `combine` result aggregation | `useQueries({combine})` | `aggregate()` | done |
+| Waterfall avoidance guidance | docs | docs | done |
 | Aggregate loading/error semantics | manual | `aggregate()` | divergent (addition) |
 
 ## Open questions
@@ -115,9 +115,16 @@ Semantics, chosen deliberately:
 ## Definition of done
 
 - [x] `aggregate()` implemented, returning an `AggregateState`.
-- [ ] Typed `combineQueries(a, b) { … }` arity overloads (OQ-2).
-- [ ] Test: dependent query ordering end to end (covered in principle by
-      `enabled` and `flatMapLatest`, both already tested elsewhere).
+- [ ] Typed `combineQueries(a, b) { … }` arity overloads — **deferred past v1**
+      (OQ-2). `combine` plus destructuring already works; the overloads remove
+      casts rather than enabling anything, so they are an ergonomics addition
+      and not a parity gap. Recorded here rather than silently dropped.
+- [x] Test: a dependent query fires strictly after its dependency resolves, and
+      exactly once.
+- [x] Test: an `enabled = false` dependent never fires while its input is missing.
+- [x] Test: five parallel queries all start before any completes — concurrent,
+      not sequential.
+- [x] Test: a changing dependency cancels the abandoned branch without re-running it.
 - [x] Test: `flatMapLatest` over a changing key cancels the old observer
       (`KeepPreviousDataTest`).
 - [x] Test: N observers across N keys issue N concurrent requests
@@ -127,5 +134,5 @@ Semantics, chosen deliberately:
 - [x] Test: partial data is preserved so a screen renders what it has.
 - [x] Test: a disabled query does not hold the aggregate in `Pending`, and
       `skipDisabled = false` opts out.
-- [ ] Documentation section on avoiding waterfalls, with a prefetch cross-link
-      to [20](20-prefetching.md).
+- [x] Documented in [`docs/parallel-queries.md`](../parallel-queries.md),
+      including the waterfall guidance and the prefetch cross-link.

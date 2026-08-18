@@ -20,6 +20,7 @@ migrating from it needs the comparison.
 
 **Keeping data fresh**
 
+- [Deduplication and observers](deduplication.md) — sharing, the grace window, eviction
 - [Caching](caching.md) — staleTime, gcTime, and why they are different clocks
 - [Invalidation](invalidation.md) — making writes visible to reads
 - [Retries](retries.md) — what to retry, what never to retry, and jitter
@@ -37,6 +38,10 @@ migrating from it needs the comparison.
 - [Compose](compose.md) — `rememberQuery` and friends
 - [ViewModels](viewmodels.md) — the `stateIn` pattern, measured
 - [Testing](testing.md) — `TestQueryClient`, and why request counts are the assertion
+
+**Composing queries**
+
+- [Parallel and dependent queries](parallel-queries.md) — `combine`, `aggregate`, and avoiding waterfalls
 
 **Lists**
 

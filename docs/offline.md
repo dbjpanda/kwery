@@ -96,6 +96,43 @@ val pending by queue.pending.collectAsState()
 if (pending > 0) Text("$pending change(s) pending")
 ```
 
+## Offline reads
+
+Writes queue; reads **pause**. A query with no connectivity does not fail — it
+reports `FetchStatus.Paused` and waits, keeping whatever data it already had on
+screen. A phone in a lift has not encountered an error, and showing one is both
+wrong and unhelpful.
+
+```kotlin
+client.query(FeedKey, QueryOptions(networkMode = NetworkMode.Online)) { api.feed() }
+```
+
+| `NetworkMode` | Offline behaviour |
+|---|---|
+| `Online` *(default)* | Pause before every attempt. Retries pause too and **continue** where they left off, so a query paused on attempt 2 resumes at attempt 3 with the right backoff. |
+| `Always` | Ignore connectivity entirely. Never pauses. |
+| `OfflineFirst` | Run the fetcher **once**, then pause retries. |
+
+**`Always` is for fetchers that do not need the network** — reading a local
+database, say. Those would otherwise be paused for a resource they never use.
+
+**`OfflineFirst` is for a fetcher whose first attempt might be served without
+the network** — an HTTP cache or an interceptor. Retrying it is pointless: if
+the cache did not have it, hammering a dead network will not help either.
+
+Two details worth knowing:
+
+- **A paused query that is cancelled does not resume.** Leaving a screen while
+  offline means no request when connectivity returns.
+- **Under `Always`, reconnecting still refetches** unless you say otherwise.
+  TanStack derives `refetchOnReconnect: false` from `networkMode: 'always'`;
+  Kwery cannot cheaply, because a Kotlin data class default cannot tell "unset"
+  from "explicitly the default". Set it yourself:
+
+  ```kotlin
+  QueryOptions(networkMode = NetworkMode.Always, refetchOnReconnect = RefetchOn.Never)
+  ```
+
 ## What goes wrong
 
 **Delivery is at-least-once, not exactly-once.** A write may have reached the

@@ -84,7 +84,7 @@ that feature's parity table with a reason.
 | 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ● | ● |
 | 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ● | ● |
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ● | ● |
-| 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ● | ○ |
+| 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ● | ● |
 | 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ● | ● |
 | 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ● | ● |
 | 08 | [Invalidation & filters](08-invalidation-filters.md) | `queryClient.test.tsx`, `utils.test.tsx` | ● | ● | ● |
@@ -97,7 +97,7 @@ that feature's parity table with a reason.
 |---|---|---|:--:|:--:|:--:|
 | 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ● | ● |
 | 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ● | ● |
-| 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ● | ○ |
+| 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ● | ● |
 | 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ◐ |
 | 15 | [Persistence & hydration](15-persistence.md) | `hydration.test.tsx` | ● | ◐ | ◐ |
 | 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ● | ● |
@@ -108,7 +108,7 @@ that feature's parity table with a reason.
 |---|---|---|:--:|:--:|:--:|
 | 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ● | ● |
 | 18 | [ViewModel integration](18-viewmodel-integration.md) | — (Kwery-specific) | ● | ● | ● |
-| 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `queriesObserver.test.tsx` | ● | ● | ○ |
+| 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `queriesObserver.test.tsx` | ● | ● | ● |
 | 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ● | ● |
 | 21 | [Testing support](21-testing.md) | — (Kwery-specific) | ● | ● | ● |
 
