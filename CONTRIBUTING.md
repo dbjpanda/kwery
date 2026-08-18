@@ -17,7 +17,7 @@ This puts TanStack Query's `docs/` and its `query-core` test suite under
 `.reference/`, at the exact revision recorded in the script. `.reference/` is
 gitignored, so it never appears in a diff and never bloats the repository.
 
-You need it before doing any test work, and the links from `docs/roadmap/*.md`
+You need it before doing any test work, and the links from the specs
 into `.reference/` only resolve once you have run it.
 
 | | |
@@ -26,7 +26,7 @@ into `.reference/` only resolve once you have run it.
 | `.reference/tanstack-query/packages/query-core/src/__tests__/` | ~16,000 lines of behavioural tests. `query-core` is the framework-agnostic layer `kwery-core` mirrors, so these are close to an executable specification. |
 
 Bumping the pinned revision is a deliberate act, not routine maintenance:
-re-check every parity table in `docs/roadmap/` against the upstream diff, and
+re-check every parity table in the specs against the upstream diff, and
 land the bump as its own commit so the behavioural delta is reviewable on its
 own.
 
@@ -49,9 +49,12 @@ all.
 
 A feature is complete only when all three have been passed, **in order**:
 
-1. **Spec** — `docs/roadmap/NN-feature.md`. Design written, open questions
-   resolved or explicitly deferred with a reason.
-2. **Tests** — every box in that file's "Definition of done" ticked, suite green.
+1. **Spec** — a design document with the open questions resolved, or explicitly
+   deferred with a reason. Specs live in `docs/roadmap/`, which is **not part of
+   this repository**: it is working material, and publishing it would put four
+   tiers of open questions in front of people who want to use the library. Ask
+   for it if you are taking on a feature.
+2. **Tests** — every box in that spec's "Definition of done" ticked, suite green.
 3. **Docs** — `docs/<feature>.md`, user-facing, with examples that compile.
 
 Gate 3 never precedes gate 2. Documentation describes behaviour that has been
@@ -59,7 +62,8 @@ proven, not behaviour that was intended — the "what goes wrong" section of a
 docs page can only be written after the tests exist, and it is the section
 readers actually need.
 
-Track status in [`docs/roadmap/README.md`](docs/roadmap/README.md).
+Current status is summarised in [RELEASE.md](RELEASE.md): what passes all
+three gates, what was deliberately not built, and what needs a device.
 
 ## Writing tests
 

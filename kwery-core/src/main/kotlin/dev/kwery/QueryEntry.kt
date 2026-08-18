@@ -17,7 +17,9 @@ import kotlin.time.Duration
  * One cache entry: its state, its observers, and the single in-flight request
  * they share.
  *
- * Implements **approach C′** from `docs/roadmap/05-deduplication-observers.md`,
+ * Implements **approach C′** — ref-counted observers with a grace window, the
+ * design a measured spike selected over the alternatives. See
+ * `docs/deduplication.md`,
  * which was settled by measurement rather than reasoning. All mutation goes
  * through [mutex]; nothing here is safe to touch without it.
  */
@@ -200,8 +202,8 @@ internal class QueryEntry<T>(
         // coroutine. The strays would be harmless — the first timer still
         // evicts on time and the rest find the entry gone — which is precisely
         // why no assertion about data can see them. This is the one guard in
-        // the sweep recorded in docs/roadmap/05-deduplication-observers.md that
-        // no test kills; keeping it is a deliberate call, not an oversight.
+        // guard sweep that no test kills; keeping it is a deliberate call
+        // rather than an oversight, and the reason is written above.
         if (graceJob?.isActive == true || gcJob?.isActive == true) return
 
         graceJob = scope.launch {

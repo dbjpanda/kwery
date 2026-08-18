@@ -54,10 +54,32 @@ the device turns* — because refetch-on-mount is driven by staleness, not by
 observer accounting, and a grace period alone does not prevent it.
 
 This was settled by a measured spike rather than reasoning, and the measurement
-overturned the assumption. It is invisible under the ViewModel
-`WhileSubscribed` pattern, where the upstream stays alive and the cache never
-sees a detach at all — and it shows up immediately in `rememberQuery`, which
-collects directly.
+overturned the assumption. Reattaching 50 ms after detaching — comfortably
+inside a five-second grace window — still fired a second request, because
+refetch-on-mount is driven by staleness, not by observer accounting.
+
+Measured across the scenarios that decided the design:
+
+| Scenario | Result |
+|---|---|
+| Rotation, direct collection, `staleTime = 0`, grace 5 s | **1 extra request** — the bug |
+| Same, with `staleTime = 30 s` | 0 |
+| Rotation under `stateIn(WhileSubscribed(5 s))`, `staleTime = 0` | 0 |
+| Leave and return inside grace, slow request in flight | 1 request — the in-flight one is **joined**, not restarted |
+| Abandon a slow request and never return | cancelled at exactly grace expiry |
+
+The third row is why this is invisible under the ViewModel pattern: the upstream
+stays alive, so the cache never sees a detach at all. It shows up immediately in
+`rememberQuery`, which collects directly.
+
+The fourth row is the other half of the window's value. Without grace,
+navigating away mid-request cancels it and returning a moment later starts over
+— wasting the request and making the user wait twice.
+
+**The two timeouts stack harmlessly.** Time from closing a screen to eviction
+was 305 000 ms with direct collection, and 310 000 ms with
+`WhileSubscribed(5 s)` layered on top: a 1.6 % difference, which is why there is
+no custom `SharingStarted` and no third timing knob to reason about.
 
 Tuning it:
 

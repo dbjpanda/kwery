@@ -1,7 +1,7 @@
 # Release readiness
 
 Where Kwery actually stands, checked against the repository rather than
-remembered. Every claim here is traceable to a test, a roadmap file, or a
+remembered. Every claim here is traceable to a test or a
 `./gradlew build apiCheck` run.
 
 **Status: publishable as `0.1.0-SNAPSHOT`, with one scope decision outstanding.**
@@ -70,11 +70,11 @@ recommendation.
 Three tests cannot run in this environment and are tracked rather than pretended
 away. None blocks a release; all three would strengthen one.
 
-| Feature | Test |
+| Area | Test |
 |---|---|
-| [01](docs/roadmap/01-query-keys.md) | R8-shrunk build proving canonical key strings survive minification |
-| [07](docs/roadmap/07-refetch-triggers.md) | A captive-portal network (connected, not validated) reports offline |
-| [17](docs/roadmap/17-compose-bindings.md) | Compose render paths for loading / error / refreshing |
+| Query keys | R8-shrunk build proving canonical key strings survive minification |
+| Refetch triggers | A captive-portal network (connected, not validated) reports offline |
+| Compose bindings | Render paths for loading / error / refreshing |
 
 The first is the one to run first. Key encoding feeds persistence, so if R8
 rewrites something the cache silently misses on every cold start after release —
@@ -83,7 +83,7 @@ a failure that cannot happen in debug builds.
 ## Deliberately not built
 
 Each of these was specified, considered, and dropped or deferred with the reason
-recorded in its roadmap file. They are decisions, not gaps.
+recorded in its spec. They are decisions, not gaps.
 
 | Not built | Why |
 |---|---|
@@ -104,9 +104,7 @@ ignore warnings.
 
 ## Post-v1
 
-Features [22](docs/roadmap/22-devtools.md) (devtools),
-[23](docs/roadmap/23-cross-process-sync.md) (cross-process cache sync) and
-[24](docs/roadmap/24-streamed-queries.md) (streamed queries) are specified and
+Devtools, cross-process cache sync and streamed queries are specified and
 unbuilt. They are tier 4 and were never in the v1 scope.
 
 ## How to check this document
@@ -115,8 +113,12 @@ unbuilt. They are tier 4 and were never in the v1 scope.
 ./gradlew build apiCheck        # everything, including the docs lint
 ```
 
-The status table in [`docs/roadmap/README.md`](docs/roadmap/README.md) is the
-source of truth, and it is checked against the Definition-of-done boxes in each
-feature file rather than maintained by hand. An open box there must say why:
-struck through with a decision, or under a **Requires a device** heading. An
-open box with no reason is unfinished work.
+The status table that backs this document lives in the project's roadmap, which
+is working material and not published. It is checked against the
+Definition-of-done boxes in each spec rather than maintained by hand — an open
+box there must say why, struck through with a decision or filed under
+**Requires a device**, and an open box with no reason is unfinished work.
+
+What *is* verifiable from this repository is everything the claims rest on: the
+tests, the `.api` dumps, and the documentation lint that holds every page to
+them.

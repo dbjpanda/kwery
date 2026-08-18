@@ -5,10 +5,13 @@ User-facing documentation. This is **gate 3** — see [`CLAUDE.md`](../CLAUDE.md
 A page appears here only after its feature's tests are green. Documentation
 describes behaviour that has been proven, not behaviour that was intended.
 
-For design rationale, parity tables, and open questions, see
-[`roadmap/`](roadmap/) — that is gate 1 and a different audience. Roadmap files
-argue with TanStack Query; these pages do not mention it unless a reader
-migrating from it needs the comparison.
+Design rationale, parity tables and open questions live in the project's
+roadmap, which is working material and deliberately not published — it argues
+with TanStack Query, and these pages do not mention it unless a reader migrating
+from it needs the comparison. Where a decision's reasoning matters to someone
+*using* the library, it is inlined here instead: see
+[deduplication](deduplication.md) for the observer model and the measurements
+that chose it.
 
 ## Pages
 
@@ -114,5 +117,7 @@ Rules:
   considered stale immediately" — not "configure `staleTime` as needed".
 - Document the two things every user gets wrong, wherever they are relevant:
   the `staleTime` vs `gcTime` distinction, and `status` vs `fetchStatus`.
-- Do not restate the roadmap's design rationale. A reader here wants to use the
-  library, not to know what was considered and rejected.
+- Do not restate the specs' design rationale. A reader here wants to use the
+  library, not to know what was considered and rejected — unless the reasoning
+  changes how they should use it, in which case it belongs here and nowhere
+  else.

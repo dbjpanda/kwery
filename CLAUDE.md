@@ -91,6 +91,13 @@ kwery-test/             TestQueryClient — virtual clock, request recording
 Start at `docs/roadmap/README.md`. It holds the status table, module layout,
 positioning against Soil and Store5, non-goals, and the locked decisions.
 
+**`docs/roadmap/` is gitignored** — it is working material, not published. It
+must still be kept accurate: it is the source of truth for project state, and
+`RELEASE.md` is the published summary derived from it. When a decision's
+reasoning matters to someone *using* the library, inline it into `docs/`
+rather than linking to a roadmap file that a reader of the repository cannot
+open.
+
 ## Locked architectural decisions
 
 Do not silently violate these. Changing one means updating

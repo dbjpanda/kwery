@@ -35,7 +35,7 @@ private const val FETCH_MS = 100L
  * [TestQueryClient] — dogfooding it is how we find out whether it is any good.
  *
  * Scenario IDs (S1, S9, S11…) refer to the spike harness recorded in
- * `docs/roadmap/05-deduplication-observers.md`; the numbers those produced are
+ * `docs/deduplication.md`; the numbers those produced are
  * the expected values here.
  */
 class QueryCacheBehaviourTest {

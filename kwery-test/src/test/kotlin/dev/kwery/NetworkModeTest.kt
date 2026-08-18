@@ -298,7 +298,7 @@ class TestManagersTest {
         // TanStack derives refetchOnReconnect = false from networkMode: 'always'.
         // Kwery does not, and cannot cheaply: a data class default cannot
         // distinguish "unset" from "explicitly IfStale". Documented rather than
-        // guessed at — see docs/roadmap/13-network-mode.md.
+        // guessed at — see docs/offline.md.
         assertEquals(2, attempts, "the default still refetches; set RefetchOn.Never to opt out")
 
         job.cancel()

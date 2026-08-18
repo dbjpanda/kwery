@@ -64,7 +64,7 @@ public data class QueryOptions(
      *
      * Suppressed inside the grace window, so a brief app switch — a
      * notification, replying to a message, the app switcher — does not refetch
-     * every visible query. See `docs/roadmap/05-deduplication-observers.md`.
+     * every visible query. See `docs/deduplication.md`.
      */
     val refetchOnFocus: RefetchOn = RefetchOn.IfStale,
 
@@ -119,7 +119,7 @@ public data class QueryClientConfig(
      * inactive.
      *
      * This window does two jobs, both established by measurement (see
-     * `docs/roadmap/05-deduplication-observers.md`):
+     * `docs/deduplication.md`):
      *
      * 1. It defers eviction, absorbing rotation and navigation churn.
      * 2. **A reattach inside the window is a continuation, not a fresh mount**,

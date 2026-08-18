@@ -16,3 +16,8 @@ local.properties
 # at the pinned revision with ./scripts/vendor-reference.sh, which is where that
 # revision is recorded. Required before gate-2 (test) work; see CONTRIBUTING.md.
 .reference/
+
+# The roadmap is working material: gate-1 specs, open questions, parity tables
+# and the reasoning behind decisions. Useful while building, noise for someone
+# consuming the library.
+docs/roadmap/

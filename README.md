@@ -7,9 +7,10 @@ process death.
 A [TanStack Query](https://tanstack.com/query/latest) equivalent for Kotlin,
 built for how Android actually behaves.
 
-> **Status: pre-alpha, not yet released.** The design is specified and decided;
-> implementation is in progress. Nothing is published to Maven Central yet.
-> See [the roadmap](docs/roadmap/README.md) for what is built and what is not.
+> **Status: pre-alpha, not yet released.** 19 of 24 features are specified,
+> tested and documented; nothing is published to Maven Central yet.
+> See [RELEASE.md](RELEASE.md) for exactly what is built, what was deliberately
+> not built and why, and what still needs a device.
 
 ## Why
 
@@ -84,8 +85,10 @@ Four decisions the whole library rests on:
   material is fetched locally by contributors rather than committed — see
   [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Full rationale, including 16 deliberate divergences and why each exists, is in
-[docs/roadmap/README.md](docs/roadmap/README.md).
+The deliberate divergences from TanStack, and the reason for each, are listed
+in [RELEASE.md](RELEASE.md#deliberately-not-built). The reasoning behind the
+observer model in particular — including the measurements that chose it — is in
+[docs/deduplication.md](docs/deduplication.md).
 
 ## Building
 
@@ -101,7 +104,7 @@ Requires JDK 17 to build; the published artifacts target JVM 11. See
 
 Kwery uses a three-gate workflow — spec, then tests, then documentation, in that
 order and never out of it. See [CONTRIBUTING.md](CONTRIBUTING.md) to get set up,
-and [docs/roadmap/README.md](docs/roadmap/README.md) for current status.
+and [RELEASE.md](RELEASE.md) for current status.
 
 ## Licence
 

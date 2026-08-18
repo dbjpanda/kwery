@@ -175,7 +175,7 @@ nothing.
 between the tap and delivery, the write is safely queued and *will* be sent, but
 the screen shows server state until it lands. The write is not lost; the
 preview of it is. This is a known gap rather than a design choice — see
-[the roadmap](roadmap/14-offline-mutation-queue.md).
+the project's roadmap, which is kept outside the published repository.
 
 **A failing write does not block its scope forever.** The scope lock is released
 even when delivery throws, so one poison record cannot deadlock everything

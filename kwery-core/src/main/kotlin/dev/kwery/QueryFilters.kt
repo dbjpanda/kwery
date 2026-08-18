@@ -37,7 +37,7 @@ public data class QueryEntrySnapshot(
      *
      * Deliberately data rather than a warning: the cache cannot distinguish a
      * leak from a screen the user has genuinely had open all afternoon. See
-     * `docs/roadmap/18-viewmodel-integration.md`.
+     * `docs/viewmodels.md`.
      */
     val observedSinceMillis: Long? = null,
 ) {
