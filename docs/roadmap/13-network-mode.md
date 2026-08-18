@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 2 — v1 headline |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core`, `kwery-android` |
 | **TanStack source** | [`guides/network-mode.md`](../../.reference/tanstack-query/docs/framework/react/guides/network-mode.md), [`reference/onlineManager.md`](../../.reference/tanstack-query/docs/reference/onlineManager.md) |
 | **Depends on** | 03 Query state, 07 Refetch triggers |
@@ -102,15 +102,53 @@ transitions. `Online` remains Kwery's default for parity, but two things follow:
   Leaning: debounce the *offline* transition by a short window (~500 ms), do not
   debounce the *online* transition. Needs a default decision and a test.
 
+### `OfflineFirst` was documented but not implemented
+
+The enum, its KDoc and this file all described "run the query function once,
+then pause retries". `awaitFetchAllowed` treated it exactly like `Online`, so it
+paused immediately and the fetcher never ran at all.
+
+Nothing caught it because nothing tested it — the constant existed, the code
+compiled, and the documentation described the intent convincingly. It is the
+cleanest example so far of why gate 2 precedes gate 3: a plausible sentence in a
+doc comment is not evidence.
+
+Now the first attempt is allowed through even with no connectivity, because it
+may be served by an HTTP cache or an interceptor that never touches the network.
+Retries are then paused — if the cache did not have it, repeating the call
+against a dead network will not help either.
+
+### Divergence: `Always` does not silently disable `refetchOnReconnect`
+
+TanStack derives `refetchOnReconnect: false` from `networkMode: 'always'`. Kwery
+does not, and the reason is a language difference rather than a preference: a
+JavaScript options object distinguishes *unset* from *explicitly set to the
+default*, and a Kotlin data class default cannot. Auto-deriving would mean
+either silently overriding an explicit `IfStale`, or adding a nullable third
+state to every trigger option purely to express "unset".
+
+So the rule is documented instead: under `NetworkMode.Always`, set
+`refetchOnReconnect = RefetchOn.Never` yourself. Both behaviours have tests, so
+the divergence is a stated fact rather than an assumption.
+
 ## Definition of done
 
-- [ ] `NetworkMode` implemented across queries and mutations.
-- [ ] Test: offline query reports `pending` + `paused`, not `error`.
-- [ ] Test: cached data + offline reports `success` + `paused`.
-- [ ] Test: going offline mid-retry pauses; reconnect resumes at the **next**
-      attempt index with correct backoff, and is not counted as a refetch.
-- [ ] Test: a paused query cancelled before reconnect does not resume.
-- [ ] Test: `Always` never pauses and errors normally while offline.
-- [ ] Test: `OfflineFirst` runs the fn once offline, then pauses retries.
-- [ ] Test: `Always` defaults `refetchOnReconnect` to false.
-- [ ] `TestOnlineManager` shipped in `kwery-test` for consumer tests.
+- [x] `NetworkMode` implemented across queries and mutations.
+      **`OfflineFirst` was documented but not implemented** — see below.
+- [x] Test: offline query reports `Pending` + `Paused` with a null error, and
+      issues no request.
+- [x] Test: cached data + offline reports `Success` + `Paused`, keeping the
+      cached value on screen.
+- [x] Test: going offline mid-retry pauses, burns no attempts, preserves
+      `failureCount`, and resumes at the **next** attempt on reconnect.
+- [x] Test: a paused query cancelled before reconnect does not resume.
+- [x] Test: `Always` never pauses — it errors normally while offline, and
+      succeeds offline when the fetcher does not need the network.
+- [x] Test: `OfflineFirst` runs the fn **once** offline, then pauses retries,
+      and resumes retrying on reconnect. **Verified by mutation** — both
+      "never allow the first attempt" and "never pause after it" fail it.
+- [ ] ~~`Always` defaults `refetchOnReconnect` to false.~~ **Divergence, not a
+      gap** — see below. Both behaviours are tested.
+- [x] `TestOnlineManager` and `TestFocusManager` shipped in `kwery-test`, for
+      consumers who build their own `QueryClient` rather than using
+      `TestQueryClient`. Both tested against a hand-built client.

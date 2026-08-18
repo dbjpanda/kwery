@@ -362,7 +362,7 @@ internal class QueryEntry<T>(
     private suspend fun runWithRetry(fetch: suspend () -> T): T {
         var failureCount = 0
         while (true) {
-            awaitFetchAllowed()
+            awaitFetchAllowed(failureCount)
             try {
                 // A fetcher that swallows CancellationException in a broad
                 // `catch (e: Exception)` cannot fabricate a success: it runs
@@ -396,9 +396,16 @@ internal class QueryEntry<T>(
      * [FetchStatus.Paused] and waits. Resuming **continues** the retry
      * sequence rather than restarting it, so a query paused on attempt 2
      * resumes at attempt 3 with the correct backoff.
+     *
+     * [NetworkMode.OfflineFirst] lets the **first** attempt through even with
+     * no connectivity, because it may be served by an HTTP cache or an
+     * interceptor that never touches the network. Retries are then paused: if
+     * the cache did not have it, repeating the call against a dead network will
+     * not help either.
      */
-    private suspend fun awaitFetchAllowed() {
+    private suspend fun awaitFetchAllowed(failureCount: Int) {
         if (options.networkMode == NetworkMode.Always) return
+        if (options.networkMode == NetworkMode.OfflineFirst && failureCount == 0) return
         if (onlineManager.isOnline.value) return
 
         mutex.withLock {

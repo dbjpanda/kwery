@@ -97,7 +97,7 @@ that feature's parity table with a reason.
 |---|---|---|:--:|:--:|:--:|
 | 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ● | ● |
 | 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ● | ● |
-| 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ◐ | ○ |
+| 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ● | ○ |
 | 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ◐ |
 | 15 | [Persistence & hydration](15-persistence.md) | `hydration.test.tsx` | ● | ◐ | ◐ |
 | 16 | [Infinite & paginated queries](16-infinite-queries.md) | `infiniteQueryBehavior.test.tsx`, `infiniteQueryObserver.test.tsx` | ● | ● | ● |

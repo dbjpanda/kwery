@@ -1,3 +1,19 @@
+public final class dev/kwery/test/TestFocusManager : dev/kwery/FocusManager {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun isFocused ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun setFocused (Z)V
+}
+
+public final class dev/kwery/test/TestOnlineManager : dev/kwery/OnlineManager {
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun isOnline ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun setOnline (Z)V
+}
+
 public final class dev/kwery/test/TestQueryClient {
 	public synthetic fun <init> (Lkotlinx/coroutines/test/TestScope;JILdev/kwery/QueryOptions;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lkotlinx/coroutines/test/TestScope;JILdev/kwery/QueryOptions;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
