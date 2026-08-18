@@ -53,6 +53,9 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
+extra_javascript:
+  - javascripts/sidebar-scroll.js
+
 extra:
   social:
     - icon: fontawesome/brands/github
