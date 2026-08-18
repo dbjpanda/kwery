@@ -85,18 +85,23 @@
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-/* Selected keeps the accent, so it stays the only accent-coloured row. */
-.md-sidebar--primary a.md-nav__link--active,
-.md-sidebar--primary a.md-nav__link--active:hover,
-.md-sidebar--primary a.md-nav__link--active:focus {
+/* Selected keeps the accent, so it stays the only accent-coloured row.
+ *
+ * [href] is carried here purely for specificity. The hover rule above needs it
+ * to override Material's own `.md-nav__link[href]:hover`, which makes hover
+ * (0,4,1); without a matching attribute selector these active rules are
+ * (0,3,1) and lose, so hovering the current page made it look unselected. */
+.md-sidebar--primary a.md-nav__link--active[href],
+.md-sidebar--primary a.md-nav__link--active[href]:hover,
+.md-sidebar--primary a.md-nav__link--active[href]:focus {
   color: var(--md-accent-fg-color);
   background-color: rgba(126, 86, 194, 0.1);
   font-weight: 500;
 }
 
-[data-md-color-scheme="slate"] .md-sidebar--primary a.md-nav__link--active,
-[data-md-color-scheme="slate"] .md-sidebar--primary a.md-nav__link--active:hover,
-[data-md-color-scheme="slate"] .md-sidebar--primary a.md-nav__link--active:focus {
+[data-md-color-scheme="slate"] .md-sidebar--primary a.md-nav__link--active[href],
+[data-md-color-scheme="slate"] .md-sidebar--primary a.md-nav__link--active[href]:hover,
+[data-md-color-scheme="slate"] .md-sidebar--primary a.md-nav__link--active[href]:focus {
   color: #c4b5fd;
   background-color: rgba(167, 139, 250, 0.14);
 }
@@ -306,4 +311,43 @@
  * without depending on what that offset happens to be. */
 .md-sidebar--primary .md-nav--primary > .md-nav__list {
   padding-bottom: 4rem;
+}
+
+/* The sidebar scrollbar is a hint, not a purple rule down the page.
+ *
+ * Material paints the thumb at all times and switches it to the accent colour
+ * on :hover or :focus-within. Clicking a nav link leaves focus inside the
+ * sidebar and the cursor is over it regardless, so once the sidebar gained its
+ * own scrollbar the result was a bright purple bar sitting there after every
+ * click. Invisible until it can be used, faint when it can. */
+.md-sidebar--primary .md-sidebar__scrollwrap,
+.md-sidebar--primary .md-sidebar__scrollwrap:focus-within {
+  scrollbar-color: transparent transparent;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+[data-md-color-scheme="slate"] .md-sidebar--primary .md-sidebar__scrollwrap:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* WebKit needs its own set; scrollbar-color is not honoured everywhere. */
+.md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar {
+  width: 4px;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar-thumb,
+.md-sidebar--primary .md-sidebar__scrollwrap:focus-within::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.18);
+}
+
+[data-md-color-scheme="slate"] .md-sidebar--primary .md-sidebar__scrollwrap:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
 }
