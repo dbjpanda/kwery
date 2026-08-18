@@ -106,6 +106,11 @@ public class FileMutationQueueStore(
     override suspend fun all(): List<QueuedMutation> = mutex.withLock { readAll() }
 
     private suspend fun readAll(): List<QueuedMutation> = withContext(dispatcher) {
+        // A fast path, not the guard: the catch below already turns a missing
+        // file into an empty queue, since readText throws. This is here so the
+        // ordinary first-launch read does not build an exception to discover
+        // something a stat call answers. Defence in depth is deliberate —
+        // crashing on launch is the worst failure this class can have.
         if (!file.exists()) return@withContext emptyList()
         try {
             fileJson.decodeFromString(QueueFile.serializer(), file.readText()).records

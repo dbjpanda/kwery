@@ -59,6 +59,36 @@ class DocsApiLintTest {
      * `Retry` and the lint reports a doc error that is not one. A lint that
      * cries wolf gets switched off, so precision matters more than reach.
      */
+    /**
+     * Exact public names, read from the Kotlin sources rather than the dumps.
+     *
+     * A JVM dump cannot tell `val Exponential` from `val exponential` — both
+     * compile to `getExponential` — so a capitalisation check against it is
+     * impossible. This caught `RetryDelay.exponential` in `retries.md`, which
+     * had been wrong since the page was written and passed the dump-based check
+     * because that check accepts both forms.
+     */
+    private val declaredNames: Set<String> by lazy {
+        val declaration = Regex("""public (?:val|fun|object|class|data class) ([A-Za-z]\w*)""")
+        val fromSources = root.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" && "/src/main/" in it.path }
+            .flatMap { f -> declaration.findAll(f.readText()).map { it.groupValues[1] } }
+            .toSet()
+
+        // Enum constants and objects are JVM *fields*, and a field keeps its
+        // exact name in the dump — unlike a property, which becomes a getter
+        // and loses its first letter's case. So the dump is authoritative for
+        // these and the sources are authoritative for the rest.
+        val fields = root.walkTopDown()
+            .filter { it.isFile && it.extension == "api" }
+            .flatMap { dump ->
+                Regex("""field ([A-Za-z]\w*)""").findAll(dump.readText()).map { it.groupValues[1] }
+            }
+            .toSet()
+
+        fromSources + fields
+    }
+
     private fun kotlinBlocks(file: File): List<String> =
         Regex("""```kotlin\n(.*?)```""", RegexOption.DOT_MATCHES_ALL)
             .findAll(file.readText())
@@ -111,7 +141,14 @@ class DocsApiLintTest {
                 enums.forEach { type ->
                     Regex("""\b$type\.([A-Za-z]\w*)""").findAll(block).forEach { m ->
                         val member = m.groupValues[1]
-                        if (member !in apiNames) problems += "${file.name}: $type.$member"
+                        // Checked against the sources, not the dump, so that
+                        // capitalisation counts: `RetryDelay.exponential`
+                        // compiles to the same JVM getter as `Exponential` and
+                        // is invisible to a dump-based check.
+                        if (member !in declaredNames) {
+                            val hint = if (member in apiNames) " (wrong capitalisation?)" else ""
+                            problems += "${file.name}: $type.$member$hint"
+                        }
                     }
                 }
             }

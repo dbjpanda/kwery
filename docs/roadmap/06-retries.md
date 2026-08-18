@@ -148,8 +148,22 @@ val Default: RetryDelay = RetryDelay.equalJitter(Exponential)
   protocol-agnostic module. Ship it as a documented `RetryDelay` recipe instead —
   it is about six lines in user code and stays correct across HTTP clients.
 
+### `delayFor` is public, so its input is not trusted
+
+`RetryDelay.delayFor(attemptIndex, error)` is part of the published surface —
+anyone writing a custom `RetryDelay`, or wrapping one, can call it with any
+index. A negative index is the interesting case: two's complement makes
+`1 shl -1` a large positive number, so without a guard attempt −1 waits *longer*
+than attempt 0.
+
+Nothing internal ever passes a negative index, which is exactly why this went
+untested until a mutation of the guard killed nothing.
+
 ## Definition of done
 
+- [x] Test: a negative attempt index yields no delay rather than a nonsense one.
+      **Verified by mutation.**
+- [x] Test: attempt zero still waits, and attempt one waits longer.
 - [x] `RetryPolicy`, `RetryDelay`, `exceptWhen` implemented.
 - [x] Test: exactly 3 retries by default (4 attempts), then `status = Error`.
 - [x] Test: delays are 1 s, 2 s, 4 s, 8 s, 16 s, capped at 30 s.

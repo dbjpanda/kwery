@@ -53,9 +53,9 @@ The default is **exponential backoff with equal jitter**, capped at 30 seconds:
 
 ```kotlin
 RetryDelay.Default                        // equal jitter, the default
-RetryDelay.exponential                    // 1s, 2s, 4s, 8s … no jitter
+RetryDelay.Exponential                    // 1s, 2s, 4s, 8s … no jitter
 RetryDelay.constant(2.seconds)
-RetryDelay.equalJitter(RetryDelay.exponential)
+RetryDelay.equalJitter(RetryDelay.Exponential)
 ```
 
 **Jitter is not a detail.** Without it, every client that failed during an

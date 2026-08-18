@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -167,5 +168,31 @@ class RetryTest {
         // Exponential for "parity", this fails.
         val observed = (1..200).map { RetryDelay.Default.delayFor(3, error) }.toSet()
         assertTrue(observed.size > 1, "RetryDelay.Default must apply jitter")
+    }
+}
+
+class RetryDelayEdgeTest {
+
+    @Test
+    fun `a negative attempt index yields no delay rather than a nonsense one`() {
+        // delayFor is public API: anyone implementing a custom RetryDelay, or
+        // wrapping one, can reach it with whatever index they like. Two's
+        // complement makes 1 shl -1 a large positive number, so without the
+        // guard a negative index produces a *longer* wait than attempt 0.
+        listOf(-1, -5, Int.MIN_VALUE).forEach { attempt ->
+            assertEquals(
+                Duration.ZERO,
+                RetryDelay.Exponential.delayFor(attempt, RuntimeException("x")),
+                "attempt $attempt should not wait",
+            )
+        }
+    }
+
+    @Test
+    fun `attempt zero is the base delay, and it grows from there`() {
+        val zero = RetryDelay.Exponential.delayFor(0, RuntimeException("x"))
+        val one = RetryDelay.Exponential.delayFor(1, RuntimeException("x"))
+        assertTrue(zero > Duration.ZERO, "the first retry still waits")
+        assertTrue(one > zero, "and the second waits longer")
     }
 }

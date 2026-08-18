@@ -197,8 +197,22 @@ rather than their serialized form, so an idle cache costs no JSON encoding
 either; and over **values** rather than timestamps, so two writes landing in the
 same millisecond cannot be mistaken for none.
 
+### First launch: no file, no crash
+
+Reading a store whose file does not exist yet happens exactly once per install,
+on the launch path, before the app has drawn anything. Anything that throws
+there is the worst kind of bug — earliest possible, hardest to reproduce.
+
+Both file stores handle it twice over: an `exists()` fast path, and a `catch`
+that turns any read failure into an empty result. Neither layer alone can be
+killed by a test, because the other covers it; removing **both** fails the
+first-launch tests, which is what makes them evidence rather than decoration.
+The fast path's comment now says which of the two it is.
+
 ## Definition of done
 
+- [x] Test: a queue store with no file yet reads as empty; a persister with no
+      file yet restores null.
 - [x] `QueryPersister`, `PersistedClient`, dehydrate/hydrate implemented.
 - [x] Test: cache survives being written and restored into a **new client**,
       which is what a cold start is.

@@ -176,7 +176,7 @@ class FileStoresTest {
         file.writeText("{{{ not json")
 
         val store = FileMutationQueueStore(file, Dispatchers.Unconfined)
-        assertEquals(emptyList(), store.all())
+        assertEquals(emptyList<QueuedMutation>(), store.all())
 
         // And it recovers: the next write rewrites the file.
         store.put(record("a"))
@@ -190,5 +190,27 @@ class FileStoresTest {
 
         val reopened = FileMutationQueueStore(file, Dispatchers.Unconfined)
         assertEquals(listOf("a"), reopened.all().map { it.id })
+    }
+}
+
+class FileStoreFirstLaunchTest {
+
+    @Test
+    fun `a queue store with no file yet reads as empty`() = runTest {
+        // First launch: the directory exists, the file does not. Anything that
+        // throws here crashes the app before it has drawn a frame, which is the
+        // worst possible time and the hardest to reproduce later.
+        val dir = Files.createTempDirectory("kwery-first-launch").toFile()
+        val store = FileMutationQueueStore(File(dir, "queue.json"))
+
+        assertEquals(emptyList<QueuedMutation>(), store.all())
+    }
+
+    @Test
+    fun `a persister with no file yet restores null`() = runTest {
+        val dir = Files.createTempDirectory("kwery-first-launch-2").toFile()
+        val persister = FilePersister(File(dir, "cache.json"))
+
+        assertNull(persister.restore())
     }
 }
