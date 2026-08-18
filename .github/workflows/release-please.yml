@@ -13,6 +13,15 @@ name: Release Please
 on:
   push:
     branches: [main]
+  # Lets an existing tag be published again without cutting a new version. A
+  # failed upload is not a reason to burn a version number, and on an immutable
+  # registry burning one is not free.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to publish, e.g. v0.2.0"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -20,6 +29,7 @@ permissions:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -33,12 +43,20 @@ jobs:
 
   publish:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    # always() because release-please is skipped on a manual dispatch, and a
+    # skipped dependency would otherwise skip this too.
+    if: |
+      always() && (
+        needs.release-please.outputs.release_created == 'true' ||
+        github.event_name == 'workflow_dispatch'
+      )
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || needs.release-please.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.release-please.outputs.tag_name }}
+          ref: ${{ inputs.tag || needs.release-please.outputs.tag_name }}
 
       - uses: actions/setup-java@v5
         with:
@@ -53,7 +71,6 @@ jobs:
       # artifacts labelled 0.1.1 cannot be taken back.
       - name: Tag and build version must match
         run: |
-          TAG="${{ needs.release-please.outputs.tag_name }}"
           BUILD=$(grep -E '^kwery = ' gradle/libs.versions.toml | sed -E 's/.*"([^"]+)".*/\1/')
           echo "tag=$TAG build=$BUILD"
           if [ "$TAG" != "v$BUILD" ]; then
@@ -69,8 +86,13 @@ jobs:
       - name: Verify
         run: ./gradlew build apiCheck --no-daemon
 
+      # --no-configuration-cache is required, not tidiness: the publish task
+      # cannot be serialized into the configuration cache, and this build turns
+      # that cache on globally in gradle.properties. The plugin fails with a
+      # clear message rather than publishing something wrong, but it does fail.
+      # See gradle/gradle#22779.
       - name: Publish to Maven Central
-        run: ./gradlew publishToMavenCentral --no-daemon
+        run: ./gradlew publishToMavenCentral --no-daemon --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}

@@ -113,6 +113,18 @@ Publishing is automatic, so an upload is permanent the moment it succeeds. Two c
 - **the whole suite and `apiCheck`**, because a failing test discovered after
   publication has no remedy.
 
+### If a publish fails
+
+The workflow can be re-run against an existing tag from the Actions tab —
+**Release Please → Run workflow**, with the tag as input. A failed upload is not
+a reason to burn a version number, and on a registry where nothing can be
+deleted, burning one is not free.
+
+Note that `publishToMavenCentral` runs with `--no-configuration-cache`. That is
+required, not tidiness: the publish task cannot be serialized into the
+configuration cache this build enables globally, and the plugin fails rather
+than publishing something wrong. See gradle/gradle#22779.
+
 ### Secrets it needs
 
 Set once, on the repository:
