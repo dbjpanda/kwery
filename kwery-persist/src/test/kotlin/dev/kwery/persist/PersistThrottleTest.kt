@@ -11,6 +11,7 @@ import kotlinx.serialization.builtins.serializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -162,5 +163,53 @@ class PersistThrottleTest {
             persister.writeCount <= 13,
             "60 changes over 60s with a 5s throttle should be ~12 writes, was ${persister.writeCount}",
         )
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class PersistFailureTest {
+
+    /** Fails a set number of times, then works. Disk errors are usually transient. */
+    private class FlakyPersister(private var failures: Int) : QueryPersister {
+        var writes = 0
+        private var stored: PersistedClient? = null
+        override suspend fun persist(client: PersistedClient) {
+            if (failures > 0) { failures--; throw java.io.IOException("disk full") }
+            writes++
+            stored = client
+        }
+        override suspend fun restore(): PersistedClient? = stored
+        override suspend fun remove() { stored = null }
+    }
+
+    @Test
+    fun `a failed write does not end persistence for the process`() = runTest {
+        val persister = FlakyPersister(failures = 2)
+        val client = QueryClient(
+            scope = backgroundScope,
+            config = QueryClientConfig(
+                timeSource = TimeSource { testScheduler.currentTime },
+                defaultQueryOptions = QueryOptions(retry = RetryPolicy.Never, gcTime = 2.hours),
+            ),
+        )
+        val key = NoteKey("1")
+        client.persist(
+            backgroundScope,
+            PersistOptions(persister, keys = listOf(key), throttle = 1.seconds, maxAge = 1.hours),
+        )
+        testScheduler.runCurrent()
+
+        client.setQueryData(key) { "v" }
+        // Three windows: two fail, the third must still be attempted. Letting
+        // the exception escape kills the loop and silently stops persisting
+        // until the app restarts.
+        repeat(3) {
+            testScheduler.advanceTimeBy(1.seconds.inWholeMilliseconds)
+            testScheduler.runCurrent()
+        }
+
+        assertEquals(1, persister.writes, "the loop recovered and wrote once it could")
+        assertNotNull(persister.restore(), "and the data actually landed")
+        client.close()
     }
 }

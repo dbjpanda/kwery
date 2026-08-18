@@ -193,12 +193,24 @@ private suspend fun QueryClient.persistLoop(options: PersistOptions, timeSource:
                 }
             }
 
-        options.persister.persist(
-            PersistedClient(
-                timestamp = timeSource.nowMillis(),
-                buster = options.buster,
-                entries = entries,
-            ),
-        )
+        // A failed write must not end persistence. The loop runs for the life of
+        // the process, and disk errors are transient: a full disk, a revoked
+        // permission, another process mid-rename. Letting the exception escape
+        // kills the coroutine and silently stops persisting until the app is
+        // restarted, which is far worse than skipping one write.
+        runCatching {
+            options.persister.persist(
+                PersistedClient(
+                    timestamp = timeSource.nowMillis(),
+                    buster = options.buster,
+                    entries = entries,
+                ),
+            )
+        }.onFailure {
+            // Retry the same content next tick rather than treating it as
+            // written, or a transient failure would be indistinguishable from
+            // a successful write until something else changed.
+            lastWritten = null
+        }
     }
 }

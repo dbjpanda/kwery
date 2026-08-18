@@ -122,6 +122,26 @@ unchanged. But if your app changes cached data continuously and holds a very
 large cache, prefer a smaller persisted subset — `exclude` is there for exactly
 this — over persisting everything and paying for it on every edit.
 
+## One process owns the cache
+
+A `QueryClient` is single-process. Two processes each hold their own cache, and
+neither knows about the other's invalidations. On Android that matters for
+widget providers, `:remote` services, and WorkManager jobs configured to run in
+another process.
+
+Pointing two processes at the same persisted file is safe but lossy:
+
+- **The store will not be corrupted.** Writes go to a uniquely named temp file
+  and are moved into place with an atomic rename, so a reader sees either the
+  old file or the new one. Tested with concurrent writers and readers.
+- **Updates can be lost.** The last writer wins, and for the queue store a
+  read-modify-write from two processes can drop records.
+- **Nothing is synchronised.** Invalidating in one process does not invalidate
+  in the other.
+
+If you need a second process to see fresh data, give it its own file, or have it
+ask the main process rather than sharing a cache.
+
 ## What goes wrong
 
 **Restored data keeps its original age.** A cache restored two minutes after it

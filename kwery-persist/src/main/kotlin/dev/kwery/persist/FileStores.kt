@@ -7,6 +7,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.UUID
 
 private val fileJson = Json { ignoreUnknownKeys = true }
 
@@ -32,13 +33,25 @@ internal fun writeAtomically(
     beforeRename: () -> Unit = {},
 ) {
     target.parentFile?.mkdirs()
-    val temp = File(target.parentFile, "${target.name}.tmp")
-    temp.writeText(content)
-    beforeRename()
-    if (!temp.renameTo(target)) {
-        // Some filesystems refuse to rename onto an existing file.
-        target.delete()
-        check(temp.renameTo(target)) { "could not replace ${target.path}" }
+    // A unique temp name per write, not "<target>.tmp". Two writers sharing one
+    // file is a real situation on Android — a widget provider, a :remote
+    // service, a WorkManager job in another process — and with a shared temp
+    // name they clobber each other's scratch file, so one rename finds nothing
+    // to move and the write fails.
+    val temp = File(target.parentFile, "${target.name}.${UUID.randomUUID()}.tmp")
+    try {
+        temp.writeText(content)
+        beforeRename()
+        if (!temp.renameTo(target)) {
+            // Some filesystems refuse to rename onto an existing file. Delete
+            // and retry, and if that still fails let it throw: a silent failure
+            // here means a cache that never persists.
+            target.delete()
+            check(temp.renameTo(target)) { "could not replace ${target.path}" }
+        }
+    } finally {
+        // A failed write must not leave scratch files behind to accumulate.
+        temp.delete()
     }
 }
 
