@@ -158,10 +158,27 @@ private suspend fun QueryClient.hydrateFrom(
 }
 
 private suspend fun QueryClient.persistLoop(options: PersistOptions, timeSource: TimeSource) {
+    var lastWritten: List<DehydratedEntry>? = null
     while (true) {
         delay(options.throttle.inWholeMilliseconds)
-        val entries = dehydrate()
+
+        val current = dehydrate()
             .filter { it.key is PersistableQueryKey<*> && !options.exclude(it.key) }
+
+        // Nothing changed since the last write, so there is nothing to write.
+        // Without this the loop writes the whole cache to disk every throttle
+        // window — by default once a second, for the entire life of the
+        // process, whether or not anything happened. That is invisible in a
+        // test that only checks correctness and expensive on a real phone.
+        //
+        // The comparison is over the *dehydrated* entries rather than their
+        // serialized form, so it costs no JSON encoding when idle, and over
+        // values rather than timestamps, so two writes in the same millisecond
+        // cannot be mistaken for none.
+        if (current == lastWritten) continue
+        lastWritten = current
+
+        val entries = current
             .mapNotNull { entry ->
                 @Suppress("UNCHECKED_CAST")
                 val key = entry.key as PersistableQueryKey<Any?>

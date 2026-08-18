@@ -179,6 +179,24 @@ user's `buster`.
   Silently growing to tens of MB is a real risk. Leaning: a configurable soft
   cap that evicts least-recently-used entries at persist time, plus a warning.
 
+### The persist loop rewrote an idle cache every second
+
+`persistLoop` woke every `throttle` window and wrote the whole cache to disk
+whether or not anything had changed. At the default one-second throttle that is
+a serialize-plus-atomic-write of the entire cache, once a second, for the life
+of the process — on a phone, on flash storage, on battery.
+
+Nothing was incorrect, which is exactly why it survived: every persistence test
+passed, the data was always right, and the cost was invisible to anything that
+only checks behaviour. It took a test that asserts a *number of writes* to see
+it.
+
+The loop now compares the current dehydrated entries against the last written
+set and skips when they match. The comparison is over the **dehydrated** entries
+rather than their serialized form, so an idle cache costs no JSON encoding
+either; and over **values** rather than timestamps, so two writes landing in the
+same millisecond cannot be mistaken for none.
+
 ## Definition of done
 
 - [x] `QueryPersister`, `PersistedClient`, dehydrate/hydrate implemented.
@@ -203,5 +221,9 @@ user's `buster`.
       cache so a cache reset can never drop pending writes.
 - [ ] ~~`DataStorePersister`~~ — **dropped**, see above.
 - [ ] `RoomPersister` for large caches.
-- [ ] Test: writes throttled to at most once per `throttle` window.
+- [x] Test: a burst of ten changes inside one window costs a single write;
+      changes in separate windows are separate writes; 60 changes over 60s with
+      a 5s throttle stays under 13 writes. **All three verified by mutation.**
+- [x] Test: an idle cache is **not** rewritten every window.
+      **This was broken and the test found it** — see below.
 - [ ] Benchmark: cold-start restore time for 100 / 1 000 / 10 000 entries.

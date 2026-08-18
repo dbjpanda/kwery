@@ -133,6 +133,20 @@ optimistic writes will be applied to an empty cache.
   hydrate — not replaying the transform, since resume must not re-run
   `onMutate`. Deferred rather than guessed.
 
+### No API change was needed for the ordering
+
+`persist()` is `suspend` and returns only once the restore has finished, so
+
+```kotlin
+client.persist(scope, options)   // suspends through the restore
+queue.resume()
+```
+
+sequences correctly by construction. Coupling `OfflineQueue` to a `QueryClient`
+purely to enforce it was considered and rejected: it would add a dependency
+between two otherwise independent components to police an ordering the caller
+already cannot easily get wrong. The ordering is tested from both sides instead.
+
 ## Definition of done
 
 - [x] Durable queue with registry, storage, and resume implemented.
@@ -157,7 +171,11 @@ optimistic writes will be applied to an empty cache.
       **Found by writing the documentation** — the id existed but could not
       reach the request, making at-least-once delivery unusable in practice.
 - [ ] Room-backed `MutationQueueStore` for large queues.
-- [ ] Test: resume happens strictly after hydration, end to end.
+- [x] Test: resume happens strictly after hydration, end to end — a queued
+      write replays onto the **restored** cache across two simulated processes.
+- [x] Test: the failure mode is pinned too — resuming before restoring delivers
+      the write to the server but has nothing on screen to update, so it looks
+      to the user exactly like a lost edit.
 - [ ] Instrumentation test on a real device using process-death simulation.
 
 ### The expiry bug worth remembering
