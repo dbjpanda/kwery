@@ -49,23 +49,23 @@ updates rather than startup latency. If your app holds a very large cache and
 changes it continuously, persist a smaller subset with `exclude` rather than
 everything.
 
-Still outstanding for Maven Central: GPG signing keys and a Portal namespace,
-both of which need credentials rather than code.
-
 ## Needs a device
 
-Three tests cannot run in this environment and are tracked rather than pretended
-away. None blocks a release; all three would strengthen one.
+Run on an emulator since this environment cannot run instrumentation tests
+directly:
 
-| Area | Test |
-|---|---|
-| Query keys | R8-shrunk build proving canonical key strings survive minification |
-| Refetch triggers | A captive-portal network (connected, not validated) reports offline |
-| Compose bindings | Render paths for loading / error / refreshing |
+| Area | Test | State |
+|---|---|---|
+| Query keys | R8-shrunk build proving canonical key strings survive minification | done |
+| Refetch triggers | Real `ConnectivityManager` agrees with `AndroidOnlineManager` on VALIDATED state | done |
+| Offline mutation queue | Queue and cache round-trip through real `filesDir`, atomic writes leave no scratch files | done |
+| Offline mutation queue | A true OS-level process kill, not just reopening the store in-process | **open** |
+| Compose bindings | Render paths for loading / error / refreshing | **open** |
 
-The first is the one to run first. Key encoding feeds persistence, so if R8
-rewrites something the cache silently misses on every cold start after release —
-a failure that cannot happen in debug builds.
+Two items are still open. Neither blocks a release. The process-kill test needs
+orchestration across two separate app launches; the Compose item needs a real UI,
+not a headless composition. Together they are the last device-only gaps in the
+project.
 
 ## Deliberately not built
 
