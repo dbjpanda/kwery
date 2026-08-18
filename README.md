@@ -1,5 +1,7 @@
 # Kwery
 
+<img src="docs/assets/hero.svg" alt="Kwery — async server-state for Android" width="100%">
+
 [![Release](https://jitpack.io/v/dbjpanda/kwery.svg)](https://jitpack.io/#dbjpanda/kwery)
 [![CI](https://github.com/dbjpanda/kwery/actions/workflows/ci.yml/badge.svg)](https://github.com/dbjpanda/kwery/actions/workflows/ci.yml)
 [![Licence](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
@@ -21,10 +23,58 @@ built for how Android actually behaves.
 Android already has good pieces — Retrofit, Ktor, Room, coroutines — but nothing
 that owns *server state* as a concern: knowing when cached data is stale, sharing
 one request between two screens that ask for the same thing, refetching when the
-app comes back to the foreground, keeping a list on screen while it refreshes
+app returns to the foreground, keeping a list on screen while it refreshes
 underneath, and not losing a write because the process was killed.
 
-The existing options each stop short:
+Most apps end up hand-rolling this in a repository layer. It works until the
+third screen wants the same data, or the user rotates the phone mid-request, or
+they tap save on the Tube.
+
+### Built for how Android actually behaves
+
+These are the differences that matter, and each was **measured rather than
+assumed** — the numbers are in [`docs/`](docs/):
+
+- **Rotation costs zero requests.** A reattach inside a five-second grace window
+  is a continuation, not a new mount, so it skips the staleness check. Without
+  that rule, the default `staleTime = 0` fires a redundant request every single
+  time the device turns — measured, not theorised.
+- **"Online" means a *validated* network.** A captive portal reports a perfectly
+  good connection on which every request fails. Treating connected as online
+  means refetching into a black hole and showing errors instead of the paused
+  state the user should see.
+- **Focus is process lifecycle, not Activity focus.** Per-Activity focus fires on
+  dialogs, permission prompts and the app switcher — a refetch storm dressed up
+  as a feature.
+- **The cache is bounded by count as well as time.** A browser tab gets reloaded;
+  an Android process can live for days.
+- **Offline is a state, not an error.** Queries *pause* and keep their data on
+  screen; writes queue durably and replay after process death.
+
+### Two status axes, because one is not enough
+
+`status` (pending/error/success) and `fetchStatus` (fetching/paused/idle) stay
+separate, so `success` + `fetching` — a background refresh over data already on
+screen — and `pending` + `paused` — a cold start with no network — are both
+expressible. Collapsing them into one enum loses exactly the states Android
+hits most.
+
+### Written to be testable
+
+`kwery-test` ships a `TestQueryClient` with a virtual clock and request
+recording, because nearly every meaningful claim about a cache is a
+request-count claim: *deduplicated*, *did not refetch*, *the prefetch was a
+no-op*. Kwery's own 370-odd tests use it, and none of them call a real
+`delay()` — the suite runs in seconds.
+
+```kotlin
+val kwery = TestQueryClient(this)
+repeat(10) { backgroundScope.launch { kwery.query(TodoKey("1")) { api.todo() }.collect { } } }
+kwery.awaitIdle()
+assertEquals(1, kwery.requestCount)   // ten screens, one request
+```
+
+### Against the alternatives
 
 |  | Kwery | [Soil](https://github.com/soil-kt/soil) | [Store5](https://github.com/MobileNativeFoundation/Store) |
 |---|---|---|---|
@@ -32,6 +82,20 @@ The existing options each stop short:
 | Ad-hoc `query(key)` from any call site | yes | yes | no — stores declared up front |
 | Persisted cache across process death | first-class | no | via `SourceOfTruth` |
 | Offline mutation queue | yes | no | partial |
+| Two orthogonal status axes | yes | partial | no |
+| Virtual-clock test client | yes | no | no |
+
+The Flow-first core is the wedge: `kwery-compose` is a thin adapter over it, so
+the same cache serves a ViewModel and a composable identically. If a behaviour
+existed only in the Compose layer, that would be a bug.
+
+### What it is not
+
+It is **new** — `0.2.1`, not battle-tested across a hundred apps. 19 of 24
+planned features are through spec, tests and documentation;
+[RELEASE.md](RELEASE.md) lists exactly what is done, what was deliberately not
+built and why, and what still needs a device. Nothing there is hidden, because
+finding out later is worse than knowing now.
 
 ## What it looks like
 

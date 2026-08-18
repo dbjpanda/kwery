@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" width="1280" height="400" role="img" aria-label="Kwery — async server-state for Android">
+  <title>Kwery — async server-state for Android</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#12132A"/>
+      <stop offset="55%" stop-color="#181A38"/>
+      <stop offset="100%" stop-color="#221A3D"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="55%" stop-color="#C13FA6"/>
+      <stop offset="100%" stop-color="#F0803C"/>
+    </linearGradient>
+    <linearGradient id="arc" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#F0803C"/>
+    </linearGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Opaque ground: never rely on the page behind it, so this reads the same
+       on GitHub's light and dark themes. -->
+  <rect width="1280" height="400" fill="url(#bg)"/>
+  <rect width="1280" height="3" fill="url(#brand)"/>
+
+  <!-- Cached layers: stacked cards, the front one crisp, the ones behind it
+       receding — data held, with older copies still there. -->
+  <g transform="translate(716 108)" opacity="0.95">
+    <rect x="52" y="34" width="230" height="150" rx="16" fill="#FFFFFF" opacity="0.05"/>
+    <rect x="26" y="17" width="230" height="150" rx="16" fill="#FFFFFF" opacity="0.09"/>
+    <rect x="0" y="0" width="230" height="150" rx="16" fill="#1E2044" stroke="#8B5CF6" stroke-opacity="0.55" stroke-width="1.5"/>
+    <rect x="22" y="28" width="120" height="11" rx="5.5" fill="#FFFFFF" opacity="0.75"/>
+    <rect x="22" y="52" width="186" height="8" rx="4" fill="#FFFFFF" opacity="0.28"/>
+    <rect x="22" y="70" width="150" height="8" rx="4" fill="#FFFFFF" opacity="0.28"/>
+    <rect x="22" y="88" width="168" height="8" rx="4" fill="#FFFFFF" opacity="0.28"/>
+    <rect x="22" y="112" width="66" height="18" rx="9" fill="#8B5CF6" opacity="0.30"/>
+    <rect x="96" y="112" width="46" height="18" rx="9" fill="#F0803C" opacity="0.28"/>
+  </g>
+
+  <!-- Revalidation: an arc with a gap, caught mid-turn. Stale-while-revalidate
+       is a loop, not a spinner. -->
+  <g transform="translate(1136 200)" fill="none" stroke-linecap="round">
+    <circle r="70" stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="1.5"/>
+    <path d="M -50 -50 A 71 71 0 1 1 -60 35" stroke="url(#arc)" stroke-width="6.5"/>
+    <path d="M -60 35 l -2 -23 l 22 8 z" fill="url(#arc)" stroke="none"/>
+    <circle r="44" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="1.5" stroke-dasharray="5 10"/>
+    <circle r="18" fill="#8B5CF6" fill-opacity="0.16" stroke="#8B5CF6" stroke-opacity="0.6" stroke-width="1.5"/>
+  </g>
+
+  <line x1="96" y1="300" x2="700" y2="300" stroke="url(#fade)" stroke-width="1"/>
+
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+    <text x="96" y="176" font-size="104" font-weight="700" letter-spacing="-3" fill="#F6F7FB">Kwery</text>
+    <text x="100" y="228" font-size="30" font-weight="500" fill="#B9BEDA">Async server-state for Android</text>
+    <text x="100" y="271" font-size="19" font-weight="400" fill="#7F86A8">Caching, deduplication and stale-while-revalidate,</text>
+    <text x="100" y="298" font-size="19" font-weight="400" fill="#7F86A8">with a cache that survives process death.</text>
+  </g>
+
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+     font-size="15" font-weight="500" fill="#6E75A0" letter-spacing="0.6">
+    <text x="100" y="348">caching · deduplication · offline · mutations · Compose</text>
+  </g>
+</svg>
