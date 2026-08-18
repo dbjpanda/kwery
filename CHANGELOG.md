@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/dbjpanda/kwery/compare/v0.2.0...v0.2.1) (2026-08-18)
+
+
+### Fixes
+
+* **build:** publish with the configuration cache off, and allow re-publishing ([a44f688](https://github.com/dbjpanda/kwery/commit/a44f688b2cb5f0f410ff9115b56a0617ff1604c5))
+
 ## [0.2.0](https://github.com/dbjpanda/kwery/compare/v0.1.2...v0.2.0) (2026-08-18)
 
 
