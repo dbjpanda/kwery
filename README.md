@@ -14,11 +14,12 @@ Built on coroutines and Flow. Works from a ViewModel or from Compose.
 ## Install
 
 ```kotlin
-implementation("io.github.dbjpanda:kwery-core:0.2.1")
-implementation("io.github.dbjpanda:kwery-android:0.2.1")   // focus + connectivity
-implementation("io.github.dbjpanda:kwery-compose:0.2.1")   // rememberQuery
-implementation("io.github.dbjpanda:kwery-persist:0.2.1")   // cache across process death
-testImplementation("io.github.dbjpanda:kwery-test:0.2.1")  // TestQueryClient
+implementation("io.github.dbjpanda:kwery-core:0.3.0")
+implementation("io.github.dbjpanda:kwery-android:0.3.0")        // focus + connectivity
+implementation("io.github.dbjpanda:kwery-compose:0.3.0")        // rememberQuery
+implementation("io.github.dbjpanda:kwery-persist:0.3.0")        // cache across process death
+implementation("io.github.dbjpanda:kwery-persist-room:0.3.0")   // Room store for large caches
+testImplementation("io.github.dbjpanda:kwery-test:0.3.0")       // TestQueryClient
 ```
 
 On Maven Central. No extra repository needed.
@@ -95,7 +96,8 @@ apart is what makes a background refresh different from a cold start.
 ## Testing
 
 `TestQueryClient` gives you a virtual clock and request counting. Kwery's own
-370 tests use it. None of them call a real `delay()`.
+suite is built on it, and nothing in it calls a real `delay()`, so 398 tests run
+in seconds.
 
 ```kotlin
 @Test fun `deduplicates`() = runTest {
@@ -126,7 +128,7 @@ that lives for days.
 
 ## Docs
 
-[Start here](docs/README.md). 22 pages, every code example checked against the
+[Start here](docs/README.md). 23 pages, every code example checked against the
 published API on each build.
 
 Popular ones: [queries](docs/queries.md), [caching](docs/caching.md),
@@ -135,8 +137,9 @@ Popular ones: [queries](docs/queries.md), [caching](docs/caching.md),
 
 ## Status
 
-Version 0.2.1. Early but real: 19 of 24 planned features are specified, tested
-and documented. [RELEASE.md](RELEASE.md) lists what is missing and why.
+Version 0.3.0. Early but real: 22 of 24 planned features are specified, tested
+and documented. What is left needs a physical device.
+[RELEASE.md](RELEASE.md) lists what is missing and why.
 
 Requires JDK 17 to build. Artifacts target JVM 11 and minSdk 24.
 

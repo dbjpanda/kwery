@@ -15,7 +15,8 @@ no publishing configuration at all, so nothing could be consumed by anyone.
 |---|---|---|
 | `kwery-core` | cache, observers, retries, mutations, infinite queries | complete for v1 |
 | `kwery-test` | `TestQueryClient`, virtual clock, request recording | complete for v1 |
-| `kwery-persist` | persistence contracts, file stores, offline queue | **file-backed only** |
+| `kwery-persist` | persistence contracts, file stores, offline queue | complete for v1 |
+| `kwery-persist-room` | Room-backed cache and queue, for large or busy caches | complete for v1 |
 | `kwery-android` | `FocusManager`, `OnlineManager` | complete for v1 |
 | `kwery-compose` | `rememberQuery` and friends | complete for v1 |
 | `docs-lint` | holds the documentation to the published API | not published |
