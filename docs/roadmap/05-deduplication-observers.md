@@ -235,6 +235,44 @@ bespoke mechanism.
   refetches normally, which is the behaviour users actually want from
   foregrounding.
 
+### Multi-observer coverage was the blind spot
+
+Nearly every test in the suite used a **single** observer, and a whole class of
+bug lives in the difference: work that should happen once per *entry* but
+accidentally happens once per *observer*, and teardown that should wait for the
+last observer but runs on the first to leave.
+
+Two guards turned out to be entirely untested, both found by mutating them and
+watching nothing fail:
+
+1. **`if (pollJob != null) return`** in `startPollingLocked`. Without it, every
+   observer starts its own polling loop.
+2. **`if (observers > 0) return@withLock`** in `detach`. Without it, one screen
+   closing stops polling and schedules eviction while another screen is still
+   watching.
+
+The first one is the interesting case. **Request counts cannot see it.** Two
+polling loops tick at the same instants, so their fetches are deduplicated into
+a single request — the count looks perfect while an extra coroutine wakes up for
+ever. Counting *interval evaluations* makes it visible: 13 for one loop, 26 for
+two. That is the same technique the polling-stop leak needed in
+[07](07-refetch-triggers.md), and the second time the same blind spot has hidden
+the same shape of defect.
+
+Note that 13, not 6, is the correct figure for one loop over 60s at a 10s
+interval: the interval is deliberately evaluated twice per tick, once before the
+delay and once after, so that turning polling off takes effect immediately
+rather than one tick late.
+
+### A second observer on a stale query *does* refetch
+
+Worth stating because it looks like a deduplication failure and is not.
+`refetchOnMount` applies per mount, so a second screen opening on a query whose
+`staleTime` has elapsed issues a request. That is TanStack's behaviour and the
+right one — the second screen has no way to know the data on screen is fresh.
+The tests above set a `staleTime` specifically to keep mount refetches out of
+counts that are about polling.
+
 ## Definition of done
 
 Scenario IDs refer to the spike harness; each becomes a real test.
@@ -247,6 +285,11 @@ Scenario IDs refer to the spike harness; each becomes a real test.
 - [x] (S9) Leaving and returning inside grace joins the existing request.
 - [x] (S10) Abandoning past grace cancels the in-flight request at grace expiry.
 - [x] (S5) Eviction occurs at `grace + gcTime` after the last observer leaves.
+- [x] Test: two, three and four observers of a polling query share one loop.
+      **Verified by mutation**, via interval evaluations rather than requests.
+- [x] Test: one observer leaving stops neither polling nor delays eviction for
+      the others; the last one leaving does both. **Verified by mutation.**
+- [x] Test: `observerCount` tracks arrivals and departures.
 - [ ] ~~(S8) `SharingStarted.Lazily` detection and warning.~~ **Dropped**, for
       the reason recorded in [18](18-viewmodel-integration.md): the cache cannot
       distinguish a leaked collector from a screen left open all afternoon, so
