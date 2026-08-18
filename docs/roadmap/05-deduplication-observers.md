@@ -293,6 +293,16 @@ That also made `lastContinuationMillis` write-only, so it is gone too. The
 continuation concept still exists where it belongs: in `attach`, deciding
 whether a reattach counts as a mount.
 
+A second sweep over `QueryClient`, `Mutation`, `Optimistic`, `KeepPreviousData`
+and `OfflineQueue` found three more survivors. Two were fast paths rather than
+guards — `if (entries.size <= config.maxEntries) return`, which the eviction
+loop's own `overflow <= 0` break already covers, and the connectivity check in
+`Mutation.awaitOnline`, where `first { it }` returns immediately on an already
+true `StateFlow`. The first is removed; the second is kept and its comment now
+says plainly that it is an optimisation, so no future reader mistakes it for
+correctness. The third was the untested `maxEntries` behaviour, covered in
+[04](04-caching-lifecycle.md).
+
 **Kept, unverified** — the already-armed check in `scheduleEvictionLocked`.
 Without it a repeated prefetch launches a waiting coroutine per call. The strays
 are harmless (the first timer evicts on time; the rest find the entry gone),

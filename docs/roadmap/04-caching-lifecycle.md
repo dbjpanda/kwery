@@ -187,8 +187,26 @@ where the hard part lives.
   that threatens a heap. It bounds worst-case memory deterministically instead of
   hoping `gcTime` is enough.
 
+### `maxEntries` was documented and untested
+
+The size bound is in `docs/caching.md`, in `docs/deduplication.md` and in the
+`QueryClientConfig` KDoc. Nothing tested it: mutating
+`if (entries.size <= config.maxEntries) return` killed nothing, because the loop
+below it breaks immediately when the overflow is not positive. The guard was a
+pure fast path restating what the loop already does, so it is gone.
+
+The behaviour it fronted, however, is real and now has tests — including the two
+parts that are easy to get backwards: eviction takes the **least** recently used
+first, and an **observed** entry is never evicted no matter the pressure.
+Discarding data that is on screen to save memory is worse than using the memory.
+
 ## Definition of done
 
+- [x] Test: the cache does not grow past `maxEntries` under churn.
+- [x] Test: eviction takes the least recently used first. **Verified by
+      mutation** — reversing the sort order fails it.
+- [x] Test: an observed entry is never evicted. **Verified by mutation** —
+      dropping the `observerCount == 0` filter fails it.
 - [x] `StaleTime` and `TimeSource` implemented, with the backwards-clock guard
       verified by mutation. `QueryOptions` lands with the cache.
 - [x] The five-step lifecycle from `guides/caching.md` reproduced as a single

@@ -290,6 +290,11 @@ public class Mutation<V, R> internal constructor(
 
     private suspend fun awaitOnline(typed: MutationOptions<V, R, Any?>) {
         if (typed.networkMode == NetworkMode.Always) return
+        // A fast path, not a correctness guard: `first { it }` on an already
+        // true StateFlow returns immediately, and StateFlow conflation hides
+        // the isPaused true-then-false pair from observers either way. It is
+        // here to keep the common case — an online write — from collecting a
+        // flow at all. Removing it changes no behaviour any test can see.
         if (onlineManager.isOnline.value) return
 
         mutableState.value = mutableState.value.copy(isPaused = true)

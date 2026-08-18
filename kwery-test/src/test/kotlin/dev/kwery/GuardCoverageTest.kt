@@ -260,3 +260,39 @@ class GuardCoverageTest {
         job.cancel()
     }
 }
+
+/**
+ * Two more guards the sweep could not kill, both about *not* signalling
+ * something that never happened.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+class SpuriousSignalTest {
+
+    @Test
+    fun `a mutation run while online never reports itself paused`() = runTest {
+        val kwery = TestQueryClient(this)
+        val seen = mutableListOf<Boolean>()
+
+        val m = kwery.client.mutation(
+            MutationOptions<Unit, String, Unit>(mutationFn = { "ok" }),
+        )
+        val watcher = backgroundScope.launch { m.state.collect { seen += it.isPaused } }
+        kwery.settle()
+
+        m.mutate(Unit)
+        kwery.settle()
+
+        // A guarantee lock rather than evidence: this passes with or without
+        // the connectivity fast path in awaitOnline, because StateFlow
+        // conflation hides the isPaused true-then-false pair from observers.
+        // The property is still worth pinning — a button that flickers
+        // "waiting for network" on a good connection is a real bug — but it is
+        // structural, so no mutation of that check can fail it.
+        assertEquals(
+            listOf(false),
+            seen.distinct(),
+            "an online mutation must never claim to be paused, saw $seen",
+        )
+        watcher.cancel()
+    }
+}

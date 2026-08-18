@@ -554,7 +554,6 @@ public class QueryClient(
      * discarding data that is on screen is worse than using the memory.
      */
     private fun evictOverflowLocked() {
-        if (entries.size <= config.maxEntries) return
         val evictable = entries.values
             .filter { it.observerCount == 0 }
             .sortedBy { it.lastAccessMillis }
