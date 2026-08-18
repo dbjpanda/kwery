@@ -12,13 +12,27 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   language: en
+  icon:
+    logo: material/database-sync
+    repo: fontawesome/brands/github
   features:
+    # Top-level sections become tabs across the header, so the left sidebar
+    # only ever shows the section you are actually in.
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.top
     - navigation.tracking
+    - navigation.footer
+    # Page loads are swapped in without a full reload, which makes clicking
+    # through the nav feel immediate rather than like a page load.
+    - navigation.instant
+    - navigation.instant.progress
     - search.suggest
     - search.highlight
+    - search.share
     - content.code.copy
+    - content.code.annotate
     - content.action.edit
     - toc.follow
   palette:
@@ -27,15 +41,29 @@ theme:
       primary: deep purple
       accent: deep purple
       toggle:
-        icon: material/brightness-7
+        icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: deep purple
       accent: deep purple
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-sunny
         name: Switch to light mode
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/dbjpanda/kwery
+      name: Kwery on GitHub
+    - icon: fontawesome/brands/android
+      link: https://central.sonatype.com/artifact/io.github.dbjpanda/kwery-core
+      name: Kwery on Maven Central
+
+copyright: Apache 2.0 licensed
 
 markdown_extensions:
   - admonition
@@ -48,6 +76,11 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
+  # Renders :material-foo: / :octicons-bar: shortcodes as inline SVG icons,
+  # which is what the card grids on the home page use.
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - toc:
       permalink: true
 

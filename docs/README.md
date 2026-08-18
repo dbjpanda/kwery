@@ -15,6 +15,45 @@ from it needs the comparison. Where a decision's reasoning matters to someone
 [deduplication](deduplication.md) for the observer model and the measurements
 that chose it.
 
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch:{ .lg .middle } **Start here**
+
+    ---
+
+    Read data, give it identity, and understand the two status axes that
+    every other page assumes.
+
+    [:octicons-arrow-right-24: Queries](queries.md)
+
+-   :material-refresh:{ .lg .middle } **Keeping data fresh**
+
+    ---
+
+    Deduplication, the two clocks, invalidation, retries, and the four
+    automatic refetch triggers.
+
+    [:octicons-arrow-right-24: Caching](caching.md)
+
+-   :material-pencil:{ .lg .middle } **Writing**
+
+    ---
+
+    Mutations, optimistic updates, and writes that survive process death.
+
+    [:octicons-arrow-right-24: Mutations](mutations.md)
+
+-   :material-android:{ .lg .middle } **In your app**
+
+    ---
+
+    Compose bindings, the ViewModel pattern, testing, and inspecting the
+    cache.
+
+    [:octicons-arrow-right-24: Compose](compose.md)
+
+</div>
+
 ## Pages
 
 **Start here**
