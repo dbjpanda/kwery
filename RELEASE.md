@@ -1,47 +1,30 @@
-# Release readiness
+# What is and is not built
 
-Where Kwery actually stands, checked against the repository rather than
-remembered. Every claim here is traceable to a test or a
-`./gradlew build apiCheck` run.
+The inventory behind the headline in [README.md](README.md). That says what
+Kwery is and how to install it; this says what to expect from it, and what was
+left out on purpose.
 
-**Status: released as `v0.1.0` via JitPack. Not yet on Maven Central.**
-See [Blockers](#blockers).
+Every claim here is traceable to a test or a `./gradlew build apiCheck` run,
+because it was written by checking the repository rather than remembering it —
+which is how it turned up a blocker nothing had flagged: for a while there was
+no publishing configuration at all, so nothing could be consumed by anyone.
 
-## What is done
-
-**19 of 24 features pass all three gates** — spec written, tests green, user
-documentation published. 354 tests across four modules, no real `delay()` in any
-of them, and a full `build` plus `apiCheck` green.
+## Module maturity
 
 | Module | Purpose | State |
 |---|---|---|
 | `kwery-core` | cache, observers, retries, mutations, infinite queries | complete for v1 |
 | `kwery-test` | `TestQueryClient`, virtual clock, request recording | complete for v1 |
-| `kwery-persist` | persistence contracts, file stores, offline queue | file-backed only |
+| `kwery-persist` | persistence contracts, file stores, offline queue | **file-backed only** |
 | `kwery-android` | `FocusManager`, `OnlineManager` | complete for v1 |
 | `kwery-compose` | `rememberQuery` and friends | complete for v1 |
 | `docs-lint` | holds the documentation to the published API | not published |
 
-Twenty user-facing documentation pages, every identifier and named argument in
-them checked against the `.api` dumps on every build.
+## How big a cache can it persist?
 
-## Blockers
-
-**~~1. There is no publishing configuration.~~ Done.** All five library modules
-publish to `io.github.dbjpanda` at `0.1.0`, each with a sources jar, a javadoc
-jar and a POM carrying the Apache-2.0 licence. Verified by publishing to Maven
-Local and reading the artifacts back.
-
-Sources are not decoration here: without them a consumer stepping into Kwery in
-a debugger sees bytecode, and the KDoc explaining `staleTime` versus `gcTime` —
-the two things every user misreads — never reaches them.
-
-Still outstanding for a *public* release: signing keys and a Central account,
-both of which need credentials rather than code.
-
-**2. `kwery-persist` ships only file-backed stores — and the measurement says
-that is fine.** This was written as a blocker on the assumption that restoring a
-large cache from a file would be too slow. It is not:
+This was written as a blocker on the assumption that restoring a large cache
+from a file would be too slow. Measured, with entries the size of a typical list
+row:
 
 | Entries | File | Write | Restore |
 |---|---|---|---|
@@ -56,14 +39,17 @@ problem.
 What the benchmark *did* find is **write amplification**: a one-entry change
 rewrites the whole file, so at 10 000 entries every change costs 1.2 MiB of
 flash. That is battery and flash wear, not correctness, and no functional test
-would ever notice it. It is bounded in practice because the persist loop now
-skips writing when nothing changed — a bug found the same way, by counting
-writes rather than checking results.
+would ever notice it. It is bounded in practice because the persist loop skips
+writing when nothing has changed — a bug found the same way, by counting writes
+rather than checking results.
 
-So Room is **not** a v1 blocker, and the case for it is row-level updates rather
-than startup latency. That is a different design and a lower priority than the
-roadmap assumed. Shipping file-only, with the amplification documented, is the
-recommendation.
+So a Room-backed store is **not** a v1 blocker, and the case for it is row-level
+updates rather than startup latency. If your app holds a very large cache and
+changes it continuously, persist a smaller subset with `exclude` rather than
+everything.
+
+Still outstanding for Maven Central: GPG signing keys and a Portal namespace,
+both of which need credentials rather than code.
 
 ## Needs a device
 
@@ -113,8 +99,8 @@ unbuilt. They are tier 4 and were never in the v1 scope.
 ./gradlew build apiCheck        # everything, including the docs lint
 ```
 
-The status table that backs this document lives in the project's roadmap, which
-is working material and not published. It is checked against the
+The status table that backs this file lives in the project's roadmap, which is
+working material and not published. It is checked against the
 Definition-of-done boxes in each spec rather than maintained by hand — an open
 box there must say why, struck through with a decision or filed under
 **Requires a device**, and an open box with no reason is unfinished work.

@@ -62,8 +62,30 @@ proven, not behaviour that was intended — the "what goes wrong" section of a
 docs page can only be written after the tests exist, and it is the section
 readers actually need.
 
-Current status is summarised in [RELEASE.md](RELEASE.md): what passes all
-three gates, what was deliberately not built, and what needs a device.
+[RELEASE.md](RELEASE.md) records what each module is ready for, what was
+deliberately not built and why, and what needs a device. The headline count of
+completed features lives in [README.md](README.md), so it is stated once.
+
+## Releasing
+
+A tag is immutable, so everything that names the version has to be right before
+it is pushed, not after.
+
+1. `./gradlew clean` then `./gradlew build apiCheck` — and read the output. The
+   build cache can return a full green in two seconds, which looks identical to
+   a stale result; `--rerun-tasks` if you want to be certain the suite actually
+   ran.
+2. Drop `-SNAPSHOT` from `kwery` in `gradle/libs.versions.toml`.
+3. Update the version in the README's install block. The JitPack badge tracks
+   the latest tag on its own; the code block does not.
+4. Update `RELEASE.md` if what is done, deferred or device-blocked has changed.
+5. Commit, then `git tag -a vX.Y.Z` with notes saying what is in it **and what
+   is not** — a version number is a promise.
+6. Push the branch and the tag.
+7. Trigger the JitPack build so the first person to depend on it does not wait
+   three minutes for a cold build:
+   `curl -s https://jitpack.io/com/github/dbjpanda/kwery/kwery-core/vX.Y.Z/kwery-core-vX.Y.Z.pom -o /dev/null`
+8. `gh release create vX.Y.Z --notes-file <file>`.
 
 ## Writing tests
 

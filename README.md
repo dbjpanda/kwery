@@ -1,5 +1,9 @@
 # Kwery
 
+[![Release](https://jitpack.io/v/dbjpanda/kwery.svg)](https://jitpack.io/#dbjpanda/kwery)
+[![CI](https://github.com/dbjpanda/kwery/actions/workflows/ci.yml/badge.svg)](https://github.com/dbjpanda/kwery/actions/workflows/ci.yml)
+[![Licence](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
+
 Async server-state management for Android and Kotlin — caching, deduplication,
 stale-while-revalidate, mutations, offline support, and a cache that survives
 process death.
@@ -120,7 +124,8 @@ dependencies {
 }
 ```
 
-A tag is immutable, so `v0.1.0` will not change under you. Use `main-SNAPSHOT`
+The badge at the top shows the current version; the block above may lag it by a
+release. A tag is immutable, so `v0.1.0` will not change under you. Use `main-SNAPSHOT`
 instead if you want to track the branch while evaluating — it is the right thing
 to depend on while looking and the wrong thing to ship against.
 
@@ -142,7 +147,7 @@ Requires JDK 17 to build; the published artifacts target JVM 11. See
 
 Kwery uses a three-gate workflow — spec, then tests, then documentation, in that
 order and never out of it. See [CONTRIBUTING.md](CONTRIBUTING.md) to get set up,
-and [RELEASE.md](RELEASE.md) for current status.
+and [RELEASE.md](RELEASE.md) for what each module is ready for.
 
 ## Licence
 
