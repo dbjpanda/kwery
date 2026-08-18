@@ -89,6 +89,29 @@ point of use, or raise `gcTime` for those keys.
   Speculative work is exactly what a user on a capped plan does not want. Ties
   to [13](13-network-mode.md) OQ-1.
 
+### `prefetchQuery` ignored `staleTime`, and its test could not tell
+
+`prefetchQuery` delegated to `fetchQuery`, which passes `force = true`. So every
+call fetched — on a scroll tick, once per row, for ever — while its own KDoc,
+`docs/prefetching.md` and this file all said it respected `staleTime`.
+
+The test that was supposed to catch it asserted
+`assertEquals(after, kwery.requestCount)`, and **both sides were zero**.
+`TestQueryClient.requestCount` only records fetches made through
+`kwery.query(...)`; a prefetch goes to `kwery.client` directly and is invisible
+to the recorder. The test compared a number to itself and passed while the code
+did the opposite of what it claimed.
+
+Found by mutating `if (!force && !isStaleNow()) return null` and noticing that
+**nothing failed** — the line was unreachable in practice because no caller ever
+passed `force = false` except `ensureQueryData`, whose own test only checked the
+returned value.
+
+Two lessons, both already in the conventions and both worth restating: assert on
+a counter you control rather than one that might not be watching the path under
+test, and a guard no test can kill is either dead or covering something nobody
+checks.
+
 ### A prefetched entry never started its gc timer
 
 The timer starts in `detach()`, which runs when the last observer leaves. A
@@ -110,7 +133,12 @@ fetch completing both begin the grace-then-gc countdown.
       **Verified by mutation.**
 - [x] Test: `fetchQuery` propagates the original exception instance.
 - [x] Test: prefetching fresh data issues no request, five calls in a row —
-      which is what makes it safe on a scroll tick.
+      which is what makes it safe on a scroll tick. **The first version of this
+      test was vacuous and the code it covered was wrong** — see below.
+- [x] Test: prefetching *stale* data does issue a request.
+- [x] Test: `fetchQuery` forces even when the cache is fresh — the documented
+      difference from `prefetchQuery`.
+- [x] Test: `ensureQueryData` serves a fresh cache without fetching.
 - [x] Test: `ensureQueryData` reads through — fetches when absent, serves from
       cache when present.
 - [x] Test: a prefetched entry is immediately inactive and starts its `gcTime`.

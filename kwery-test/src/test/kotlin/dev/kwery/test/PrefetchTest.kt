@@ -61,17 +61,74 @@ class PrefetchTest {
     @Test
     fun `prefetching fresh data issues no request`() = runTest {
         // What makes it safe to call on every scroll tick.
+        //
+        // Counted with a local rather than kwery.requestCount: the recorder
+        // only sees fetches made through kwery.query(...), and a prefetch goes
+        // to the client directly. An earlier version of this test compared
+        // requestCount to itself and passed while prefetchQuery was fetching
+        // every single time.
         val kwery = TestQueryClient(this)
         val key = DetailPageKey("1")
+        var calls = 0
 
-        kwery.client.prefetchQuery(key, fresh) { delay(50); "data" }
+        kwery.client.prefetchQuery(key, fresh) { delay(50); calls++; "data" }
         kwery.settle(200.milliseconds)
-        val after = kwery.requestCount
+        assertEquals(1, calls)
 
-        repeat(5) { kwery.client.prefetchQuery(key, fresh) { delay(50); "data" } }
+        repeat(5) { kwery.client.prefetchQuery(key, fresh) { delay(50); calls++; "data" } }
         kwery.settle(200.milliseconds)
 
-        assertEquals(after, kwery.requestCount, "already fresh; nothing to do")
+        assertEquals(1, calls, "already fresh; nothing to do")
+    }
+
+    @Test
+    fun `prefetching stale data does issue a request`() = runTest {
+        // The other half: cheap when warm must not mean useless when cold.
+        val kwery = TestQueryClient(this)
+        val key = DetailPageKey("1")
+        var calls = 0
+
+        kwery.client.prefetchQuery(key, fresh) { calls++; "data" }
+        kwery.settle()
+        assertEquals(1, calls)
+
+        kwery.settle(6.minutes)
+        kwery.client.prefetchQuery(key, fresh) { calls++; "data" }
+        kwery.settle()
+
+        assertEquals(2, calls, "past staleTime there is something to do")
+    }
+
+    @Test
+    fun `fetchQuery forces, even when the cache is fresh`() = runTest {
+        // The documented difference from prefetchQuery: a caller is waiting on
+        // this one and asked for it explicitly.
+        val kwery = TestQueryClient(this)
+        val key = DetailPageKey("1")
+        var calls = 0
+
+        kwery.client.fetchQuery(key, fresh) { calls++; "data" }
+        kwery.settle()
+        kwery.client.fetchQuery(key, fresh) { calls++; "data" }
+        kwery.settle()
+
+        assertEquals(2, calls, "fetchQuery is imperative — it fetches when told")
+    }
+
+    @Test
+    fun `ensureQueryData serves a fresh cache without fetching`() = runTest {
+        val kwery = TestQueryClient(this)
+        val key = DetailPageKey("1")
+        var calls = 0
+
+        assertEquals("data", kwery.client.ensureQueryData(key, fresh) { calls++; "data" })
+        kwery.settle()
+        repeat(5) {
+            assertEquals("data", kwery.client.ensureQueryData(key, fresh) { calls++; "other" })
+        }
+        kwery.settle()
+
+        assertEquals(1, calls, "read-through means read, when there is something to read")
     }
 
     @Test

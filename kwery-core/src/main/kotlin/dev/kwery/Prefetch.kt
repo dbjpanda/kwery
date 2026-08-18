@@ -24,7 +24,11 @@ public suspend fun <T> QueryClient.prefetchQuery(
     options: QueryOptions = config.defaultQueryOptions,
     fetcher: suspend () -> T,
 ) {
-    runCatching { fetchQuery(key, options, fetcher) }
+    // Deliberately NOT delegating to fetchQuery: that one forces, which would
+    // make every scroll tick a request and quietly contradict the paragraph
+    // above. Prefetching is speculative, so being cheap when the cache is warm
+    // is the whole point.
+    runCatching { obtainForFetch(key, options, fetcher).fetchAndAwait(force = false) }
 }
 
 /**
