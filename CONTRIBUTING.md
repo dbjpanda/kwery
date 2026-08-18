@@ -135,6 +135,29 @@ Set once, on the repository:
 | `SIGNING_KEY_PASSWORD` | the passphrase, empty if the key has none |
 | `MAVEN_CENTRAL_USERNAME` / `MAVEN_CENTRAL_PASSWORD` | a Central Portal user token, from Account → Generate User Token |
 
+## Instrumentation tests
+
+Most behaviour is testable on the JVM, and should be: the suite runs in seconds
+because nothing waits on real time or a device. A handful of things cannot be,
+and those live in `androidTest`.
+
+```sh
+$ANDROID_HOME/emulator/emulator -avd <name> -no-window -no-audio &
+./gradlew :kwery-android:connectedDebugAndroidTest   # connectivity, storage
+./gradlew :sample:connectedReleaseAndroidTest        # R8, against a minified build
+```
+
+The sample runs its instrumentation against **release** on purpose. Kwery
+encodes enum key parts by `name`, and only a minified build can show whether R8
+rewrites them.
+
+**A zero-test run is a failure, not a pass.** If the instrumentation process
+dies before the first test, the report shows zero tests and zero failures, which
+looks like success in any summary that counts failures. That happened three
+times while writing these. `KeyEncodingR8Test` includes a test asserting the
+build really is minified for the same reason: a test that quietly stops testing
+is worse than one that fails.
+
 ## Writing tests
 
 - **Start from TanStack's tests**, not from the design document. Read the test

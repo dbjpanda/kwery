@@ -15,8 +15,29 @@ android {
         applicationId = "dev.kwery.sample"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.compileSdk.get().toInt()
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = 1
         versionName = "0.1.0"
+    }
+
+    // Instrumentation runs against the MINIFIED build on purpose. Kwery encodes
+    // enum key parts by `name`, and if R8 rewrote those names every persisted
+    // key would change: the cache would miss on every cold start after release,
+    // silently, in a way no debug build can reproduce.
+    testBuildType = "release"
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            testProguardFiles("test-proguard-rules.pro")
+            // Debug signing so the release variant is installable for tests.
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
 
     compileOptions {
@@ -41,6 +62,15 @@ kotlin {
 }
 
 dependencies {
+    androidTestImplementation(kotlin("test"))
+    androidTestImplementation(libs.androidx.test.runner)
+    // Reached reflectively by AndroidJUnitRunner. Present transitively in a
+    // normal build, absent here, so the minified test process died in onCreate
+    // before running anything and reported zero tests rather than a failure.
+    androidTestImplementation("androidx.tracing:tracing:1.2.0")
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.junit)
+
     implementation(project(":kwery-core"))
     implementation(project(":kwery-android"))
     implementation(project(":kwery-compose"))
