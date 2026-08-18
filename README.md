@@ -11,6 +11,99 @@ what to serve, what to refresh, and what to queue until the network returns.
 
 Built on coroutines and Flow. Works from a ViewModel or from Compose.
 
+## Is Kwery another HTTP client?
+
+**No.** You keep Retrofit, Ktor or OkHttp. Kwery sits on top of whichever one
+you already use.
+
+```
+your screen  ──►  Kwery  ──►  Retrofit / Ktor / OkHttp  ──►  your server
+                    │
+                    └── decides whether to call the network at all,
+                        what to show while it does, and what to keep
+```
+
+If you know the web: **Retrofit is `fetch`. Kwery is TanStack Query.** You use
+both, and they do different jobs.
+
+Kwery never opens a connection. You hand it a function that fetches, and it
+decides when to run that function, who shares the result, what the screen shows
+while it runs, and what happens when it fails.
+
+```kotlin
+// Kwery handles caching, loading state, dedup, retries and offline.
+val state = rememberQuery(TodoKey(id)) {
+    api.todo(id)        // your existing Retrofit or Ktor call, unchanged
+}
+```
+
+## What problem does it actually solve?
+
+Here is a normal screen that loads a list. No library, just coroutines:
+
+```kotlin
+class TodoViewModel(private val api: Api) : ViewModel() {
+    private val _state = MutableStateFlow(UiState())
+    val state = _state.asStateFlow()
+    private var job: Job? = null
+
+    fun load() {
+        job?.cancel()
+        job = viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            try {
+                _state.update { it.copy(isLoading = false, todos = api.todos()) }
+            } catch (e: Exception) {
+                _state.update { it.copy(isLoading = false, error = e) }
+            }
+        }
+    }
+}
+```
+
+Most Android apps contain some version of this, once per screen. It works, and
+it still has all of these problems:
+
+- **Rotate the phone** and it fetches again, even though the data arrived a
+  second ago.
+- **Two screens showing the same list** make two identical requests at the same
+  moment.
+- **Reopen the app** after Android kills it and the user gets a blank screen and
+  a spinner, every time.
+- **Save something with no signal** and the write is simply lost.
+- **Pull to refresh** and you cannot tell "loading for the first time" from
+  "refreshing what is already on screen", so the whole list flashes a spinner.
+- Retry, backoff, and "stop polling when the app is in the background" are all
+  still yours to write.
+
+The same screen with Kwery:
+
+```kotlin
+val todos = client.query(TodoListKey) { api.todos() }
+```
+
+Every item above is handled. Not because the library is clever, but because
+these are the same six problems in every app, and they have known answers.
+
+## What you would otherwise write by hand
+
+| What the user notices | What it takes to fix yourself |
+|---|---|
+| Rotation refetches | keep a cache outside the ViewModel, track what is in flight |
+| Two screens, two requests | a registry of in-flight calls keyed by request |
+| Spinner on every cold start | a disk cache, plus deciding what is too old to show |
+| Lost write when offline | a durable queue, replay on reconnect, idempotency keys |
+| Full-screen spinner on refresh | two separate status flags, not one enum |
+| Refetch storms on reconnect | debounce, and knowing the network is *really* back |
+
+## Do you need it?
+
+**Probably yes if** your app reads data from a server on more than one screen,
+or the same data appears in more than one place, or users use it on a train.
+
+**Probably not if** your app fetches once at startup and never again, or all
+your data is local.
+
 ## Install
 
 ```kotlin
