@@ -26,6 +26,20 @@ public data class QueryEntrySnapshot(
     val isStale: Boolean,
     val isInvalidated: Boolean,
     val observerCount: Int,
+
+    /**
+     * When this entry's observer count last rose from zero, or null if nothing
+     * is observing it.
+     *
+     * For spotting a collector that never completes — the classic case being a
+     * `stateIn(scope, SharingStarted.Lazily, …)` in a ViewModel, which never
+     * releases the entry and so never lets `gcTime` start.
+     *
+     * Deliberately data rather than a warning: the cache cannot distinguish a
+     * leak from a screen the user has genuinely had open all afternoon. See
+     * `docs/roadmap/18-viewmodel-integration.md`.
+     */
+    val observedSinceMillis: Long? = null,
 ) {
     public val isActive: Boolean get() = observerCount > 0
 }

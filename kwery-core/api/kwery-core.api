@@ -274,7 +274,8 @@ public final class dev/kwery/QueryClientConfig {
 }
 
 public final class dev/kwery/QueryEntrySnapshot {
-	public fun <init> (Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZI)V
+	public fun <init> (Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZILjava/lang/Long;)V
+	public synthetic fun <init> (Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZILjava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ldev/kwery/QueryKey;
 	public final fun component2 ()Ldev/kwery/QueryStatus;
 	public final fun component3 ()Ldev/kwery/FetchStatus;
@@ -282,12 +283,14 @@ public final class dev/kwery/QueryEntrySnapshot {
 	public final fun component5 ()Z
 	public final fun component6 ()Z
 	public final fun component7 ()I
-	public final fun copy (Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZI)Ldev/kwery/QueryEntrySnapshot;
-	public static synthetic fun copy$default (Ldev/kwery/QueryEntrySnapshot;Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZIILjava/lang/Object;)Ldev/kwery/QueryEntrySnapshot;
+	public final fun component8 ()Ljava/lang/Long;
+	public final fun copy (Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZILjava/lang/Long;)Ldev/kwery/QueryEntrySnapshot;
+	public static synthetic fun copy$default (Ldev/kwery/QueryEntrySnapshot;Ldev/kwery/QueryKey;Ldev/kwery/QueryStatus;Ldev/kwery/FetchStatus;Ljava/lang/Long;ZZILjava/lang/Long;ILjava/lang/Object;)Ldev/kwery/QueryEntrySnapshot;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDataUpdatedAt ()Ljava/lang/Long;
 	public final fun getFetchStatus ()Ldev/kwery/FetchStatus;
 	public final fun getKey ()Ldev/kwery/QueryKey;
+	public final fun getObservedSinceMillis ()Ljava/lang/Long;
 	public final fun getObserverCount ()I
 	public final fun getStatus ()Ldev/kwery/QueryStatus;
 	public fun hashCode ()I

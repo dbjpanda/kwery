@@ -61,6 +61,17 @@ internal class QueryEntry<T>(
     // Read without the mutex by snapshot(); written only under it.
     @Volatile
     private var observers = 0
+
+    /**
+     * When this entry's observer count last rose from zero, or null if nothing
+     * is observing it.
+     *
+     * Exposed through [snapshot] because the cache cannot tell a legitimately
+     * long-lived screen from a leaked collector — only a developer can. Giving
+     * them "observed for 3 hours" is useful; guessing on their behalf is how a
+     * warning ends up firing on correct code.
+     */
+    private var observedSinceMillis: Long? = null
     private var inFlight: Deferred<FetchOutcome<T>>? = null
     private var graceJob: Job? = null
     private var gcJob: Job? = null
@@ -94,6 +105,7 @@ internal class QueryEntry<T>(
             isStale = options.enabled && isStaleNow(),
             isInvalidated = current.isInvalidated,
             observerCount = observers,
+            observedSinceMillis = observedSinceMillis,
         )
     }
 
@@ -140,6 +152,7 @@ internal class QueryEntry<T>(
     suspend fun attach() = mutex.withLock {
         observers++
         lastAccessMillis = timeSource.nowMillis()
+        if (observers == 1) observedSinceMillis = timeSource.nowMillis()
 
         // A reattach landing inside the grace window is a continuation of the
         // same logical mount — rotation, a brief navigation, an app switch.
@@ -168,6 +181,7 @@ internal class QueryEntry<T>(
     suspend fun detach() = mutex.withLock {
         observers--
         if (observers > 0) return@withLock
+        observedSinceMillis = null
 
         // Polling is a property of being watched. Nobody is watching.
         pollJob?.cancel()

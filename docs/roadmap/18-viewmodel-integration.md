@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 3 — v1 integration |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` (+ docs), optional `kwery-lifecycle` |
 | **TanStack source** | none — Kwery-specific |
 | **Depends on** | 05 Observers |
@@ -71,8 +71,18 @@ nobody can reason about:
    `WhileSubscribed(5s)` + 5 s grace + 5 min `gcTime` evicts 310 000 ms after
    the screen closes, against 305 000 ms without the grace layer. A 1.6 %
    difference does not justify a third concept. Plain `WhileSubscribed` is fine.
-3. **A guard against `Lazily`.** Detect a query observed by a never-completing
-   collector and log a warning naming the key, rather than leaking silently.
+3. ~~**A guard against `Lazily`.**~~ **Changed to a diagnostic, not a warning.**
+   The cache cannot tell a leaked collector from a screen the user has genuinely
+   had open all afternoon: both are one observer that never detaches. A
+   heuristic would fire on correct code, which is the same reason the `gcTime`
+   warning ([04](04-caching-lifecycle.md) OQ-1) and the `Static` invalidation
+   warning ([08](08-invalidation-filters.md) OQ-2) were both rejected. Three
+   rejections for one reason is a pattern worth naming: **Kwery does not warn
+   about things it cannot distinguish from correct usage.**
+
+   Instead `QueryEntrySnapshot` gained `observedSinceMillis`, so a developer can
+   see "this entry has been observed for three hours" and make the call
+   themselves. Data, not a guess.
 4. **`SavedStateHandle` interaction guidance.** Query *keys* belong in saved
    state; query *data* does not — that is what [15](15-persistence.md) is for.
    Putting response data in `SavedStateHandle` risks `TransactionTooLargeException`,
@@ -84,12 +94,12 @@ Not applicable — no TanStack equivalent. Tracking the deliverables instead:
 
 | Deliverable | Status |
 |---|---|
-| Canonical ViewModel recipe, tested | planned |
+| Canonical ViewModel recipe, tested | tested; docs pending |
 | ~~`WhileQueryObserved` sharing strategy~~ | dropped — see above |
-| `Lazily` leak warning | planned |
+| `Lazily` leak *diagnostic* (`observedSinceMillis`) | done |
 | `SavedStateHandle` guidance | planned |
 | Sample app screen using ViewModel (no Compose state holder) | planned |
-| Interop with `flatMapLatest` over changing keys | planned |
+| Interop with `flatMapLatest` over changing keys | done |
 
 ## Open questions
 
@@ -106,11 +116,23 @@ Not applicable — no TanStack equivalent. Tracking the deliverables instead:
 
 ## Definition of done
 
-- [ ] Recipe documented with a real, compiling sample in the sample app.
-- [ ] Test: rotation causes zero refetches and zero evictions.
-- [ ] Test: backstack navigation beyond the grace window evicts exactly once
-      after `gcTime`, with total request count asserted.
-- [ ] Test: `flatMapLatest` over a changing key cancels the old observer and
-      subscribes the new one, with no interleaved duplicate requests.
-- [ ] Test: `SharingStarted.Lazily` produces the documented warning.
-- [ ] OQ-1 resolved after the [05](05-deduplication-observers.md) spike.
+- [ ] Recipe documented with a real, compiling sample in the sample app
+      (gate 3 — `docs/viewmodels.md`).
+- [x] Test: five rotations cost zero refetches and zero evictions — under
+      `WhileSubscribed` the cache never even sees a detach.
+- [x] Test: backstack navigation evicts exactly once after all three timers
+      (`WhileSubscribed` → grace → `gcTime`), still present at 20s, gone past
+      `gcTime`, and eviction is not a refetch.
+- [x] Test: `flatMapLatest` over a changing key issues one request per key in
+      order, and switching back to a warm key costs nothing.
+      **Verified by mutation** — removing grace-aware reattach fails it.
+- [x] Test: `SharingStarted.Lazily` holds the entry for ever (30 virtual
+      minutes, still active), and `observedSinceMillis` reports the full
+      duration. **Verified by mutation.**
+- [x] Test: `observedSinceMillis` tracks the *first* observer, not the latest —
+      a second screen opening must not restart the clock and hide the leak.
+      **Verified by mutation**: this one was missing on the first pass and the
+      surviving mutant is what found it.
+- [x] Test: `observedSinceMillis` is null once nothing is observing.
+- [x] OQ-1 resolved by the [05](05-deduplication-observers.md) spike — no
+      custom `SharingStarted` needed; the stacking costs 1.6%.
