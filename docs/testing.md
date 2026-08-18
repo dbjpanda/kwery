@@ -38,7 +38,7 @@ the cache's coroutine scope, which is what keeps each test's cache isolated with
 no teardown. It arrives already configured for tests: **retries off**, virtual
 time, controllable focus and connectivity, request recording.
 
-That last point matters. TanStack's testing guide is largely four pieces of
+That last point matters. The usual advice is largely four pieces of
 configuration you must remember (disable retries, fresh client, neutralise gc
 timers, silence logging). A library that needs that much setup to be testable
 has a design problem, so the defaults are simply correct here.

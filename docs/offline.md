@@ -58,7 +58,7 @@ the *identity* of the function to run — never the function itself. When the ap
 restarts, the screen that created the write is gone, so the queue has nowhere to
 get the function from unless it was registered somewhere screen-independent.
 
-TanStack Query hits the same wall and surfaces it as a runtime error,
+Web query libraries hit the same wall and surface it as a runtime error,
 `No mutationFn found`, after the fact. Kwery makes `register` the only way to
 create a durable write, so an unregistered key fails immediately at the call
 site instead.
@@ -125,7 +125,7 @@ Two details worth knowing:
 - **A paused query that is cancelled does not resume.** Leaving a screen while
   offline means no request when connectivity returns.
 - **Under `Always`, reconnecting still refetches** unless you say otherwise.
-  TanStack derives `refetchOnReconnect: false` from `networkMode: 'always'`;
+  A JavaScript library can derive `refetchOnReconnect: false` from its network mode;
   Kwery cannot cheaply, because a Kotlin data class default cannot tell "unset"
   from "explicitly the default". Set it yourself:
 

@@ -34,7 +34,7 @@ While data is **fresh**, nothing refetches it — not a new screen observing it,
 not returning to the app, not reconnecting. Once **stale**, any of those
 triggers a background refresh while the existing data stays on screen.
 
-The default is `Zero`, matching TanStack: data is stale the moment it arrives,
+The default is `Zero`, by design: data is stale the moment it arrives,
 so every new observer refreshes. That is a safe default and a chatty one. Most
 apps should raise it:
 
@@ -61,7 +61,7 @@ going back to a screen instant — until `gcTime` elapses, then it is dropped.
 An entry someone is watching is **never** garbage collected, whatever `gcTime`
 says.
 
-`gcTime` is expressible as `Duration.INFINITE`. TanStack caps it at around 24
+`gcTime` is expressible as `Duration.INFINITE`. Web query libraries typically cap it at around 24
 days because `setTimeout` overflows; `delay` takes a `Long`, so "never forget
 this" says what it means.
 

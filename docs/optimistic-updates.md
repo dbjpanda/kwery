@@ -79,7 +79,7 @@ screen tracking which of its own mutations are pending.
 ## What goes wrong
 
 **Invalidation waits for the last write, not each one.** Invalidating in every
-mutation's `onSettled` — which is what TanStack's examples do — refetches server
+mutation's `onSettled` — which most examples show — refetches server
 truth while your *other* optimistic write is still pending, clobbering it.
 Kwery invalidates only when the last in-flight write for the key clears. If you
 write the callbacks by hand, you have to handle this yourself.

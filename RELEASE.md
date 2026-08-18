@@ -74,7 +74,7 @@ recorded in its spec. They are decisions, not gaps.
 | Not built | Why |
 |---|---|
 | `QuerySignal` cancellation token | `suspendCancellableCoroutine` bridges callback clients in fifteen lines at the call site — [tested](kwery-test/src/test/kotlin/dev/kwery/DivergenceTest.kt), not assumed |
-| Mutation filters by key | The `Mutation` object *is* the handle; TanStack needs filters because its hooks return a fresh object each render |
+| Mutation filters by key | The `Mutation` object *is* the handle; hook-based libraries need filters because they return a fresh object each render |
 | `QueryPriority` parameter | Speculative API. A defaulted parameter is source-compatible to add later; reserving the slot now costs more than it saves |
 | `SharingStarted.Lazily` warning | The cache cannot distinguish a leak from a screen left open all afternoon. `observedSinceMillis` reports instead |
 | `gcTime` / `Static` warnings | Same reason — both would fire on correct code |

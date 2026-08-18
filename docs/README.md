@@ -7,7 +7,7 @@ describes behaviour that has been proven, not behaviour that was intended.
 
 Design rationale, parity tables and open questions live in the project's
 roadmap, which is working material and deliberately not published — it argues
-with TanStack Query, and these pages do not mention it unless a reader migrating
+with prior art, and these pages do not unless a reader migrating
 from it needs the comparison. Where a decision's reasoning matters to someone
 *using* the library, it is inlined here instead: see
 [deduplication](deduplication.md) for the observer model and the measurements

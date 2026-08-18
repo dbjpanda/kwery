@@ -53,7 +53,7 @@ MutationOptions<Input, Result, Snapshot>(
 ```
 
 The third type parameter is the **rollback channel**: whatever `onMutate`
-returns is handed to `onError` and `onSettled`, fully typed. TanStack types this
+returns is handed to `onError` and `onSettled`, fully typed. JavaScript equivalents type this
 as `unknown` and every caller casts; here a snapshot cannot be misread.
 
 **The mutation stays `Pending` until `onSettled` finishes.** That is what makes
@@ -98,7 +98,7 @@ in `state.error` only. If you need to react, either use `mutateAwait` and write
 the follow-up code after it, or observe the state — `mutate` returns its `Job`
 if you want to join it.
 
-**Kwery has no per-call callbacks.** TanStack lets you pass `onSuccess` to
+**Kwery has no per-call callbacks.** Some libraries let you pass `onSuccess` to
 `mutate()` itself; those fire only for the *last* of several concurrent calls,
 and only if the component is still mounted. Those rules model React's observer
 resubscription and translate to nothing sensible in Kotlin. Write the follow-up
@@ -107,12 +107,12 @@ after `mutateAwait` instead — it always runs, and needs no explanation.
 **A callback that throws can fail a successful write.** If `onSuccess` or
 `onSettled` throws after the write succeeded, the mutation ends in `Error` and
 `onError` runs, because something in the operation genuinely did fail. This
-matches TanStack. Keep side effects in callbacks small, and do not let a
+is deliberate. Keep side effects in callbacks small, and do not let a
 logging failure fail a save.
 
 **A throwing `onError` never hides the real failure.** The original error stays
 primary and the callback's failure is attached as a **suppressed** exception, so
-neither is lost. TanStack routes these to an unhandled-rejection channel, where
+neither is lost. some libraries route these to an unhandled-rejection channel, where
 they are easy to miss.
 
 **`variables` survive an error, deliberately.** After a failure, `state.variables`

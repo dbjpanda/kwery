@@ -28,8 +28,7 @@ combine(ids.map { client.query(TodoKey(it)) { api.todo(it) } }) { it.toList() }
 
 **There is no `useQueries` equivalent and none is needed.** That API exists in
 React purely because hooks cannot be called in a loop or conditionally. Kotlin
-has no such rule. Recording this explicitly matters: a mechanical port of
-TanStack would have added an API with no reason to exist.
+has no such rule. Recording this explicitly matters: a mechanical port of another library's API would have added an API with no reason to exist.
 
 ## Dependent: two shapes
 

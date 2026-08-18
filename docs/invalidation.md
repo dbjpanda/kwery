@@ -35,7 +35,7 @@ than flashing "done" and updating a moment later.
 
 ## There is no no-argument form
 
-`client.invalidateQueries()` does not compile. In TanStack the no-argument call
+`client.invalidateQueries()` does not compile. In web query libraries the no-argument call
 invalidates the **entire cache**, while reading exactly like "the thing I just
 changed" — a footgun whose cost is invisible in development and expensive on
 cellular. Invalidating everything costs four extra characters here and cannot

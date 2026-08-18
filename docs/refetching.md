@@ -22,7 +22,7 @@ refused by `StaleTime.Static`).
 
 ## Focus is process lifecycle, not window focus
 
-TanStack refetches on window focus. Android has no equivalent, and the obvious
+Web libraries refetch on window focus. Android has no equivalent, and the obvious
 mapping is wrong.
 
 Kwery uses **`ProcessLifecycleOwner`** — the app moving between foreground and

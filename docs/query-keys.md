@@ -34,7 +34,7 @@ client.setQueryData(TodoKey("5")) { it?.copy(done = true) }  // lambda param is 
 ## Why the missing-dependency bug cannot happen
 
 The classic cache bug is a query function reading a variable that is not in the
-key, so two different results collide in one entry. TanStack ships an ESLint
+key, so two different results collide in one entry. some libraries ship an ESLint
 rule to catch it.
 
 Here it does not compile. The key's constructor parameters are the only things

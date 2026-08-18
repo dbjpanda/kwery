@@ -6,10 +6,10 @@
 [![CI](https://github.com/dbjpanda/kwery/actions/workflows/ci.yml/badge.svg)](https://github.com/dbjpanda/kwery/actions/workflows/ci.yml)
 [![Licence](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
 
-Server state for Android, done properly. Caching, deduplication, background
-refresh, offline writes, and a cache that survives process death.
+**Offline-first caching for Android.** Your screens ask for data. Kwery decides
+what to serve, what to refresh, and what to queue until the network returns.
 
-If you know [TanStack Query](https://tanstack.com/query/latest), you know Kwery.
+Built on coroutines and Flow. Works from a ViewModel or from Compose.
 
 ## Install
 
@@ -111,6 +111,10 @@ apart is what makes a background refresh different from a cold start.
 ```
 
 ## Compared to
+
+Inspired by [TanStack Query](https://tanstack.com/query/latest), rebuilt for how
+Android behaves: process death, rotation, captive-portal wifi, and a process
+that lives for days.
 
 |  | Kwery | [Soil](https://github.com/soil-kt/soil) | [Store5](https://github.com/MobileNativeFoundation/Store) |
 |---|---|---|---|

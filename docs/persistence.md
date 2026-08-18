@@ -64,7 +64,7 @@ QueryOptions(gcTime = 24.hours)   // matching a 24-hour maxAge
 
 Otherwise entries are evicted from memory long before the stored copy expires,
 so the cache is written on every change and almost never read — the feature
-quietly does nothing. TanStack documents this constraint and lets you violate
+quietly does nothing. other libraries documents this constraint and lets you violate
 it; Kwery refuses to start.
 
 ## How much can it hold?

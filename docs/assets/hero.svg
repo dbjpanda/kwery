@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" width="1280" height="400" role="img" aria-label="Kwery: async server-state for Android">
-  <title>Kwery: async server-state for Android</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" width="1280" height="400" role="img" aria-label="Kwery: offline-first caching for Android">
+  <title>Kwery: offline-first caching for Android</title>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#12132A"/>
@@ -54,13 +54,13 @@
 
   <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
     <text x="96" y="176" font-size="104" font-weight="700" letter-spacing="-3" fill="#F6F7FB">Kwery</text>
-    <text x="100" y="228" font-size="30" font-weight="500" fill="#B9BEDA">Async server-state for Android</text>
-    <text x="100" y="271" font-size="19" font-weight="400" fill="#7F86A8">Caching, deduplication and stale-while-revalidate,</text>
-    <text x="100" y="298" font-size="19" font-weight="400" fill="#7F86A8">with a cache that survives process death.</text>
+    <text x="100" y="228" font-size="30" font-weight="500" fill="#B9BEDA">Offline-first caching for Android</text>
+    <text x="100" y="271" font-size="19" font-weight="400" fill="#7F86A8">Request deduplication, background refresh,</text>
+    <text x="100" y="298" font-size="19" font-weight="400" fill="#7F86A8">and a cache that survives process death.</text>
   </g>
 
   <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
      font-size="15" font-weight="500" fill="#6E75A0" letter-spacing="0.6">
-    <text x="100" y="348">caching · deduplication · offline · mutations · Compose</text>
+    <text x="100" y="348">caching · offline-first · coroutines · Compose · ViewModel</text>
   </g>
 </svg>
