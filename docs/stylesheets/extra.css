@@ -164,9 +164,15 @@
   padding-top: 0.35rem;
 }
 
-/* Icon slot on every real page link. Excludes the in-page table of contents,
- * which nests inside the active item and whose links are all fragments. */
-.md-sidebar--primary a.md-nav__link:not([href^="#"])::before {
+/* Icon slot on every real page link.
+ *
+ * Selected structurally rather than by href. navigation.instant rewrites every
+ * href to an absolute URL on hydration, so "#the-problem" becomes
+ * "https://host/caching/#the-problem" and a :not([href^="#"]) guard silently
+ * inverts: the table of contents starts matching and every entry gains an
+ * empty icon box. The table of contents is instead excluded below by where it
+ * lives in the tree, which hydration cannot change. */
+.md-sidebar--primary a.md-nav__link::before {
   content: "";
   display: inline-block;
   flex: 0 0 auto;
@@ -183,9 +189,19 @@
   mask-position: center;
 }
 
-.md-sidebar--primary a.md-nav__link:not([href^="#"]) {
+.md-sidebar--primary a.md-nav__link {
   display: flex;
   align-items: center;
+}
+
+/* The nested table of contents carries no icons: it is a copy of the page's
+ * own headings, not navigation between pages. */
+.md-sidebar--primary .md-nav--secondary a.md-nav__link::before {
+  content: none;
+}
+
+.md-sidebar--primary .md-nav--secondary a.md-nav__link {
+  display: block;
 }
 
 .md-sidebar--primary a.md-nav__link--active::before,
