@@ -107,6 +107,31 @@ states.aggregate(isDisabled = { myOwnRule(it) })
 The default heuristic treats "pending and idle" as disabled. Override
 `isDisabled` where that is wrong for you.
 
+## Different types on one screen
+
+`aggregate()` handles many queries of the same type. A screen usually needs
+several *different* types — a user, their settings, an unread count — and for
+that there are typed overloads up to five queries:
+
+```kotlin
+combineQueries(
+    client.query(UserKey(id)) { api.user(id) },
+    client.query(SettingsKey(id)) { api.settings(id) },
+) { user, settings -> ScreenState(user, settings) }
+```
+
+You get a `Flow<QueryState<ScreenState>>` — one status, one error, one
+`dataUpdatedAt` (the freshest of the sources), and no casts.
+
+The transform receives **nullable** data, for the same reason
+`AggregateState.data` holds nullable slots: a screen with two of its three
+pieces should render what it has rather than blank. Check `isSuccess` on the
+result when you need everything present.
+
+Status follows the same rules as `aggregate()`, including the disabled-query
+one: a source with `enabled = false` never resolves, so it is excluded rather
+than holding the screen in `Pending` for ever.
+
 ## What goes wrong
 
 **`combine` waits for every flow to emit at least once.** Each Kwery query emits
@@ -121,10 +146,9 @@ aggregating.
 query still exists and still holds cached data; it simply never fetches. It is
 `aggregate` that decides to ignore it.
 
-**Typed heterogeneous combine is not built.** For a `Profile` and a `Settings`
-into one screen state, use `combine` directly and destructure — a
-`combineQueries(a, b) { … }` overload set is still an open question in the
-roadmap.
+**Prefer `combineQueries` over `aggregate` for mixed types.** `aggregate` is for
+many queries of the *same* type; the moment they differ, the typed overloads
+below are what you want.
 
 ## Related
 

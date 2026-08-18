@@ -27,6 +27,13 @@ public final class dev/kwery/AggregateState {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/kwery/CombineQueriesKt {
+	public static final fun combineQueries (Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun combineQueries (Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlin/jvm/functions/Function3;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun combineQueries (Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlin/jvm/functions/Function4;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun combineQueries (Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlinx/coroutines/flow/Flow;Lkotlin/jvm/functions/Function5;)Lkotlinx/coroutines/flow/Flow;
+}
+
 public final class dev/kwery/DehydratedEntry {
 	public fun <init> (Ldev/kwery/QueryKey;Ljava/lang/Object;J)V
 	public final fun component1 ()Ldev/kwery/QueryKey;
