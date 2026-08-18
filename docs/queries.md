@@ -51,6 +51,24 @@ No context object, no cancellation token to thread through. Structured
 concurrency handles cancellation, and the call site already holds whatever a
 context would have carried — the key was just built from the same values.
 
+**Callback-based clients need no special support.** If your client hands back
+an abort handle rather than suspending, bridge it once at the call site:
+
+```kotlin
+client.query(TodoKey(id)) {
+    suspendCancellableCoroutine { continuation ->
+        val call = api.enqueue(id) { continuation.resume(it) }
+        continuation.invokeOnCancellation { call.cancel() }
+    }
+}
+```
+
+Leaving the screen then aborts the request — though not instantly, and
+deliberately so: an in-flight fetch belongs to the cache entry rather than to
+whichever screen started it, so a rotation does not kill a request it is about
+to want back, and one screen closing does not abort a fetch another is sharing.
+The abort happens once the grace window closes with nothing observing.
+
 One caveat worth stating: **do not catch `Exception` in here.**
 `CancellationException` is an `Exception`, so a broad catch swallows
 cancellation. Kwery makes sure a swallowed cancellation cannot fabricate a

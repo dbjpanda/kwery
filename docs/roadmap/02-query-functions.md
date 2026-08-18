@@ -73,9 +73,17 @@ type-safe against `QueryKey<T>`. See OQ-2.
 1. **No `Result<T>` return type.** Exceptions are the contract, as in TanStack.
    Kotlin users may expect `Result`, so this needs to be explicit in the docs.
 2. **No cancellation token at all.** Structured concurrency covers every
-   suspending client. A `QuerySignal` bridge for blocking, callback-based
-   clients remains unbuilt — `suspendCancellableCoroutine` already does the job
-   in user code, so it may never be needed.
+   suspending client, and `suspendCancellableCoroutine` covers callback-based
+   ones — now demonstrated by a test using exactly the client shape that would
+   otherwise need a `QuerySignal`.
+
+   Writing that test found a nuance worth stating: cancelling one collector does
+   **not** abort the request. An in-flight fetch belongs to the entry, not to
+   whichever collector started it, so aborting on detach would kill a request a
+   rotation is about to want back — and would abort a shared fetch out from
+   under a second screen. The abort happens when the grace window closes with
+   nothing observing. **Verified by mutation**: aborting on detach fails the
+   test.
 
 ## Open questions
 
@@ -125,7 +133,14 @@ type-safe against `QueryKey<T>`. See OQ-2.
 - [x] Test: `CancellationException` is **not** treated as a failure and does not
       consume a retry attempt. **Verified by mutation**: without the guard,
       `RetryPolicy.Forever` turns one cancellation into 251 attempts.
-- [ ] Test against a real HTTP client (Ktor/OkHttp) — needs an integration
-      source set; structured concurrency covers it in principle.
-- [ ] `QuerySignal` bridge for non-cancellable clients.
+- [x] Test against a **callback-based** client — the shape that would need a
+      cancellation token. Cancelling the query aborts it through
+      `suspendCancellableCoroutine`, and a completed request is not reported as
+      aborted. This is the divergence's actual claim, tested rather than
+      asserted; a Ktor/OkHttp integration source set would add network flakiness
+      to prove the same thing about coroutine-native clients.
+- [ ] ~~`QuerySignal` bridge for non-cancellable clients.~~ **Not built, and now
+      backed by a test rather than a belief.** The bridge is fifteen lines of
+      standard library at the call site, and it is the caller's fifteen lines
+      rather than a parameter every query function carries for ever.
 - [x] OQ-2 closed: the global default query function is an explicit non-goal.

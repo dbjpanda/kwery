@@ -127,7 +127,7 @@ This is a deliberate parity gap, recorded as such.
 | Mutation scopes run serially | yes | `MutationScope` | planned |
 | `setMutationDefaults` | yes | see [14](14-offline-mutation-queue.md) | planned |
 | `isMutating` (global count) | yes | `QueryClient.isMutating` | done |
-| Mutation *filters* (by key / predicate) | yes | **not built** | gap |
+| Mutation *filters* (by key / predicate) | yes | the `Mutation` object is the handle | divergent (structural) |
 | Observe others' mutations (`useMutationState`) | yes | `client.mutationStates(filters)` | planned |
 | Throwing `onSettled` promotes success → error | yes | yes | done |
 | Throwing `onError` loses the original error | yes — unhandled rejection | **no** — original stays primary, callback attached as suppressed | divergent (better) |
@@ -250,7 +250,15 @@ serialisation tests.
       **Verified by mutation** — counting only after the lock fails it.
 - [x] Test: failed and cancelled mutations both decrement.
       **Verified by mutation** — moving the decrement off the `finally` fails both.
-- [ ] Mutation filters (by key or predicate) — see the note above.
+- [ ] ~~Mutation filters (by key or predicate).~~ **Not built — a structural
+      divergence, and tested as one.** TanStack needs
+      `useIsMutating({ mutationKey })` because its hooks hand back a fresh
+      object each render, leaving nothing stable to hold; the filter is how you
+      find your mutation again. In Kwery the `Mutation` *is* the handle, so
+      "is this one saving?" is `mutation.state.value.status`, typed and local,
+      rather than a query against a registry. Two mutations in flight are told
+      apart by holding them, which the tests demonstrate. `isMutating` remains
+      what it is useful for: a global indicator.
 - [x] Test: callbacks fire in documented order and each is awaited.
 - [x] Test: `onMutate` result reaches `onError` and `onSettled`, typed.
 - [x] Test: mutations do not retry by default; `retry` opts in.

@@ -91,7 +91,7 @@ that feature's parity table with a reason.
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
 | 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ● | ● |
-| 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ◐ | ● |
+| 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ● | ● |
 | 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ● | ● |
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ● | ● |
 | 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ● | ● |
@@ -105,7 +105,7 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ◐ | ● |
+| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ● | ● |
 | 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ● | ● |
 | 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ● | ● |
 | 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ◐ |
