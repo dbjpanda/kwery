@@ -88,7 +88,6 @@ internal class QueryEntry<T>(
      * within the grace window produces BOTH a reattach and a focus event, and
      * suppressing only the reattach would let the focus event refetch anyway.
      */
-    private var lastContinuationMillis: Long? = null
 
     val observerCount: Int get() = observers
 
@@ -165,10 +164,7 @@ internal class QueryEntry<T>(
 
         startPollingLocked()
 
-        if (withinGrace) {
-            lastContinuationMillis = timeSource.nowMillis()
-            return@withLock
-        }
+        if (withinGrace) return@withLock
         if (!options.enabled) return@withLock
         if (shouldRefetchFor(options.refetchOnMount)) startFetchLocked()
     }
@@ -199,6 +195,13 @@ internal class QueryEntry<T>(
      * the cache until LRU eviction.
      */
     private fun scheduleEvictionLocked() {
+        // Idempotent: a repeated prefetch of the same key reaches here on every
+        // call, and without this each one would launch another waiting
+        // coroutine. The strays would be harmless — the first timer still
+        // evicts on time and the rest find the entry gone — which is precisely
+        // why no assertion about data can see them. This is the one guard in
+        // the sweep recorded in docs/roadmap/05-deduplication-observers.md that
+        // no test kills; keeping it is a deliberate call, not an oversight.
         if (graceJob?.isActive == true || gcJob?.isActive == true) return
 
         graceJob = scope.launch {
@@ -434,11 +437,6 @@ internal class QueryEntry<T>(
         }
     }
 
-    private fun withinContinuationWindow(): Boolean {
-        val at = lastContinuationMillis ?: return false
-        return !isElapsed(timeSource.nowMillis(), at, gracePeriodMillis)
-    }
-
     /** The app returned to the foreground. */
     suspend fun onFocusRegained(): Unit = onEnvironmentTrigger(options.refetchOnFocus)
 
@@ -449,7 +447,13 @@ internal class QueryEntry<T>(
         if (!options.enabled) return@withLock
         // Only queries something is actually watching refetch on these triggers.
         if (observers == 0) return@withLock
-        if (withinContinuationWindow()) return@withLock
+        // No continuation check here on purpose. Brief-switch suppression lives
+        // in QueryClient.observeReturns, which only calls this at all once the
+        // app has been away longer than the grace period. Repeating it here was
+        // redundant in the common case and wrong in one: an Activity recreated
+        // *while* the app was away sets its continuation stamp at the moment of
+        // return, which would suppress a refetch the user genuinely wants —
+        // depending on whether attach or the focus event happens to land first.
         if (shouldRefetchFor(policy)) startFetchLocked()
     }
 
@@ -468,9 +472,10 @@ internal class QueryEntry<T>(
         // A disabled query ignores invalidation entirely, matching TanStack:
         // it is excluded even from refetchType 'all'.
         if (!options.enabled) return@withLock null
-        // Idempotent: invalidating twice must not produce a second state object
-        // or a second fetch.
-        if (state.value.isInvalidated) return@withLock null
+        // Invalidating twice is idempotent without a guard here: the state copy
+        // is equal so StateFlow publishes nothing, and startFetchLocked joins
+        // the in-flight request rather than starting a second. A guard that
+        // restates a structural property reads as though it is load-bearing.
 
         state.value = state.value.copy(isInvalidated = true)
         if (observers == 0) return@withLock null

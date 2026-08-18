@@ -264,6 +264,44 @@ interval: the interval is deliberately evaluated twice per tick, once before the
 delay and once after, so that turning polling off takes effect immediately
 rather than one tick late.
 
+### The guard sweep: four resolved, one kept unverified
+
+Mutating each guard in `QueryEntry` and `InfiniteQuery` and watching what the
+suite noticed produced six survivors. Resolved as follows.
+
+**Covered by new tests** — `focus-needs-observer`, `windowed-trim`, the trim's
+eviction *direction*, and the `!force` staleness check (that last one exposed a
+real bug, recorded in [20](20-prefetching.md)).
+
+**Removed as redundant** — `if (state.value.isInvalidated) return null` in
+`invalidate`. Both properties its comment claimed are structural: an equal state
+copy publishes nothing through `StateFlow`, and `startFetchLocked` joins the
+in-flight request rather than starting a second. A guard that restates a
+guarantee the surrounding code already gives reads as though it is load-bearing.
+
+**Removed because it was wrong** — `withinContinuationWindow()` in
+`onEnvironmentTrigger`. Brief-switch suppression is implemented in
+`QueryClient.observeReturns`, which does not notify entries at all unless the
+app was away longer than the grace period; the check here was redundant in the
+common case. It was also actively harmful in one: an Activity recreated *while*
+the app was away stamps its continuation at the moment of return, which
+suppressed a refetch the user genuinely wanted — and whether it did depended on
+whether `attach` or the focus event happened to land first. There is now a test
+for that case, and re-adding the guard fails it.
+
+That also made `lastContinuationMillis` write-only, so it is gone too. The
+continuation concept still exists where it belongs: in `attach`, deciding
+whether a reattach counts as a mount.
+
+**Kept, unverified** — the already-armed check in `scheduleEvictionLocked`.
+Without it a repeated prefetch launches a waiting coroutine per call. The strays
+are harmless (the first timer evicts on time; the rest find the entry gone),
+which is exactly why nothing can observe them: a coroutine-counting test passed
+with and without the guard, because `runTest` advances virtual time while the
+fetch suspends and lets the strays complete. Rather than keep a test that cannot
+fail, the guard is documented as a deliberate defensive choice and the failed
+attempt recorded here.
+
 ### A second observer on a stale query *does* refetch
 
 Worth stating because it looks like a deduplication failure and is not.
