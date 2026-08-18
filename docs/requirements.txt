@@ -1,0 +1,4 @@
+# Pinned so a Read the Docs build and a local build produce the same site.
+# Bumping these is a deliberate act, same as any other dependency here.
+mkdocs==1.6.1
+mkdocs-material==9.6.14

@@ -1,6 +1,8 @@
 # Kwery documentation
 
-User-facing documentation. This is **gate 3** — see [`CLAUDE.md`](../CLAUDE.md).
+User-facing documentation. This is **gate 3**: see
+[`CLAUDE.md`](https://github.com/dbjpanda/kwery/blob/main/CLAUDE.md) for what
+the gates are.
 
 A page appears here only after its feature's tests are green. Documentation
 describes behaviour that has been proven, not behaviour that was intended.
@@ -36,8 +38,9 @@ that chose it.
 
 - [Mutations](mutations.md) — writes, their lifecycle, and scopes
 - [Optimistic updates](optimistic-updates.md) — showing a write before it lands
-- [Offline writes](offline.md) — durable writes that survive process death *(feature still open)*
-- [Persistence](persistence.md) — the query cache across process death *(feature still open)*
+- [Offline writes](offline.md) — durable writes that survive process death
+- [Persistence](persistence.md) — the query cache across process death
+
 **Using it from your app**
 
 - [Compose](compose.md) — `rememberQuery` and friends
@@ -57,11 +60,10 @@ that chose it.
 Pages are named after the feature rather than its roadmap number, since readers
 do not care about build order.
 
-Two pages are marked *feature still open*: everything they describe is tested,
-but their features have gate-2 items outstanding (a Room-backed store, device
-tests), so neither counts as gate 3 passed. A page describing proven behaviour
-is useful before the feature is finished; the gate is what says the feature is
-done.
+Every page here has passed all three gates: its feature is specified, its tests
+are green, and the page describes behaviour that was proven rather than
+intended. Offline writes and persistence were the last two to get there, once
+the Room-backed store and the device tests landed.
 
 Writing the docs keeps finding real bugs, which is the ordering rule earning its
 keep: `offline.md` justified the ordering rule: the page's

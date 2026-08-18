@@ -1,0 +1,91 @@
+site_name: Kwery
+site_description: >-
+  Offline-first caching for Android. Request deduplication, background refresh,
+  optimistic updates and a cache that survives process death. Built on Kotlin
+  coroutines and Flow, for Compose and ViewModels.
+site_url: https://kwery.readthedocs.io/
+
+repo_url: https://github.com/dbjpanda/kwery
+repo_name: dbjpanda/kwery
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - toc:
+      permalink: true
+
+# The roadmap is working material and is gitignored, so it is absent on a fresh
+# clone. Excluding it explicitly keeps a local build identical to the one Read
+# the Docs runs, instead of warning about files CI will never see.
+exclude_docs: |
+  roadmap/
+
+# Ordered for someone who has never used the library, which is not the order
+# the features were built in and not alphabetical. This mirrors docs/README.md.
+nav:
+  - Home: README.md
+  - Start here:
+      - Queries: queries.md
+      - Query keys: query-keys.md
+      - Query state: query-state.md
+  - Keeping data fresh:
+      - Deduplication and observers: deduplication.md
+      - Caching: caching.md
+      - Invalidation: invalidation.md
+      - Reading and writing the cache: manual-cache.md
+      - Retries: retries.md
+      - Cancellation: cancellation.md
+      - Refetching: refetching.md
+      - Prefetching: prefetching.md
+  - Writing:
+      - Mutations: mutations.md
+      - Optimistic updates: optimistic-updates.md
+      - Offline writes: offline.md
+      - Persistence: persistence.md
+  - Using it from your app:
+      - Compose: compose.md
+      - ViewModels: viewmodels.md
+      - Testing: testing.md
+      - Inspecting the cache: devtools.md
+  - Composing queries:
+      - Parallel and dependent queries: parallel-queries.md
+  - Lists:
+      - Infinite queries: infinite-queries.md
+      - Paginated queries: paginated-queries.md
