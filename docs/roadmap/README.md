@@ -106,7 +106,7 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ◐ | ○ |
+| 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ● | ○ |
 | 18 | [ViewModel integration](18-viewmodel-integration.md) | — (Kwery-specific) | ● | ◐ | ○ |
 | 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `queriesObserver.test.tsx` | ● | ● | ○ |
 | 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ● | ● |

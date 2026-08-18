@@ -10,6 +10,8 @@ import dev.kwery.RefetchOn
 import dev.kwery.QueryState
 import dev.kwery.StaleTime
 import dev.kwery.test.TestQueryClient
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
@@ -252,3 +254,55 @@ class RememberQueryTest {
 }
 
 
+
+class GlobalStateTest {
+
+    @Test
+    fun `rememberIsFetching counts in-flight queries and returns to zero`() = runTest {
+        val kwery = TestQueryClient(this)
+        val gate = CompletableDeferred<String>()
+        val seen = mutableListOf<Int>()
+        val composition = TestComposition(backgroundScope) { kwery.settle() }
+
+        composition.setContent {
+            CompositionLocalProvider(LocalQueryClient provides kwery.client) {
+                val fetching by rememberIsFetching()
+                seen += fetching
+                rememberQuery(TodoKey("1")) { gate.await() }
+            }
+        }
+
+        assertTrue(seen.contains(1), "the in-flight query should have been visible, saw $seen")
+
+        gate.complete("todo")
+        composition.frame()
+
+        assertEquals(0, seen.last(), "the counter must come back down, saw $seen")
+    }
+
+    @Test
+    fun `rememberIsRestoring follows the client`() = runTest {
+        val kwery = TestQueryClient(this)
+        val seen = mutableListOf<Boolean>()
+        val composition = TestComposition(backgroundScope) { kwery.settle() }
+        val restoring = CompletableDeferred<Unit>()
+
+        composition.setContent {
+            CompositionLocalProvider(LocalQueryClient provides kwery.client) {
+                val value by rememberIsRestoring()
+                seen += value
+            }
+        }
+        assertEquals(listOf(false), seen)
+
+        backgroundScope.launch {
+            kwery.client.withRestoring { restoring.await() }
+        }
+        composition.frame()
+        assertTrue(seen.last(), "restoring should be visible while it runs, saw $seen")
+
+        restoring.complete(Unit)
+        composition.frame()
+        assertEquals(false, seen.last(), "and false once it finishes, saw $seen")
+    }
+}

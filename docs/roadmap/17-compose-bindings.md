@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 3 — v1 integration |
-| **Status** | **gate 2 complete** (render-path tests need a device)|
+| **Status** | **gate 2 complete** (render tests need a device; `rememberIsMutating` blocked on core) |
 | **Module** | `kwery-compose` |
 | **TanStack source** | [`reference/useQuery.md`](../../.reference/tanstack-query/docs/framework/react/reference/useQuery.md), [`reference/QueryClientProvider.md`](../../.reference/tanstack-query/docs/framework/react/reference/QueryClientProvider.md) |
 | **Depends on** | 05 Observers |
@@ -91,9 +91,14 @@ CompositionLocalProvider(LocalQueryClient provides client) { App() }
 
 - [x] `rememberQuery`, `rememberQuerySelecting`, `rememberMutation`,
       `rememberInfiniteQuery` implemented.
-- [x] `LocalQueryClient`.
-- [ ] `isFetching` / `isMutating` / `isRestoring` composable helpers — the
-      client exposes these; the Compose wrappers are not written.
+- [x] `LocalQueryClient`, `rememberIsFetching`, `rememberIsRestoring`.
+- [x] Test: `rememberIsFetching` counts in-flight queries and returns to zero;
+      `rememberIsRestoring` follows the client. **Both verified by mutation.**
+- [ ] `rememberIsMutating` — **blocked, and not on this module.** TanStack has
+      `useIsMutating`, but `QueryClient` tracks no mutation count for it to
+      read. A Compose wrapper over a signal that does not exist would put
+      behaviour in the bindings that is absent from the core, which AD-2
+      forbids. Belongs in [11](11-mutations.md) first.
 - [x] Test: changing the key resubscribes. **Verified by mutation** — dropping
       `key` from the `remember` scope fails it.
 - [x] Test: recomposition with an equal key does not.
