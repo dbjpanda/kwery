@@ -16,11 +16,10 @@ theme:
     logo: material/database-sync
     repo: fontawesome/brands/github
   features:
-    # Top-level sections become tabs across the header, so the left sidebar
-    # only ever shows the section you are actually in.
-    - navigation.tabs
-    - navigation.tabs.sticky
+    # One full-height sidebar with every section visible, rather than tabs
+    # across the header. Group labels act as headings, not links.
     - navigation.sections
+    - navigation.expand
     - navigation.top
     - navigation.tracking
     - navigation.footer
