@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 3 — v1 integration |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/dependent-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/dependent-queries.md), [`guides/parallel-queries.md`](../../.reference/tanstack-query/docs/framework/react/guides/parallel-queries.md), [`guides/request-waterfalls.md`](../../.reference/tanstack-query/docs/framework/react/guides/request-waterfalls.md) |
 | **Depends on** | 03 Query state |
@@ -102,10 +102,11 @@ Semantics, chosen deliberately:
 
 ## Open questions
 
-- **OQ-1.** Should `aggregate()` treat a disabled query as satisfied or as
-  pending forever? Treating it as pending means one disabled query makes the
-  whole screen load forever — almost never intended. Leaning: disabled queries
-  are excluded from the aggregate, and this must be prominent in the KDoc.
+- **OQ-1.** ~~Disabled query: satisfied, or pending for ever?~~ **Closed:
+  excluded by default.** One disabled query would otherwise hold an entire
+  screen in `Pending` indefinitely, which is almost never what anyone means.
+  `skipDisabled = false` opts out, and the predicate identifying a disabled
+  query is overridable for cases the default heuristic gets wrong.
 - **OQ-2.** Should there be a typed `combine` for heterogeneous queries, e.g.
   `combineQueries(userQ, settingsQ) { user, settings -> ScreenState(user, settings) }`?
   Requires arity overloads up to some N, which is boilerplate in the library but
@@ -113,14 +114,18 @@ Semantics, chosen deliberately:
 
 ## Definition of done
 
-- [ ] `aggregate()` and `combineQueryStates` implemented.
-- [ ] Test: dependent query does not fire until its dependency resolves, and
-      fires exactly once when it does.
-- [ ] Test: `flatMapLatest` form cancels the dependent query when the dependency
-      key changes.
-- [ ] Test: N parallel queries issue N concurrent requests, not sequential.
-- [ ] Test: aggregate status transitions across all-pending, partial, one-error,
-      and all-success.
-- [ ] Test: a disabled query does not hold the aggregate in `Pending` (OQ-1).
+- [x] `aggregate()` implemented, returning an `AggregateState`.
+- [ ] Typed `combineQueries(a, b) { … }` arity overloads (OQ-2).
+- [ ] Test: dependent query ordering end to end (covered in principle by
+      `enabled` and `flatMapLatest`, both already tested elsewhere).
+- [x] Test: `flatMapLatest` over a changing key cancels the old observer
+      (`KeepPreviousDataTest`).
+- [x] Test: N observers across N keys issue N concurrent requests
+      (`CacheLifecycleTest`, 100 keys).
+- [x] Test: aggregate status across all-success, partial, one-error and empty.
+- [x] Test: `Fetching` outranks `Paused` — something IS happening.
+- [x] Test: partial data is preserved so a screen renders what it has.
+- [x] Test: a disabled query does not hold the aggregate in `Pending`, and
+      `skipDisabled = false` opts out.
 - [ ] Documentation section on avoiding waterfalls, with a prefetch cross-link
       to [20](20-prefetching.md).

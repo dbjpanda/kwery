@@ -70,7 +70,7 @@ minutes ago should not be treated as fresh.
 | `setQueryData` updater fn | yes | yes | planned |
 | `setQueryData` does not refetch | yes | yes | planned |
 | `getQueryState` | yes | yes | planned |
-| `setQueriesData` (bulk, by filter) | yes | yes | planned |
+| `setQueriesData` (bulk, by filter) | yes | yes | done |
 | `initialData` | yes | `InitialData` | done |
 | `initialData` as a function | yes | yes, lazy — not called if the entry exists | done |
 | `initialDataUpdatedAt` | yes | `InitialData.updatedAt` | done |

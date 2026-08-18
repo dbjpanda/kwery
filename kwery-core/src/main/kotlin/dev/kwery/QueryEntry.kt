@@ -173,6 +173,20 @@ internal class QueryEntry<T>(
         pollJob?.cancel()
         pollJob = null
 
+        scheduleEvictionLocked()
+    }
+
+    /**
+     * Begin the grace-then-gc countdown. Caller must hold [mutex].
+     *
+     * Called both when the last observer leaves and after a fetch that had no
+     * observer at all — a prefetch. Without the second case a prefetched entry
+     * would never start its timer, because it never detaches, and would sit in
+     * the cache until LRU eviction.
+     */
+    private fun scheduleEvictionLocked() {
+        if (graceJob?.isActive == true || gcJob?.isActive == true) return
+
         graceJob = scope.launch {
             delay(gracePeriodMillis)
             mutex.withLock {
@@ -447,6 +461,35 @@ internal class QueryEntry<T>(
         if (!options.enabled) return@withLock null
         startFetchLocked()
         inFlight
+    }
+
+    /**
+     * Fetch without attaching an observer, and return the result.
+     *
+     * [force] skips the staleness check. When the data is already fresh and
+     * [force] is false this issues no request and returns what is cached, which
+     * is what makes prefetching safe to call on every scroll or hover.
+     */
+    @Suppress("UNCHECKED_CAST")
+    suspend fun fetchAndAwait(force: Boolean): T {
+        val pending = mutex.withLock {
+            if (!options.enabled) return@withLock null
+            if (!force && !isStaleNow()) return@withLock null
+            startFetchLocked()
+            inFlight
+        }
+        if (pending == null) return state.value.data as T
+
+        try {
+            return when (val outcome = pending.await()) {
+                is FetchOutcome.Ok -> outcome.value
+                is FetchOutcome.Failed -> throw outcome.error
+            }
+        } finally {
+            // A prefetch attaches no observer, so nothing will ever detach and
+            // start the timer. Start it here instead.
+            mutex.withLock { if (observers == 0) scheduleEvictionLocked() }
+        }
     }
 
     suspend fun cancel() = mutex.withLock {

@@ -360,6 +360,20 @@ public class QueryClient(
         scope.cancel()
     }
 
+    /**
+     * Get or create an entry for a fetch that has **no observer**.
+     *
+     * Such an entry is inactive the moment it is created, so its `gcTime` timer
+     * starts immediately. Prefetching far ahead of use can therefore be
+     * collected before the user arrives — prefetch close to the point of use,
+     * or raise `gcTime` for those keys.
+     */
+    internal suspend fun <T> obtainForFetch(
+        key: QueryKey<T>,
+        options: QueryOptions,
+        fetcher: suspend () -> T,
+    ): QueryEntry<T> = obtain(key, options, fetcher)
+
     // ---- Internals -------------------------------------------------------
 
     /**

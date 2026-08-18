@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Tier** | 3 — v1 integration |
-| **Status** | planned |
+| **Status** | **gate 2 complete** |
 | **Module** | `kwery-core` |
 | **TanStack source** | [`guides/prefetching.md`](../../.reference/tanstack-query/docs/framework/react/guides/prefetching.md), [`guides/request-waterfalls.md`](../../.reference/tanstack-query/docs/framework/react/guides/request-waterfalls.md) |
 | **Depends on** | 04 Caching lifecycle, 09 Manual cache |
@@ -89,16 +89,33 @@ point of use, or raise `gcTime` for those keys.
   Speculative work is exactly what a user on a capped plan does not want. Ties
   to [13](13-network-mode.md) OQ-1.
 
+### A prefetched entry never started its gc timer
+
+The timer starts in `detach()`, which runs when the last observer leaves. A
+prefetched entry has **no** observer, so it never detaches and never started
+one — it would sit in the cache until LRU eviction, which is a leak in exactly
+the feature whose purpose is speculative loading.
+
+Eviction scheduling is now shared: the last observer leaving and an unobserved
+fetch completing both begin the grace-then-gc countdown.
+
+**Verified by mutation.**
+
 ## Definition of done
 
-- [ ] `prefetchQuery`, `prefetchInfiniteQuery`, `fetchQuery`,
-      `ensureQueryData`, `ensureInfiniteQueryData` implemented.
-- [ ] Test: `prefetchQuery` swallows a thrown error and leaves the cache clean.
-- [ ] Test: `fetchQuery` propagates the same error.
-- [ ] Test: prefetching fresh data within `staleTime` issues no request.
-- [ ] Test: `ensureQueryData` returns cached data without a request, and fetches
-      when absent.
-- [ ] Test: a prefetched entry is immediately inactive and starts its `gcTime`.
-- [ ] Test: a query observing a prefetched key gets data with no second request.
-- [ ] `QueryPriority` parameter present in the fetch path even if unused (OQ-1).
+- [x] `prefetchQuery`, `fetchQuery`, `ensureQueryData` implemented.
+- [ ] `prefetchInfiniteQuery` / `ensureInfiniteQueryData`.
+- [x] Test: `prefetchQuery` swallows a thrown error, while still recording it
+      in that query's state so a screen observing the key later finds out.
+      **Verified by mutation.**
+- [x] Test: `fetchQuery` propagates the original exception instance.
+- [x] Test: prefetching fresh data issues no request, five calls in a row —
+      which is what makes it safe on a scroll tick.
+- [x] Test: `ensureQueryData` reads through — fetches when absent, serves from
+      cache when present.
+- [x] Test: a prefetched entry is immediately inactive and starts its `gcTime`.
+      **This was broken and the test found it** — see below. Verified by mutation.
+- [x] Test: a screen observing a prefetched key finds the data already there.
+- [ ] `QueryPriority` in the fetch path, so deprioritising speculative work
+      later is not a breaking change (OQ-1).
 - [ ] Navigation Compose prefetch recipe in the sample app.
