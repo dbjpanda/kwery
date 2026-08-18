@@ -1,19 +1,55 @@
-# Kwery documentation
+# Kwery
 
-User-facing documentation. This is **gate 3**: see
-[`CLAUDE.md`](https://github.com/dbjpanda/kwery/blob/main/CLAUDE.md) for what
-the gates are.
+**Offline-first caching for Android.** Your screens ask for data. Kwery decides
+what to serve, what to refresh, and what to queue until the network returns.
 
-A page appears here only after its feature's tests are green. Documentation
-describes behaviour that has been proven, not behaviour that was intended.
+Built on coroutines and Flow. Works from a ViewModel or from Compose.
 
-Design rationale, parity tables and open questions live in the project's
-roadmap, which is working material and deliberately not published — it argues
-with prior art, and these pages do not unless a reader migrating
-from it needs the comparison. Where a decision's reasoning matters to someone
-*using* the library, it is inlined here instead: see
-[deduplication](deduplication.md) for the observer model and the measurements
-that chose it.
+## Install
+
+```kotlin
+implementation("io.github.dbjpanda:kwery-core:0.3.2")
+implementation("io.github.dbjpanda:kwery-android:0.3.2")        // focus + connectivity
+implementation("io.github.dbjpanda:kwery-compose:0.3.2")        // rememberQuery
+implementation("io.github.dbjpanda:kwery-persist:0.3.2")        // cache across process death
+implementation("io.github.dbjpanda:kwery-persist-room:0.3.2")   // Room store for large caches
+testImplementation("io.github.dbjpanda:kwery-test:0.3.2")       // TestQueryClient
+```
+
+On Maven Central. No extra repository needed.
+
+## Use it
+
+Declare a key. Ask for data. That is the whole API.
+
+```kotlin
+data class TodoKey(val id: String) : QueryKey<Todo> {
+    override val parts get() = listOf("todo", id)
+}
+
+@Composable
+fun TodoScreen(id: String) {
+    val state = rememberQuery(TodoKey(id)) { api.todo(id) }
+
+    when {
+        state.isLoading -> Spinner()
+        state.isError   -> ErrorView(state.error!!)
+        else            -> TodoView(state.data!!, refreshing = state.isRefreshing)
+    }
+}
+```
+
+The same cache from a ViewModel:
+
+```kotlin
+val todos = client.query(TodoListKey) { api.todos() }
+    .stateIn(viewModelScope, WhileSubscribed(5_000), QueryState())
+```
+
+Compose is a thin layer over the Flow core. Both surfaces share one cache entry
+and one in-flight request.
+
+## Where to go next
 
 <div class="grid cards" markdown>
 
@@ -54,7 +90,7 @@ that chose it.
 
 </div>
 
-## Pages
+## All pages
 
 **Start here**
 
@@ -96,70 +132,18 @@ that chose it.
 - [Infinite queries](infinite-queries.md) — accumulating pages
 - [Paginated queries](paginated-queries.md) — pages that replace each other
 
-Pages are named after the feature rather than its roadmap number, since readers
-do not care about build order.
+## Two things everyone gets wrong
 
-Every page here has passed all three gates: its feature is specified, its tests
-are green, and the page describes behaviour that was proven rather than
-intended. Offline writes and persistence were the last two to get there, once
-the Room-backed store and the device tests landed.
+Worth reading before anything else, because they cause most of the confusion:
 
-Writing the docs keeps finding real bugs, which is the ordering rule earning its
-keep: `offline.md` justified the ordering rule: the page's
-idempotency example referenced a value the API did not expose, which made the
-at-least-once guarantee unusable from the one place that needs it. That gap was
-invisible from the tests, which never had to *write the call*. `DurableMutationScope`
-exists because of it.
+- **`staleTime` and `gcTime` are different clocks.** One decides when to
+  refetch, the other when to forget. See [caching](caching.md).
+- **`status` and `fetchStatus` are separate axes.** Collapsing them loses
+  "showing data while refreshing in the background" and "waiting, offline",
+  which are the states an Android app actually spends its time in. See
+  [query state](query-state.md).
 
-## How these pages are kept honest
+---
 
-Examples rot silently: nothing compiles a fenced code block, so a renamed
-parameter or a method that only ever existed in a design sketch sits here
-looking authoritative. That has happened three times in this project — a
-`currentQueuedMutationId` that did not exist, a `PlaceholderData.KeepPrevious`
-that was never built, and a `prefetchQuery(key, staleTime, fetcher)` overload
-lifted from a roadmap file rather than the code.
-
-`docs-lint` runs as part of the normal build and checks two things:
-
-- **Every Kwery identifier** in these pages exists — methods called on a client
-  or query, enum constants, and Kwery's own type names — against the committed
-  `.api` dumps and the sources. Capitalisation counts, which the dumps alone
-  cannot tell you: `val Exponential` and `val exponential` compile to the same
-  getter.
-- **Every named argument** names a real parameter, with the accepted list shown
-  when one does not. Parameter names live only in the sources, so this reads
-  those; it is what would have caught
-  `prefetchQuery(key, staleTime, fetcher)`, a signature taken from a design
-  sketch that never existed in the code.
-
-It is still a lint rather than a compiler — it will not catch a wrong argument
-*order*, or a type error — but the two classes it does catch are the two that
-have actually bitten this project.
-
-## Writing a page
-
-Each page should answer, in order:
-
-1. **What problem does this solve?** One paragraph, no API.
-2. **The simplest thing that works.** A complete, compiling example — not a
-   fragment with `// ...` where the hard part goes.
-3. **The options**, with defaults stated and the reason each default was chosen.
-4. **What goes wrong.** The failure modes, misconfigurations, and gotchas found
-   while writing the tests. This is the section that makes documentation worth
-   reading, and it can only be written after gate 2 — which is why gate 3 comes
-   last.
-5. **Related pages.**
-
-Rules:
-
-- **Examples must compile.** Extract them from the test suite or the sample app
-  where possible, so they cannot rot silently.
-- State defaults explicitly. "`staleTime` defaults to zero, so data is
-  considered stale immediately" — not "configure `staleTime` as needed".
-- Document the two things every user gets wrong, wherever they are relevant:
-  the `staleTime` vs `gcTime` distinction, and `status` vs `fetchStatus`.
-- Do not restate the specs' design rationale. A reader here wants to use the
-  library, not to know what was considered and rejected — unless the reasoning
-  changes how they should use it, in which case it belongs here and nowhere
-  else.
+Kwery is open source under Apache 2.0. Issues, source and contributing guide
+are on [GitHub](https://github.com/dbjpanda/kwery).

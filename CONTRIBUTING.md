@@ -174,6 +174,61 @@ times while writing these. `KeyEncodingR8Test` includes a test asserting the
 build really is minified for the same reason: a test that quietly stops testing
 is worse than one that fails.
 
+## Writing documentation
+
+### How the docs pages are kept honest
+
+Examples rot silently: nothing compiles a fenced code block, so a renamed
+parameter or a method that only ever existed in a design sketch sits here
+looking authoritative. That has happened three times in this project — a
+`currentQueuedMutationId` that did not exist, a `PlaceholderData.KeepPrevious`
+that was never built, and a `prefetchQuery(key, staleTime, fetcher)` overload
+lifted from a roadmap file rather than the code.
+
+`docs-lint` runs as part of the normal build and checks two things:
+
+- **Every Kwery identifier** in `docs/` exists — methods called on a client
+  or query, enum constants, and Kwery's own type names — against the committed
+  `.api` dumps and the sources. Capitalisation counts, which the dumps alone
+  cannot tell you: `val Exponential` and `val exponential` compile to the same
+  getter.
+- **Every named argument** names a real parameter, with the accepted list shown
+  when one does not. Parameter names live only in the sources, so this reads
+  those; it is what would have caught
+  `prefetchQuery(key, staleTime, fetcher)`, a signature taken from a design
+  sketch that never existed in the code.
+
+It is still a lint rather than a compiler — it will not catch a wrong argument
+*order*, or a type error — but the two classes it does catch are the two that
+have actually bitten this project.
+
+### Writing a page
+
+Each page should answer, in order:
+
+1. **What problem does this solve?** One paragraph, no API.
+2. **The simplest thing that works.** A complete, compiling example — not a
+   fragment with `// ...` where the hard part goes.
+3. **The options**, with defaults stated and the reason each default was chosen.
+4. **What goes wrong.** The failure modes, misconfigurations, and gotchas found
+   while writing the tests. This is the section that makes documentation worth
+   reading, and it can only be written after gate 2 — which is why gate 3 comes
+   last.
+5. **Related pages.**
+
+Rules:
+
+- **Examples must compile.** Extract them from the test suite or the sample app
+  where possible, so they cannot rot silently.
+- State defaults explicitly. "`staleTime` defaults to zero, so data is
+  considered stale immediately" — not "configure `staleTime` as needed".
+- Document the two things every user gets wrong, wherever they are relevant:
+  the `staleTime` vs `gcTime` distinction, and `status` vs `fetchStatus`.
+- Do not restate the specs' design rationale. A reader here wants to use the
+  library, not to know what was considered and rejected — unless the reasoning
+  changes how they should use it, in which case it belongs here and nowhere
+  else.
+
 ## Writing tests
 
 - **Start from TanStack's tests**, not from the design document. Read the test

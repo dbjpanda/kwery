@@ -14,12 +14,12 @@ Built on coroutines and Flow. Works from a ViewModel or from Compose.
 ## Install
 
 ```kotlin
-implementation("io.github.dbjpanda:kwery-core:0.3.0")
-implementation("io.github.dbjpanda:kwery-android:0.3.0")        // focus + connectivity
-implementation("io.github.dbjpanda:kwery-compose:0.3.0")        // rememberQuery
-implementation("io.github.dbjpanda:kwery-persist:0.3.0")        // cache across process death
-implementation("io.github.dbjpanda:kwery-persist-room:0.3.0")   // Room store for large caches
-testImplementation("io.github.dbjpanda:kwery-test:0.3.0")       // TestQueryClient
+implementation("io.github.dbjpanda:kwery-core:0.3.2")
+implementation("io.github.dbjpanda:kwery-android:0.3.2")        // focus + connectivity
+implementation("io.github.dbjpanda:kwery-compose:0.3.2")        // rememberQuery
+implementation("io.github.dbjpanda:kwery-persist:0.3.2")        // cache across process death
+implementation("io.github.dbjpanda:kwery-persist-room:0.3.2")   // Room store for large caches
+testImplementation("io.github.dbjpanda:kwery-test:0.3.2")       // TestQueryClient
 ```
 
 On Maven Central. No extra repository needed.
@@ -137,7 +137,7 @@ Popular ones: [queries](docs/queries.md), [caching](docs/caching.md),
 
 ## Status
 
-Version 0.3.0. Early but real: 22 of 24 planned features are specified, tested
+Version 0.3.2. Early but real: 22 of 24 planned features are specified, tested
 and documented. What is left needs a physical device.
 [RELEASE.md](RELEASE.md) lists what is missing and why.
 

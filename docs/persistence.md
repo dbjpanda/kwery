@@ -84,7 +84,7 @@ storage.queueStore
 Add the module for the Room option:
 
 ```kotlin
-implementation("io.github.dbjpanda:kwery-persist-room:0.3.0")
+implementation("io.github.dbjpanda:kwery-persist-room:0.3.2")
 ```
 
 | | File | Room |
