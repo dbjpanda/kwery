@@ -281,6 +281,33 @@ class GlobalStateTest {
     }
 
     @Test
+    fun `rememberIsMutating follows the client`() = runTest {
+        val kwery = TestQueryClient(this)
+        val seen = mutableListOf<Int>()
+        val gate = CompletableDeferred<String>()
+        val composition = TestComposition(backgroundScope) { kwery.settle() }
+
+        composition.setContent {
+            CompositionLocalProvider(LocalQueryClient provides kwery.client) {
+                val mutating by rememberIsMutating()
+                seen += mutating
+            }
+        }
+        assertEquals(listOf(0), seen)
+
+        val m = kwery.client.mutation(
+            dev.kwery.MutationOptions<Unit, String, Unit>(mutationFn = { gate.await() }),
+        )
+        m.mutate(Unit)
+        composition.frame()
+        assertEquals(1, seen.last(), "an in-flight write should be visible, saw $seen")
+
+        gate.complete("done")
+        composition.frame()
+        assertEquals(0, seen.last(), "and gone once it settles, saw $seen")
+    }
+
+    @Test
     fun `rememberIsRestoring follows the client`() = runTest {
         val kwery = TestQueryClient(this)
         val seen = mutableListOf<Boolean>()

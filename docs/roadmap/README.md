@@ -95,7 +95,7 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ◐ | ● |
+| 11 | [Mutations](11-mutations.md) | `mutations.test.tsx`, `mutationCache.test.tsx`, `mutationObserver.test.tsx` | ● | ● | ● |
 | 12 | [Optimistic updates & rollback](12-optimistic-updates.md) | `mutations.test.tsx` | ● | ● | ● |
 | 13 | [Network mode & offline pause](13-network-mode.md) | `onlineManager.test.tsx`, `query.test.tsx` | ● | ◐ | ○ |
 | 14 | [Offline mutation queue](14-offline-mutation-queue.md) | `mutations.test.tsx`, `hydration.test.tsx` | ● | ◐ | ◐ |

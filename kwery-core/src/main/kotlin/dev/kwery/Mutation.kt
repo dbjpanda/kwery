@@ -128,6 +128,8 @@ public class Mutation<V, R> internal constructor(
     private val onlineManager: OnlineManager,
     /** Shared by every mutation declaring the same [MutationScope]. */
     private val serialLock: Mutex?,
+    private val onMutationStarted: () -> Unit = {},
+    private val onMutationSettled: () -> Unit = {},
 ) {
     private val mutableState = MutableStateFlow(MutationState<V, R>())
 
@@ -173,7 +175,21 @@ public class Mutation<V, R> internal constructor(
             variables = variables,
             submittedAt = timeSource.nowMillis(),
         )
+        onMutationStarted()
 
+        try {
+            return runToCompletion(typed, variables)
+        } finally {
+            // Non-suspending, so it also runs when the mutation is cancelled.
+            onMutationSettled()
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private suspend fun runToCompletion(
+        typed: MutationOptions<V, R, Any?>,
+        variables: V,
+    ): R {
         // Before anything else, and before waiting for a scope turn: an
         // optimistic update must be visible immediately, not after the queue.
         val context = typed.onMutate?.invoke(variables)

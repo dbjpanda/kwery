@@ -102,6 +102,22 @@ public fun rememberIsFetching(): State<Int> =
     LocalQueryClient.current.isFetching.collectAsState()
 
 /**
+ * How many mutations are running right now, across the whole client.
+ *
+ * Includes writes still queued behind another in the same scope, so a button
+ * driven by this does not flicker back to enabled between two serialised
+ * submissions.
+ *
+ * ```kotlin
+ * val saving by rememberIsMutating()
+ * TopAppBar(actions = { if (saving > 0) CircularProgressIndicator() })
+ * ```
+ */
+@Composable
+public fun rememberIsMutating(): State<Int> =
+    LocalQueryClient.current.isMutating.collectAsState()
+
+/**
  * True while a persisted cache is being restored.
  *
  * Queries hold rather than fetch during a restore, so a splash screen shown on

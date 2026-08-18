@@ -126,7 +126,8 @@ This is a deliberate parity gap, recorded as such.
 | `submittedAt` | yes | yes | planned |
 | Mutation scopes run serially | yes | `MutationScope` | planned |
 | `setMutationDefaults` | yes | see [14](14-offline-mutation-queue.md) | planned |
-| `isMutating` / mutation filters | yes | **not built** | gap — see below |
+| `isMutating` (global count) | yes | `QueryClient.isMutating` | done |
+| Mutation *filters* (by key / predicate) | yes | **not built** | gap |
 | Observe others' mutations (`useMutationState`) | yes | `client.mutationStates(filters)` | planned |
 | Throwing `onSettled` promotes success → error | yes | yes | done |
 | Throwing `onError` loses the original error | yes — unhandled rejection | **no** — original stays primary, callback attached as suppressed | divergent (better) |
@@ -189,27 +190,36 @@ would double it.
   `mutate(v).join()` or observe `state`. Adding a second callback channel to
   cover a case already served by two mechanisms is API surface for its own sake.
 
-### Gap: no global mutation count
+### `isMutating`: a queued write is still outstanding
 
-`QueryClient` exposes `isFetching: StateFlow<Int>` but has no `isMutating`
-counterpart, so TanStack's `useIsMutating` has no Kwery equivalent — found while
-closing [17](17-compose-bindings.md) gate 2, where `rememberIsMutating` was
-specified next to two helpers that do exist and turned out to have nothing to
-wrap.
+`QueryClient.isMutating` counts a mutation from submission until its callbacks
+finish — **including time spent queued** behind another mutation in the same
+`MutationScope`.
 
-The parity table claimed this was built. It was not, and "planned" in a status
-column is exactly how a false parity claim survives review.
+The alternative, counting only once the scope lock is held, is the more obvious
+implementation and is wrong in a way that shows up on screen: a user submitting
+two writes back to back would see the save button re-enable in the gap between
+them. A queued write has not happened yet, but it is going to.
 
-The fix belongs here rather than in the bindings: a global indicator that a
-write is in flight is client state, and adding it to `kwery-compose` alone would
-put behaviour in the adapter that the core lacks, which AD-2 forbids.
+The decrement lives in a `finally` that does not suspend, so it survives
+cancellation — a suspending cleanup would not run, and a leaked count means a
+spinner that never stops.
+
+TanStack's mutation *filters* (`useIsMutating({ mutationKey })`) remain
+unimplemented; Kwery mutations have no key to filter on, which is a design
+question rather than an oversight.
 
 ## Definition of done
 
 - [x] `Mutation`, `MutationState`, `MutationOptions` implemented.
-- [ ] `isMutating: StateFlow<Int>` on `QueryClient`, with a test that it counts
-      concurrent mutations and returns to zero (see the gap above), and
-      `rememberIsMutating` in `kwery-compose` once it exists.
+- [x] `isMutating: StateFlow<Int>` on `QueryClient`, and `rememberIsMutating`
+      in `kwery-compose`.
+- [x] Test: counts concurrent mutations and returns to zero.
+- [x] Test: a mutation queued behind its scope still counts.
+      **Verified by mutation** — counting only after the lock fails it.
+- [x] Test: failed and cancelled mutations both decrement.
+      **Verified by mutation** — moving the decrement off the `finally` fails both.
+- [ ] Mutation filters (by key or predicate) — see the note above.
 - [x] Test: callbacks fire in documented order and each is awaited.
 - [x] Test: `onMutate` result reaches `onError` and `onSettled`, typed.
 - [x] Test: mutations do not retry by default; `retry` opts in.

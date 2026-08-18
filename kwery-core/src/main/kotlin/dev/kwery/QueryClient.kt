@@ -180,6 +180,8 @@ public class QueryClient(
             timeSource = config.timeSource,
             onlineManager = config.onlineManager,
             serialLock = lock,
+            onMutationStarted = ::onMutationStarted,
+            onMutationSettled = ::onMutationSettled,
         )
     }
 
@@ -349,6 +351,30 @@ public class QueryClient(
 
     internal fun onFetchSettled() {
         fetchingCount.value = (fetchingCount.value - 1).coerceAtLeast(0)
+    }
+
+    private val mutatingCount = MutableStateFlow(0)
+
+    /**
+     * How many mutations are running right now, across the whole client.
+     *
+     * The counterpart to [isFetching], and the signal behind a global "saving…"
+     * indicator or a guard against navigating away mid-write.
+     *
+     * A mutation counts from the moment it is submitted until its callbacks
+     * have finished — **including time spent queued** behind another mutation
+     * in the same [MutationScope]. A queued write has not happened yet but is
+     * going to, so treating it as idle would let a button re-enable between two
+     * serialised submissions.
+     */
+    public val isMutating: StateFlow<Int> get() = mutatingCount.asStateFlow()
+
+    internal fun onMutationStarted() {
+        mutatingCount.value += 1
+    }
+
+    internal fun onMutationSettled() {
+        mutatingCount.value = (mutatingCount.value - 1).coerceAtLeast(0)
     }
 
     /** Snapshots of every cached entry, for inspection and devtools. */

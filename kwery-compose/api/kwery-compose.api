@@ -6,6 +6,7 @@ public final class dev/kwery/compose/InfiniteScrollKt {
 public final class dev/kwery/compose/RememberMutationKt {
 	public static final fun rememberInfiniteQuery (Ldev/kwery/QueryKey;Ldev/kwery/InfiniteQueryOptions;Ldev/kwery/QueryOptions;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)Ldev/kwery/InfiniteQuery;
 	public static final fun rememberIsFetching (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
+	public static final fun rememberIsMutating (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
 	public static final fun rememberIsRestoring (Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
 	public static final fun rememberMutation (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)Ldev/kwery/Mutation;
 	public static final fun stateAsState (Ldev/kwery/InfiniteQuery;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;
