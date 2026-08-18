@@ -80,13 +80,13 @@ that feature's parity table with a reason.
 
 | # | Feature | Port tests from | Spec | Tests | Docs |
 |---|---|---|:--:|:--:|:--:|
-| 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ● | ○ |
-| 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ● | ○ |
+| 01 | [Query keys](01-query-keys.md) | `utils.test.tsx`, `queryCache.test.tsx` | ● | ● | ● |
+| 02 | [Query functions](02-query-functions.md) | `query.test.tsx` | ● | ● | ● |
 | 03 | [Query state & status axes](03-query-state.md) | `queryObserver.test.tsx` | ● | ● | ● |
 | 04 | [Caching lifecycle](04-caching-lifecycle.md) | `query.test.tsx`, `queryCache.test.tsx` | ● | ● | ● |
 | 05 | [Deduplication & observers](05-deduplication-observers.md) | `queryObserver.test.tsx`, `queriesObserver.test.tsx` | ● | ● | ○ |
-| 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ● | ○ |
-| 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ● | ○ |
+| 06 | [Retries & backoff](06-retries.md) | `query.test.tsx` | ● | ● | ● |
+| 07 | [Refetch triggers](07-refetch-triggers.md) | `focusManager.test.tsx`, `onlineManager.test.tsx` | ● | ● | ● |
 | 08 | [Invalidation & filters](08-invalidation-filters.md) | `queryClient.test.tsx`, `utils.test.tsx` | ● | ● | ● |
 | 09 | [Manual cache access](09-manual-cache.md) | `queryClient.test.tsx`, `queryObserver.test.tsx` | ● | ● | ○ |
 | 10 | [Cancellation](10-cancellation.md) | `query.test.tsx` | ● | ● | ○ |
@@ -109,7 +109,7 @@ that feature's parity table with a reason.
 | 17 | [Compose bindings](17-compose-bindings.md) | — (React-specific) | ● | ◐ | ○ |
 | 18 | [ViewModel integration](18-viewmodel-integration.md) | — (Kwery-specific) | ● | ◐ | ○ |
 | 19 | [Dependent & parallel queries](19-dependent-parallel.md) | `queriesObserver.test.tsx` | ● | ● | ○ |
-| 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ● | ○ |
+| 20 | [Prefetching](20-prefetching.md) | `queryClient.test.tsx` | ● | ● | ● |
 | 21 | [Testing support](21-testing.md) | — (Kwery-specific) | ● | ○ | ○ |
 
 ### Tier 4 — post-v1

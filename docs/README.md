@@ -12,13 +12,28 @@ migrating from it needs the comparison.
 
 ## Pages
 
+**Start here**
+
+- [Queries](queries.md) — reading data, and everything the library does around it
+- [Query keys](query-keys.md) — identity, and why keys are typed
+- [Query state](query-state.md) — the two status axes, and why one enum is not enough
+
+**Keeping data fresh**
+
 - [Caching](caching.md) — staleTime, gcTime, and why they are different clocks
 - [Invalidation](invalidation.md) — making writes visible to reads
-- [Query state](query-state.md) — the two status axes, and why one enum is not enough
+- [Retries](retries.md) — what to retry, what never to retry, and jitter
+- [Refetching](refetching.md) — the four automatic triggers
+- [Prefetching](prefetching.md) — starting the request before the screen opens
+
+**Writing**
+
 - [Mutations](mutations.md) — writes, their lifecycle, and scopes
 - [Optimistic updates](optimistic-updates.md) — showing a write before it lands
 - [Offline writes](offline.md) — durable writes that survive process death *(feature still open)*
 - [Persistence](persistence.md) — the query cache across process death *(feature still open)*
+**Lists**
+
 - [Infinite queries](infinite-queries.md) — accumulating pages
 - [Paginated queries](paginated-queries.md) — pages that replace each other
 
@@ -26,8 +41,7 @@ Pages land as features pass gate 2, named after the feature rather than its
 roadmap number since readers do not care about build order. Still to write, and
 each blocked on its feature's gate 2:
 
-`queries.md` · `query-keys.md` · `retries.md` · `refetching.md` ·
-`compose.md` · `viewmodels.md` · `prefetching.md` · `testing.md`
+`compose.md` · `viewmodels.md` · `testing.md`
 
 Two pages are marked *feature still open*: everything they describe is tested,
 but their features have gate-2 items outstanding (a Room-backed store, device
@@ -35,7 +49,8 @@ tests), so neither counts as gate 3 passed. A page describing proven behaviour
 is useful before the feature is finished; the gate is what says the feature is
 done.
 
-Writing `offline.md` immediately justified the ordering rule: the page's
+Writing the docs keeps finding real bugs, which is the ordering rule earning its
+keep: `offline.md` justified the ordering rule: the page's
 idempotency example referenced a value the API did not expose, which made the
 at-least-once guarantee unusable from the one place that needs it. That gap was
 invisible from the tests, which never had to *write the call*. `DurableMutationScope`
