@@ -39,16 +39,31 @@ the two things every user misreads — never reaches them.
 Still outstanding for a *public* release: signing keys and a Central account,
 both of which need credentials rather than code.
 
-**2. `kwery-persist` ships only file-backed stores.** `FilePersister` and
-`FileMutationQueueStore` are tested and correct, but both rewrite the whole file
-on every change. That is fine for a few hundred entries and wrong for tens of
-thousands. The roadmap specifies Room-backed implementations for that case
-([14](docs/roadmap/14-offline-mutation-queue.md),
-[15](docs/roadmap/15-persistence.md)) and neither exists.
+**2. `kwery-persist` ships only file-backed stores — and the measurement says
+that is fine.** This was written as a blocker on the assumption that restoring a
+large cache from a file would be too slow. It is not:
 
-Whether this blocks v1 is a scope decision, not a technical one: shipping
-file-only with the limit documented is defensible. Shipping it *undocumented*
-is not, and there is currently no benchmark saying where the limit falls.
+| Entries | File | Write | Restore |
+|---|---|---|---|
+| 100 | 11 KiB | <1 ms | <1 ms |
+| 1 000 | 119 KiB | 1 ms | <1 ms |
+| 10 000 | 1.2 MiB | 4–7 ms | 3–5 ms |
+
+Ten thousand entries restore in single-digit milliseconds. Allow an order of
+magnitude for slower storage and a cold JIT and it is still not a startup
+problem.
+
+What the benchmark *did* find is **write amplification**: a one-entry change
+rewrites the whole file, so at 10 000 entries every change costs 1.2 MiB of
+flash. That is battery and flash wear, not correctness, and no functional test
+would ever notice it. It is bounded in practice because the persist loop now
+skips writing when nothing changed — a bug found the same way, by counting
+writes rather than checking results.
+
+So Room is **not** a v1 blocker, and the case for it is row-level updates rather
+than startup latency. That is a different design and a lower priority than the
+roadmap assumed. Shipping file-only, with the amplification documented, is the
+recommendation.
 
 ## Needs a device
 

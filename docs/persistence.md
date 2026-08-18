@@ -67,6 +67,26 @@ so the cache is written on every change and almost never read — the feature
 quietly does nothing. TanStack documents this constraint and lets you violate
 it; Kwery refuses to start.
 
+## How much can it hold?
+
+Measured, with entries the size of a typical list row:
+
+| Entries | File | Restore |
+|---|---|---|
+| 100 | 11 KiB | <1 ms |
+| 1 000 | 119 KiB | <1 ms |
+| 10 000 | 1.2 MiB | 3–5 ms |
+
+Restoring is not the constraint — ten thousand entries come back in single-digit
+milliseconds. The constraint is **write amplification**: the file store rewrites
+the whole file for any change, so at ten thousand entries each change costs
+about 1.2 MiB of flash.
+
+In practice that is bounded, because nothing is written while the cache is
+unchanged. But if your app changes cached data continuously and holds a very
+large cache, prefer a smaller persisted subset — `exclude` is there for exactly
+this — over persisting everything and paying for it on every edit.
+
 ## What goes wrong
 
 **Restored data keeps its original age.** A cache restored two minutes after it

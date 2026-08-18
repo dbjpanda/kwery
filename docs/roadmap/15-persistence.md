@@ -179,6 +179,34 @@ user's `buster`.
   Silently growing to tens of MB is a real risk. Leaning: a configurable soft
   cap that evicts least-recently-used entries at persist time, plus a warning.
 
+### Measured: restore is not the problem, write amplification is
+
+The assumption behind `RoomPersister` was that a file store would be too slow to
+restore a large cache on a cold start. Measured on a development machine, with
+entries the size of a typical list row:
+
+| Entries | File | Write | Restore |
+|---|---|---|---|
+| 100 | 11 KiB | <1 ms | <1 ms |
+| 1 000 | 119 KiB | 1 ms | <1 ms |
+| 10 000 | 1.2 MiB | 4–7 ms | 3–5 ms |
+
+Ten thousand entries restore in single-digit milliseconds. Even allowing an
+order of magnitude for slower storage and a cold JIT on a mid-range phone, this
+is not a startup problem, and building Room to fix startup would have been
+building the wrong thing carefully.
+
+The real cost is **write amplification**, which the benchmark also pins: a
+one-entry change rewrites the entire file, and removing one queued write
+rewrites the other 499. At 10 000 entries that is 1.2 MiB written per change.
+Nothing is wrong with the data — it is flash wear and battery, and it is
+invisible to every correctness test.
+
+Two things follow. The idle-rewrite fix below matters more than it first
+appeared, because it removes the amplification entirely when nothing changes.
+And **the case for Room is row-level updates, not startup latency** — which is a
+different design, and a lower priority, than the roadmap originally assumed.
+
 ### The persist loop rewrote an idle cache every second
 
 `persistLoop` woke every `throttle` window and wrote the whole cache to disk
@@ -240,4 +268,5 @@ The fast path's comment now says which of the two it is.
       a 5s throttle stays under 13 writes. **All three verified by mutation.**
 - [x] Test: an idle cache is **not** rewritten every window.
       **This was broken and the test found it** — see below.
-- [ ] Benchmark: cold-start restore time for 100 / 1 000 / 10 000 entries.
+- [x] Benchmark: cold-start restore time for 100 / 1 000 / 10 000 entries.
+      **The result reframes what a Room store is for** — see below.
