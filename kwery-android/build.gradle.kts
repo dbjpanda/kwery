@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 description = "Android implementations of Kwery's environment contracts: " +
@@ -12,6 +13,10 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
+        // See kwery-compose/build.gradle.kts: unset, a very old default
+        // targetSdk triggers Android's "built for an older version" system
+        // dialog on the test APK's launch.
+        targetSdk = libs.versions.compileSdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -54,6 +59,7 @@ dependencies {
 
     androidTestImplementation(kotlin("test"))
     androidTestImplementation(project(":kwery-persist"))
+    androidTestImplementation(libs.kotlinx.serialization.json)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.core)

@@ -59,13 +59,13 @@ directly:
 | Query keys | R8-shrunk build proving canonical key strings survive minification | done |
 | Refetch triggers | Real `ConnectivityManager` agrees with `AndroidOnlineManager` on VALIDATED state | done |
 | Offline mutation queue | Queue and cache round-trip through real `filesDir`, atomic writes leave no scratch files | done |
-| Offline mutation queue | A true OS-level process kill, not just reopening the store in-process | **open** |
-| Compose bindings | Render paths for loading / error / refreshing | **open** |
+| Offline mutation queue | A true OS-level process kill, driven by `scripts/process-kill-test.sh` as two separate `am instrument` runs with a real `am force-stop` between them | done |
+| Compose bindings | Render paths for loading / error / refreshing, in `kwery-compose/src/androidTest` | done |
 
-Two items are still open. Neither blocks a release. The process-kill test needs
-orchestration across two separate app launches; the Compose item needs a real UI,
-not a headless composition. Together they are the last device-only gaps in the
-project.
+Every device-only item in the project is now closed. The process-kill test was
+also checked against a negative control — running its second half alone,
+against an empty queue, fails with the expected assertion, rather than passing
+vacuously.
 
 ## Deliberately not built
 

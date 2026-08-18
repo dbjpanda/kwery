@@ -143,13 +143,29 @@ and those live in `androidTest`.
 
 ```sh
 $ANDROID_HOME/emulator/emulator -avd <name> -no-window -no-audio &
-./gradlew :kwery-android:connectedDebugAndroidTest   # connectivity, storage
+./gradlew :kwery-android:connectedDebugAndroidTest   # connectivity, storage, process-kill queue
+./gradlew :kwery-compose:connectedDebugAndroidTest   # render paths: loading, error, refreshing
 ./gradlew :sample:connectedReleaseAndroidTest        # R8, against a minified build
+./scripts/process-kill-test.sh                       # real am force-stop, not run by the above
 ```
 
 The sample runs its instrumentation against **release** on purpose. Kwery
 encodes enum key parts by `name`, and only a minified build can show whether R8
 rewrites them.
+
+`ProcessKillQueueTest` (in `kwery-android`) is **not** exercised by
+`connectedDebugAndroidTest`: its two methods only prove anything when run as
+two separate `am instrument` processes with a real `am force-stop` between
+them, which is what `scripts/process-kill-test.sh` does. Run through
+`connectedDebugAndroidTest` normally, both methods still pass, but that only
+proves the store survives being reopened in the same process — the weaker
+claim every other persistence test already covers.
+
+If a `kwery-compose` instrumentation run fails with "No compose hierarchies
+found in the app" for no obvious reason, check `targetSdk` is set explicitly
+in that module's `defaultConfig` — left unset, it defaults low enough that
+some system images show a "built for an older version of Android" dialog on
+launch, which steals focus before Compose ever renders.
 
 **A zero-test run is a failure, not a pass.** If the instrumentation process
 dies before the first test, the report shows zero tests and zero failures, which
