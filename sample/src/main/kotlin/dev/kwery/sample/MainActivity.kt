@@ -80,9 +80,14 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TodoApp(app: SampleApplication) {
-    var useKwery by remember { mutableStateOf(true) }
-    var showDemo by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    // Persisted, not remembered. The comparison this toggle exists for is
+    // about cold starts, so it has to survive the process being killed. Held
+    // in memory it always came back on, which made the without-Kwery cold
+    // start impossible to reach: exactly the half worth showing.
+    val prefs = remember { context.getSharedPreferences("demo", android.content.Context.MODE_PRIVATE) }
+    var useKwery by remember { mutableStateOf(prefs.getBoolean("useKwery", true)) }
+    var showDemo by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -115,7 +120,10 @@ private fun TodoApp(app: SampleApplication) {
             AnimatedVisibility(visible = showDemo) {
                 DemoPanel(
                     useKwery = useKwery,
-                    onToggle = { useKwery = it },
+                    onToggle = {
+                        useKwery = it
+                        prefs.edit().putBoolean("useKwery", it).apply()
+                    },
                     onOpenLog = { context.startActivity(Chucker.getLaunchIntent(context)) },
                     app = app,
                 )
