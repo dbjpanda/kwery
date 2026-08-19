@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Kwery: offline-first caching for Android">
+  <title>Kwery: offline-first caching for Android</title>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#12132A"/>
+      <stop offset="55%" stop-color="#181A38"/>
+      <stop offset="100%" stop-color="#221A3D"/>
+    </linearGradient>
+
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="55%" stop-color="#C13FA6"/>
+      <stop offset="100%" stop-color="#F0803C"/>
+    </linearGradient>
+
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#C13FA6" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#F0803C" stop-opacity="0"/>
+    </linearGradient>
+
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ground. Opaque, because link unfurlers composite on unknown backgrounds. -->
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <ellipse cx="1040" cy="150" rx="440" ry="330" fill="url(#glow)"/>
+
+  <!-- Wordmark -->
+  <text x="88" y="196"
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+        font-size="128" font-weight="700" letter-spacing="-4" fill="#FFFFFF">Kwery</text>
+
+  <rect x="92" y="228" width="300" height="6" rx="3" fill="url(#rule)"/>
+
+  <!-- Tagline. The single sentence a stranger reads. -->
+  <text x="88" y="306"
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+        font-size="46" font-weight="600" fill="#F6F7FB">Offline-first caching for Android</text>
+
+  <!-- Three concrete behaviours, not feature words. Readable at Slack size. -->
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+     font-size="32" fill="#B9BEDA">
+    <circle cx="102" cy="386" r="7" fill="#8B5CF6"/>
+    <text x="132" y="397">Rotate the screen. No refetch.</text>
+
+    <circle cx="102" cy="450" r="7" fill="#C13FA6"/>
+    <text x="132" y="461">Two screens. One request.</text>
+
+    <circle cx="102" cy="514" r="7" fill="#F0803C"/>
+    <text x="132" y="525">Process death. Cache survives.</text>
+  </g>
+
+  <!-- Footer credibility strip -->
+  <rect x="88" y="566" width="1104" height="1" fill="#2A2D52"/>
+  <text x="88" y="606"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="25" fill="#7F86A8">io.github.dbjpanda:kwery-core</text>
+  <text x="1192" y="606" text-anchor="end"
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+        font-size="25" fill="#6E75A0">Kotlin · Coroutines · Flow · Compose</text>
+</svg>
