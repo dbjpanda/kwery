@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
@@ -75,7 +76,9 @@ private fun TodoScreen(app: SampleApplication) {
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-        Text("Kwery sample", style = MaterialTheme.typography.headlineSmall)
+        Text("Todos", style = MaterialTheme.typography.headlineMedium)
+
+        NetworkRequestCounter(api)
 
         StatusLine(state)
 
@@ -85,10 +88,6 @@ private fun TodoScreen(app: SampleApplication) {
         if (state.isRefreshing) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
         }
-
-        DetailFromViewModel(api)
-        SurvivesProcessDeath(app)
-        PrefetchOnNavigate(api)
 
         Row(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -150,9 +149,42 @@ private fun TodoScreen(app: SampleApplication) {
 
         if (failNext) {
             Text(
-                text = "The next request will fail — watch the list stay on screen.",
+                text = "The next request will fail. Watch the list stay on screen.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+
+        SurvivesProcessDeath(app)
+        DetailFromViewModel(api)
+        PrefetchOnNavigate(api)
+    }
+}
+
+/**
+ * The number the whole sample exists to make a claim about.
+ *
+ * Large and unmissable on purpose: "the count did not change" is the entire
+ * result of the rotation demo, and it is invisible if it is a small label.
+ */
+@Composable
+private fun NetworkRequestCounter(api: FakeApi) {
+    val count by api.requestCount.collectAsState()
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Network requests", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.displaySmall,
             )
         }
     }
@@ -176,13 +208,13 @@ private fun DetailFromViewModel(api: FakeApi) {
 
     Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("From a ViewModel", style = MaterialTheme.typography.titleSmall)
+            Text("Same cache, read from a ViewModel", style = MaterialTheme.typography.titleSmall)
             Text(
                 text = state.data?.title ?: if (state.isLoading) "Loading…" else "—",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { viewModel.select("2") }) { Text("Select #2") }
+                Button(onClick = { viewModel.select("2") }) { Text("Load one todo") }
                 Button(onClick = { viewModel.refresh() }) { Text("Refresh") }
             }
         }
@@ -218,24 +250,31 @@ private fun SurvivesProcessDeath(app: SampleApplication) {
 
     Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Survives process death", style = MaterialTheme.typography.titleSmall)
+            Text("Works offline", style = MaterialTheme.typography.titleMedium)
 
             Text(
                 text = when (restored) {
-                    null -> "Restoring the cache…"
-                    0 -> "Restored 0 entries. Nothing on disk yet. Pull data, kill the app, reopen."
-                    else -> "Restored $restored entr(ies) from disk on this launch."
+                    null -> "Loading the saved cache…"
+                    0 -> "Cache on disk: empty. Kill the app and reopen it."
+                    else -> "Cache on disk: $restored item(s), loaded on this launch"
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
 
             Text(
-                text = "Pending writes: $pending",
+                text = "Waiting to send: $pending",
                 style = MaterialTheme.typography.bodyMedium,
             )
 
+            Text(
+                text = "Mark one done. Works with no network:",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("2", "3").forEach { id ->
+                // Named, not numbered. "Finish #2" tells a viewer nothing.
+                listOf("2" to "Call the dentist", "3" to "Book the flights").forEach { (id, title) ->
                     Button(
                         onClick = {
                             scope.launch {
@@ -243,23 +282,23 @@ private fun SurvivesProcessDeath(app: SampleApplication) {
                                 // when it is delivered. Tapping save with no
                                 // signal must not park the caller for hours.
                                 app.queue.submit(ToggleDoneKey, ToggleDone(id, done = true))
-                                lastSubmitted = id
+                                lastSubmitted = title
                             }
                         },
-                    ) { Text("Finish #" + id) }
+                    ) { Text(title) }
                 }
             }
 
             lastSubmitted?.let {
                 Text(
-                    text = "Queued a write for #" + it + ". Turn off wifi first and it waits here.",
+                    text = "Saved \"" + it + "\". It will send when the network is back.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
 
             if (app.api.delivered.isNotEmpty()) {
                 Text(
-                    text = "Delivered to the server: " + app.api.delivered.joinToString(", "),
+                    text = "Sent to the server: " + app.api.delivered.joinToString(", "),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -275,7 +314,7 @@ private fun PrefetchOnNavigate(api: FakeApi) {
 
     Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Prefetch before navigating", style = MaterialTheme.typography.titleSmall)
+            Text("Load before the screen opens", style = MaterialTheme.typography.titleSmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("1", "2").forEach { id ->
                     Button(
@@ -283,7 +322,7 @@ private fun PrefetchOnNavigate(api: FakeApi) {
                             scope.launch { client.prefetchQuery(TodoKey(id)) { api.todo(id) } }
                             opened = id
                         },
-                    ) { Text("Open #" + id) }
+                    ) { Text("Open todo " + id) }
                 }
             }
             val id = opened

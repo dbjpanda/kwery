@@ -3,6 +3,7 @@ package dev.kwery.sample
 import dev.kwery.persist.DurableMutationKey
 import dev.kwery.persist.PersistableQueryKey
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -57,12 +58,21 @@ object ToggleDoneKey : DurableMutationKey<ToggleDone> {
  * previous data — only appear when requests take time and sometimes go wrong.
  */
 class FakeApi {
-    private var counter = 0
+
+    /**
+     * How many times the network was actually hit.
+     *
+     * Exposed as state because it is the claim the sample exists to make. A
+     * caching library is judged on this number, so it belongs on screen rather
+     * than in a log.
+     */
+    val requestCount: MutableStateFlow<Int> = MutableStateFlow(0)
 
     private val todos = mutableListOf(
-        Todo("1", "Read the roadmap", done = true),
-        Todo("2", "Rotate the screen and watch the request count", done = false),
-        Todo("3", "Turn off wifi and watch it pause, not fail", done = false),
+        Todo("1", "Buy milk", done = true),
+        Todo("2", "Call the dentist", done = false),
+        Todo("3", "Book the flights", done = false),
+        Todo("4", "Renew the passport", done = false),
     )
 
     var failNextRequest: Boolean = false
@@ -80,13 +90,14 @@ class FakeApi {
             failNextRequest = false
             throw IllegalStateException("the network let you down")
         }
-        counter++
-        val fresh = todos + Todo("gen-$counter", "Fetched $counter time(s)", done = false)
+        requestCount.value += 1
+        val fresh = todos.toList()
         return if (onlyOpen) fresh.filter { !it.done } else fresh
     }
 
     suspend fun todo(id: String): Todo {
         delay(600)
+        requestCount.value += 1
         return todos.firstOrNull { it.id == id }
             ?: Todo(id, "Unknown todo $id", done = false)
     }
@@ -95,6 +106,6 @@ class FakeApi {
         delay(400)
         val index = todos.indexOfFirst { it.id == id }
         if (index >= 0) todos[index] = todos[index].copy(done = done)
-        delivered += "#$id -> done=$done"
+        delivered += (todos.firstOrNull { it.id == id }?.title ?: id)
     }
 }
