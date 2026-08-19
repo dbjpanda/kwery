@@ -27,4 +27,5 @@ build/central*/
 
 # Go-to-market planning. Working material, not published.
 gtm.md
-.playwright-mcpvideo-script.md
+.playwright-mcp/
+video-script.md
