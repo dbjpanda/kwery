@@ -14,6 +14,10 @@ kwery = "0.3.2" # x-release-please-version
 kotlin = "2.2.20"
 coroutines = "1.10.2"
 serialization = "1.9.0"
+retrofit = "2.11.0"   # 3.x pulls okhttp 5, which needs compileSdk 37; this project is pinned to 36
+okhttp = "4.12.0"
+retrofitSerialization = "1.0.0"
+chucker = "4.3.1"
 bcv = "0.18.1"
 # Handles POM, sources, javadoc, signing and Central Portal upload in one task,
 # replacing about forty lines of hand-rolled publishing config.
@@ -43,6 +47,14 @@ jdkToolchain = "17"
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+# Sample app only. Kwery itself depends on no HTTP client: it calls whatever
+# function you hand it, which is the point the sample now demonstrates on screen.
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-serialization = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "retrofitSerialization" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+chucker = { module = "com.github.chuckerteam.chucker:library", version.ref = "chucker" }
+chucker-noop = { module = "com.github.chuckerteam.chucker:library-no-op", version.ref = "chucker" }
 
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 # 2.10.0 deliberately, not 2.11.0: androidx.lifecycle is an atomic group, so

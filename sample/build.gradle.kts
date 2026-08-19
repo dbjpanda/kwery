@@ -78,6 +78,16 @@ dependencies {
     // The two headline features need to be demonstrable, not just documented.
     implementation(project(":kwery-persist"))
 
+    // Real HTTP, so the demo shows Kwery sitting on top of Retrofit rather
+    // than replacing it, and so Chucker can prove what actually went over the
+    // wire instead of a counter the sample wrote itself.
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.serialization)
+    implementation(libs.okhttp)
+    implementation(libs.kotlinx.serialization.json)
+    debugImplementation(libs.chucker)
+    releaseImplementation(libs.chucker.noop)
+
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")

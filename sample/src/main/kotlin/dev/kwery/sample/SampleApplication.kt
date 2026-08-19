@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 /**
  * One [QueryClient] per application.
@@ -32,7 +32,8 @@ import kotlin.time.Duration.Companion.seconds
  */
 class SampleApplication : Application() {
 
-    val api: FakeApi = FakeApi()
+    lateinit var api: TodoApi
+        private set
 
     private val appScope = CoroutineScope(SupervisorJob())
 
@@ -51,6 +52,7 @@ class SampleApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        api = buildTodoApi(this)
         onlineManager = AndroidOnlineManager(this)
 
         queryClient = QueryClient(
@@ -62,11 +64,14 @@ class SampleApplication : Application() {
                 focusManager = AndroidFocusManager(),
                 onlineManager = onlineManager,
                 defaultQueryOptions = QueryOptions(
-                    // Deliberately non-zero, unlike the library default. The
-                    // library matches TanStack (stale immediately); an app
-                    // usually wants a few seconds of freshness so navigating
-                    // back and forth does not refetch every time.
-                    staleTime = StaleTime.of(10.seconds),
+                    // Long enough that a cache restored from disk is still
+                    // fresh. At ten seconds the restored entry was already
+                    // stale by the time the app relaunched, so Kwery correctly
+                    // refetched and the demo appeared to prove the opposite of
+                    // its own claim. Restored data keeps its original age, so
+                    // staleTime is what decides whether a cold start hits the
+                    // network at all.
+                    staleTime = StaleTime.of(5.minutes),
                     // Must be at least the persistence maxAge below, or
                     // persist() refuses to start: entries would be evicted
                     // from memory long before the stored copy expired, so the
@@ -86,7 +91,9 @@ class SampleApplication : Application() {
         ) {
             // Registered here, at construction, not on a screen. A write
             // replayed after a cold start has no composable left to ask.
-            register(ToggleDoneKey) { input -> api.setDone(input.id, input.done) }
+            register(ToggleDoneKey) { input ->
+                api.setCompleted(input.id, CompletedPatch(input.done))
+            }
         }
 
         appScope.launch {
@@ -98,7 +105,7 @@ class SampleApplication : Application() {
                 options = PersistOptions(
                     persister = FilePersister(File(filesDir, "kwery-cache.json")),
                     // Only keys listed here can be decoded on restore.
-                    keys = listOf(TodoListKey(onlyOpen = false), TodoListKey(onlyOpen = true)),
+                    keys = listOf(TodoListKey(limit = 5), TodoKey(1)),
                     maxAge = 1.hours,
                     buster = "sample-1",
                 ),

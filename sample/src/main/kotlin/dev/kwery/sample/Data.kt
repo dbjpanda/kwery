@@ -8,8 +8,17 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
+/** Exactly the shape jsonplaceholder.typicode.com returns. */
 @Serializable
-data class Todo(val id: String, val title: String, val done: Boolean)
+data class RemoteTodo(
+    val id: Int,
+    val title: String,
+    val completed: Boolean,
+)
+
+/** Body for the write the offline queue replays. */
+@Serializable
+data class CompletedPatch(val completed: Boolean)
 
 /**
  * A key names the type it produces, so nothing downstream needs a cast.
@@ -23,19 +32,19 @@ data class Todo(val id: String, val title: String, val done: Boolean)
  * never touch disk simply stays a `QueryKey`, which makes "this is persisted"
  * visible at the declaration instead of hidden in configuration.
  */
-data class TodoListKey(val onlyOpen: Boolean) : PersistableQueryKey<List<Todo>> {
-    override val parts get() = listOf("todos", mapOf("onlyOpen" to onlyOpen))
-    override val serializer: KSerializer<List<Todo>> get() = serializer()
+data class TodoListKey(val limit: Int) : PersistableQueryKey<List<RemoteTodo>> {
+    override val parts get() = listOf("todos", mapOf("limit" to limit))
+    override val serializer: KSerializer<List<RemoteTodo>> get() = serializer()
 }
 
-data class TodoKey(val id: String) : PersistableQueryKey<Todo> {
+data class TodoKey(val id: Int) : PersistableQueryKey<RemoteTodo> {
     override val parts get() = listOf("todos", "detail", id)
-    override val serializer: KSerializer<Todo> get() = serializer()
+    override val serializer: KSerializer<RemoteTodo> get() = serializer()
 }
 
 /** Variables for a write that has to outlive the process. */
 @Serializable
-data class ToggleDone(val id: String, val done: Boolean)
+data class ToggleDone(val id: Int, val done: Boolean)
 
 /**
  * A durable write, registered once at startup.
@@ -48,64 +57,4 @@ data class ToggleDone(val id: String, val done: Boolean)
 object ToggleDoneKey : DurableMutationKey<ToggleDone> {
     override val parts get() = listOf("todos", "toggle-done")
     override val serializer: KSerializer<ToggleDone> get() = serializer()
-}
-
-/**
- * Stands in for a network layer.
- *
- * Deliberately slow and occasionally failing: the states worth demonstrating —
- * a background refresh with content still on screen, an error that keeps the
- * previous data — only appear when requests take time and sometimes go wrong.
- */
-class FakeApi {
-
-    /**
-     * How many times the network was actually hit.
-     *
-     * Exposed as state because it is the claim the sample exists to make. A
-     * caching library is judged on this number, so it belongs on screen rather
-     * than in a log.
-     */
-    val requestCount: MutableStateFlow<Int> = MutableStateFlow(0)
-
-    private val todos = mutableListOf(
-        Todo("1", "Buy milk", done = true),
-        Todo("2", "Call the dentist", done = false),
-        Todo("3", "Book the flights", done = false),
-        Todo("4", "Renew the passport", done = false),
-    )
-
-    var failNextRequest: Boolean = false
-
-    /**
-     * Every delivered write appends a line here, so the screen can show that a
-     * write made while offline really did reach the "server" later, rather than
-     * asking the viewer to take it on trust.
-     */
-    val delivered = mutableListOf<String>()
-
-    suspend fun todos(onlyOpen: Boolean): List<Todo> {
-        delay(900)
-        if (failNextRequest) {
-            failNextRequest = false
-            throw IllegalStateException("the network let you down")
-        }
-        requestCount.value += 1
-        val fresh = todos.toList()
-        return if (onlyOpen) fresh.filter { !it.done } else fresh
-    }
-
-    suspend fun todo(id: String): Todo {
-        delay(600)
-        requestCount.value += 1
-        return todos.firstOrNull { it.id == id }
-            ?: Todo(id, "Unknown todo $id", done = false)
-    }
-
-    suspend fun setDone(id: String, done: Boolean) {
-        delay(400)
-        val index = todos.indexOfFirst { it.id == id }
-        if (index >= 0) todos[index] = todos[index].copy(done = done)
-        delivered += (todos.firstOrNull { it.id == id }?.title ?: id)
-    }
 }

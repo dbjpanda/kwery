@@ -3,6 +3,7 @@ package dev.kwery.sample
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,10 +16,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -27,226 +30,213 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import dev.kwery.QueryState
-import dev.kwery.prefetchQuery
-import dev.kwery.compose.LocalQueryClient
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.chuckerteam.chucker.api.Chucker
+import dev.kwery.QueryState
+import dev.kwery.compose.LocalQueryClient
 import dev.kwery.compose.rememberQuery
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Draw behind the system bars and let the platform pick icon colours
+        // that contrast with whatever is underneath them. Scaffold then insets
+        // the content, so nothing ends up under the clock or the gesture bar.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val app = application as SampleApplication
 
         setContent {
             MaterialTheme {
                 CompositionLocalProvider(LocalQueryClient provides app.queryClient) {
-                    Surface(modifier = Modifier.fillMaxSize()) {
-                        TodoScreen(app = app)
-                    }
+                    TodoScaffold(app)
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TodoScreen(app: SampleApplication) {
-    val api = app.api
-    val client = LocalQueryClient.current
-    val scope = rememberCoroutineScope()
+private fun TodoScaffold(app: SampleApplication) {
+    // Not in saved state on purpose. The toggle should reset with the process
+    // so a cold start always begins in the mode you left it in conceptually,
+    // not in a half-restored one.
+    var useKwery by remember { mutableStateOf(true) }
+    val context = LocalContext.current
 
-    // Kept in saved state so it survives rotation. The query KEY belongs here;
-    // the query DATA does not — that is the cache's job, and putting response
-    // bodies in saved state risks TransactionTooLargeException.
-    var onlyOpen by rememberSaveable { mutableStateOf(false) }
-    var failNext by remember { mutableStateOf(false) }
-
-    val key = TodoListKey(onlyOpen)
-    val state: QueryState<List<Todo>> = rememberQuery(key) { api.todos(onlyOpen) }
-
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-
-        Text("Todos", style = MaterialTheme.typography.headlineMedium)
-
-        NetworkRequestCounter(api)
-
-        StatusLine(state)
-
-        // isRefreshing is success + fetching: content is on screen and being
-        // refreshed underneath. A single Loading/Success/Error enum cannot
-        // express this, which is why there are two status axes.
-        if (state.isRefreshing) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
-        }
-
-        Row(
-            modifier = Modifier.padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            FilterChip(
-                selected = onlyOpen,
-                onClick = { onlyOpen = !onlyOpen },
-                label = { Text("Only open") },
+    Scaffold(
+        // Scaffold applies the status and navigation bar insets to the padding
+        // it hands back, so nothing collides with the clock or the gesture bar.
+        topBar = {
+            TopAppBar(
+                title = { Text("Todos") },
+                actions = {
+                    Text(
+                        text = "Kwery",
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(end = 4.dp),
+                    )
+                    Switch(
+                        checked = useKwery,
+                        onCheckedChange = { useKwery = it },
+                        modifier = Modifier.padding(end = 12.dp),
+                    )
+                },
             )
-            Button(onClick = {
-                // Prefix match: hits every key starting with "todos", so both
-                // the list and any detail queries refresh.
-                scope.launch { client.invalidateQueries("todos") }
-            }) {
-                Text("Invalidate")
-            }
-            Button(onClick = {
-                failNext = true
-                api.failNextRequest = true
-                scope.launch { client.invalidateQueries("todos") }
-            }) {
-                Text("Fail next")
-            }
-        }
-
-        // isLoading is pending + fetching — a first load actually in flight.
-        // isPending alone would show a spinner forever for a disabled query.
-        if (state.isLoading) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                CircularProgressIndicator()
-                Text("First load", modifier = Modifier.padding(top = 8.dp))
-            }
-            return@Column
-        }
-
-        val todos = state.data
-        if (todos != null) {
-            // Data survives an error, so a failed refresh shows the error
-            // banner above WITHOUT blanking the list.
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(todos, key = { it.id }) { todo ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = if (todo.done) "✓ ${todo.title}" else todo.title,
-                            modifier = Modifier.padding(16.dp),
-                        )
-                    }
-                }
-            }
-        } else if (state.isError) {
-            Text("Failed, and there is no cached data to fall back on.")
-        }
-
-        if (failNext) {
-            Text(
-                text = "The next request will fail. Watch the list stay on screen.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-
-        SurvivesProcessDeath(app)
-        DetailFromViewModel(api)
-        PrefetchOnNavigate(api)
-    }
-}
-
-/**
- * The number the whole sample exists to make a claim about.
- *
- * Large and unmissable on purpose: "the count did not change" is the entire
- * result of the rotation demo, and it is invisible if it is a small label.
- */
-@Composable
-private fun NetworkRequestCounter(api: FakeApi) {
-    val count by api.requestCount.collectAsState()
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-        ),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Network requests", style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = count.toString(),
-                style = MaterialTheme.typography.displaySmall,
-            )
-        }
-    }
-}
-
-/**
- * The same cache, observed from a ViewModel instead of a composable.
- *
- * Both surfaces share one entry and one in-flight request — that is the point
- * of the Flow-first core.
- */
-@Composable
-private fun DetailFromViewModel(api: FakeApi) {
-    val client = LocalQueryClient.current
-    val viewModel: TodoDetailViewModel = viewModel(
-        factory = viewModelFactory {
-            initializer { TodoDetailViewModel(client, api) }
         },
-    )
-    val state by viewModel.todo.collectAsState()
+    ) { insets ->
+        TodoScreen(
+            app = app,
+            useKwery = useKwery,
+            context = context,
+            modifier = Modifier.padding(insets),
+        )
+    }
+}
 
-    Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Same cache, read from a ViewModel", style = MaterialTheme.typography.titleSmall)
+@Composable
+private fun TodoScreen(
+    app: SampleApplication,
+    useKwery: Boolean,
+    context: android.content.Context,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (useKwery) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+            ),
+        ) {
             Text(
-                text = state.data?.title ?: if (state.isLoading) "Loading…" else "—",
+                text = if (useKwery) {
+                    "Kwery on. Retrofit still does the networking; Kwery decides when it runs."
+                } else {
+                    "Kwery off. Plain ViewModel and Retrofit, the usual way."
+                },
                 style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(16.dp),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { viewModel.select("2") }) { Text("Load one todo") }
-                Button(onClick = { viewModel.refresh() }) { Text("Refresh") }
+        }
+
+        Button(
+            onClick = { context.startActivity(Chucker.getLaunchIntent(context)) },
+            modifier = Modifier.padding(bottom = 8.dp),
+        ) { Text("Open the network log") }
+
+        if (useKwery) WithKwery(app) else WithoutKwery(app)
+    }
+}
+
+/**
+ * The Kwery path. One call, and everything the toggle demonstrates comes from
+ * the client's configuration rather than from code on this screen.
+ */
+@Composable
+private fun WithKwery(app: SampleApplication) {
+    val api = app.api
+    val state: QueryState<List<RemoteTodo>> =
+        rememberQuery(TodoListKey(limit = 5)) { api.todos(5) }
+
+    if (state.isRefreshing) {
+        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
+    }
+
+    when {
+        state.isLoading -> Loading()
+        state.data != null -> TodoList(state.data!!)
+        state.isError -> Text("Failed, and nothing cached to fall back on.")
+    }
+
+    state.error?.let {
+        Text(
+            text = "Last error: ${it.message}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+
+    OfflineCard(app)
+}
+
+/** The baseline path. See [PlainTodosViewModel] for what it does and does not do. */
+@Composable
+private fun WithoutKwery(app: SampleApplication) {
+    val vm: PlainTodosViewModel = viewModel(
+        factory = viewModelFactory { initializer { PlainTodosViewModel(app.api) } },
+    )
+    val state by vm.state.collectAsState()
+
+    when {
+        state.loading && state.todos.isEmpty() -> Loading()
+        state.todos.isNotEmpty() -> TodoList(state.todos)
+        state.error != null -> Text("Failed: ${state.error}")
+    }
+
+    Text(
+        text = "No cache on disk, nothing shared between screens, and a write " +
+            "with no network is lost.",
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.padding(top = 12.dp),
+    )
+}
+
+@Composable
+private fun Loading() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CircularProgressIndicator()
+        Text("Loading from the network", modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+@Composable
+private fun TodoList(todos: List<RemoteTodo>) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(todos, key = { it.id }) { todo ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = if (todo.completed) "✓ ${todo.title}" else todo.title,
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
     }
 }
 
 /**
- * Prefetch in the click handler, before navigating.
- *
- * The request overlaps the transition animation — usually 200-300ms of latency
- * you get for free — and the destination renders with data already in the
- * cache. Two details make this safe rather than clever:
- *
- * - it is `launch`ed, so prefetching never delays the navigation itself;
- * - `prefetchQuery` respects `staleTime` and never throws, so calling it on
- *   every tap costs nothing when the data is warm and cannot crash the handler
- *   when the network is down.
- */
-/**
- * The two things Kwery does that a plain repository does not: the cache comes
- * back from disk on a cold start, and a write made with no network is kept and
- * replayed rather than lost.
- *
- * Both are shown as counts rather than described, because both are invisible
- * otherwise — the whole point is that nothing appears to happen.
+ * The cache on disk and the queue of writes, both of which only exist in the
+ * Kwery path. This card is the answer to "what do I get that a ViewModel does
+ * not give me".
  */
 @Composable
-private fun SurvivesProcessDeath(app: SampleApplication) {
+private fun OfflineCard(app: SampleApplication) {
     val scope = rememberCoroutineScope()
     val restored by app.restoredEntryCount.collectAsState()
     val pending by app.queue.pending.collectAsState()
-    var lastSubmitted by remember { mutableStateOf<String?>(null) }
+    var lastSaved by remember { mutableStateOf<String?>(null) }
 
     Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -260,105 +250,34 @@ private fun SurvivesProcessDeath(app: SampleApplication) {
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
-
-            Text(
-                text = "Waiting to send: $pending",
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Text("Waiting to send: $pending", style = MaterialTheme.typography.bodyMedium)
 
             Text(
                 text = "Mark one done. Works with no network:",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp),
             )
-
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Named, not numbered. "Finish #2" tells a viewer nothing.
-                listOf("2" to "Call the dentist", "3" to "Book the flights").forEach { (id, title) ->
+                listOf(1, 2).forEach { id ->
                     Button(
                         onClick = {
                             scope.launch {
-                                // Returns as soon as the write is on disk, not
-                                // when it is delivered. Tapping save with no
-                                // signal must not park the caller for hours.
+                                // Returns once the write is on disk, not when
+                                // it is delivered.
                                 app.queue.submit(ToggleDoneKey, ToggleDone(id, done = true))
-                                lastSubmitted = title
+                                lastSaved = "todo $id"
                             }
                         },
-                    ) { Text(title) }
+                    ) { Text("Todo $id") }
                 }
             }
 
-            lastSubmitted?.let {
+            lastSaved?.let {
                 Text(
-                    text = "Saved \"" + it + "\". It will send when the network is back.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            if (app.api.delivered.isNotEmpty()) {
-                Text(
-                    text = "Sent to the server: " + app.api.delivered.joinToString(", "),
+                    text = "Saved $it. It will send when the network is back.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun PrefetchOnNavigate(api: FakeApi) {
-    val client = LocalQueryClient.current
-    val scope = rememberCoroutineScope()
-    var opened by remember { mutableStateOf<String?>(null) }
-
-    Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Load before the screen opens", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("1", "2").forEach { id ->
-                    Button(
-                        onClick = {
-                            scope.launch { client.prefetchQuery(TodoKey(id)) { api.todo(id) } }
-                            opened = id
-                        },
-                    ) { Text("Open todo " + id) }
-                }
-            }
-            val id = opened
-            if (id != null) {
-                val state = rememberQuery(TodoKey(id)) { api.todo(id) }
-                Text(
-                    text = if (state.isLoading) "Loading…" else state.data?.title ?: "—",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = "Opened with no spinner if the prefetch had landed.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-    }
-}
-
-/** Renders both status axes, which is the point of the sample. */
-@Composable
-private fun StatusLine(state: QueryState<List<Todo>>) {
-    Text(
-        text = "status=${state.status}  fetchStatus=${state.fetchStatus}",
-        style = MaterialTheme.typography.bodySmall,
-    )
-    if (state.isPaused) {
-        Text(
-            text = "Paused — no validated network. Not an error: it will resume.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    }
-    state.error?.let {
-        Text(
-            text = "Last error: ${it.message}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-        )
     }
 }
