@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or idea
+    url: https://github.com/dbjpanda/kwery/discussions
+    about: Use Discussions for "how do I", design debate, or showing what you built.
+  - name: Documentation
+    url: https://kwery.readthedocs.io
+    about: Every feature has a page, including what goes wrong with it.

@@ -1,0 +1,23 @@
+name: Feature request
+description: Something Kwery should do and does not
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you hitting
+      description: The situation in your app, not the API you have in mind. The API is the easy part.
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What are you doing instead today
+      description: If you have worked around it, that workaround is the most useful thing in this issue.
+
+  - type: input
+    id: prior-art
+    attributes:
+      label: Prior art
+      description: Does another library solve this, and how? TanStack Query, Store, SWR, or anything else.

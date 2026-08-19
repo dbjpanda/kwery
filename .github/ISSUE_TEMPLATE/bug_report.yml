@@ -1,0 +1,78 @@
+name: Bug report
+description: Something behaves differently from what the documentation says
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most caching bugs come down to a request count: something fetched when it
+        should not have, or did not when it should. A failing test against
+        `TestQueryClient` is worth more than any description, and Kwery's own
+        suite is written that way, so the harness is already there.
+
+  - type: input
+    id: version
+    attributes:
+      label: Kwery version
+      placeholder: "0.3.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: modules
+    attributes:
+      label: Which modules are involved
+      multiple: true
+      options:
+        - kwery-core
+        - kwery-android
+        - kwery-compose
+        - kwery-persist
+        - kwery-persist-room
+        - kwery-test
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: How are you observing the query
+      options:
+        - rememberQuery / rememberMutation (Compose)
+        - client.query(...) collected in a ViewModel
+        - client.query(...) collected somewhere else
+        - Not observing a query (mutations, manual cache, persistence)
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect, and what happened instead
+      description: If it concerns fetching, say how many requests you expected and how many you saw.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: |
+        Ideally a failing test using `TestQueryClient`. Its virtual clock means
+        no real waiting, and `requestCount` makes the claim precise.
+      render: kotlin
+      placeholder: |
+        @Test
+        fun `it refetches when it should not`() = runTest {
+            val kwery = TestQueryClient(this)
+            // ...
+            assertEquals(1, kwery.requestCount)
+        }
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Android version, whether it only happens on a real device, relevant QueryOptions.
