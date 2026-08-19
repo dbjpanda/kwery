@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 description = "Sample app. Not published — it exists so documentation examples " +
@@ -74,6 +75,8 @@ dependencies {
     implementation(project(":kwery-core"))
     implementation(project(":kwery-android"))
     implementation(project(":kwery-compose"))
+    // The two headline features need to be demonstrable, not just documented.
+    implementation(project(":kwery-persist"))
 
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 CompositionLocalProvider(LocalQueryClient provides app.queryClient) {
                     Surface(modifier = Modifier.fillMaxSize()) {
-                        TodoScreen(api = app.api)
+                        TodoScreen(app = app)
                     }
                 }
             }
@@ -59,7 +59,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun TodoScreen(api: FakeApi) {
+private fun TodoScreen(app: SampleApplication) {
+    val api = app.api
     val client = LocalQueryClient.current
     val scope = rememberCoroutineScope()
 
@@ -86,6 +87,7 @@ private fun TodoScreen(api: FakeApi) {
         }
 
         DetailFromViewModel(api)
+        SurvivesProcessDeath(app)
         PrefetchOnNavigate(api)
 
         Row(
@@ -199,6 +201,72 @@ private fun DetailFromViewModel(api: FakeApi) {
  *   every tap costs nothing when the data is warm and cannot crash the handler
  *   when the network is down.
  */
+/**
+ * The two things Kwery does that a plain repository does not: the cache comes
+ * back from disk on a cold start, and a write made with no network is kept and
+ * replayed rather than lost.
+ *
+ * Both are shown as counts rather than described, because both are invisible
+ * otherwise — the whole point is that nothing appears to happen.
+ */
+@Composable
+private fun SurvivesProcessDeath(app: SampleApplication) {
+    val scope = rememberCoroutineScope()
+    val restored by app.restoredEntryCount.collectAsState()
+    val pending by app.queue.pending.collectAsState()
+    var lastSubmitted by remember { mutableStateOf<String?>(null) }
+
+    Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Survives process death", style = MaterialTheme.typography.titleSmall)
+
+            Text(
+                text = when (restored) {
+                    null -> "Restoring the cache…"
+                    0 -> "Restored 0 entries. Nothing on disk yet. Pull data, kill the app, reopen."
+                    else -> "Restored $restored entr(ies) from disk on this launch."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+
+            Text(
+                text = "Pending writes: $pending",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("2", "3").forEach { id ->
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                // Returns as soon as the write is on disk, not
+                                // when it is delivered. Tapping save with no
+                                // signal must not park the caller for hours.
+                                app.queue.submit(ToggleDoneKey, ToggleDone(id, done = true))
+                                lastSubmitted = id
+                            }
+                        },
+                    ) { Text("Finish #" + id) }
+                }
+            }
+
+            lastSubmitted?.let {
+                Text(
+                    text = "Queued a write for #" + it + ". Turn off wifi first and it waits here.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            if (app.api.delivered.isNotEmpty()) {
+                Text(
+                    text = "Delivered to the server: " + app.api.delivered.joinToString(", "),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun PrefetchOnNavigate(api: FakeApi) {
     val client = LocalQueryClient.current

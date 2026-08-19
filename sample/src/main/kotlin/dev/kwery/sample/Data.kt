@@ -1,8 +1,13 @@
 package dev.kwery.sample
 
-import dev.kwery.QueryKey
+import dev.kwery.persist.DurableMutationKey
+import dev.kwery.persist.PersistableQueryKey
 import kotlinx.coroutines.delay
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 
+@Serializable
 data class Todo(val id: String, val title: String, val done: Boolean)
 
 /**
@@ -10,13 +15,38 @@ data class Todo(val id: String, val title: String, val done: Boolean)
  *
  * `parts` is what filters and persistence use; `TodoListKey` and `TodoKey`
  * share the `"todos"` prefix so `invalidateQueries("todos")` matches both.
+ *
+ * These are [PersistableQueryKey] rather than plain `QueryKey` because they are
+ * meant to survive process death. A stored entry arrives from disk as bytes
+ * with no type, so only the key can say how to decode it. A key that should
+ * never touch disk simply stays a `QueryKey`, which makes "this is persisted"
+ * visible at the declaration instead of hidden in configuration.
  */
-data class TodoListKey(val onlyOpen: Boolean) : QueryKey<List<Todo>> {
+data class TodoListKey(val onlyOpen: Boolean) : PersistableQueryKey<List<Todo>> {
     override val parts get() = listOf("todos", mapOf("onlyOpen" to onlyOpen))
+    override val serializer: KSerializer<List<Todo>> get() = serializer()
 }
 
-data class TodoKey(val id: String) : QueryKey<Todo> {
+data class TodoKey(val id: String) : PersistableQueryKey<Todo> {
     override val parts get() = listOf("todos", "detail", id)
+    override val serializer: KSerializer<Todo> get() = serializer()
+}
+
+/** Variables for a write that has to outlive the process. */
+@Serializable
+data class ToggleDone(val id: String, val done: Boolean)
+
+/**
+ * A durable write, registered once at startup.
+ *
+ * Serialized state cannot carry code, so a queued write stores its *variables*
+ * and the identity of the function to run. That function is registered when the
+ * queue is built, away from any screen, because a write replayed after a cold
+ * start has no UI left to get it from.
+ */
+object ToggleDoneKey : DurableMutationKey<ToggleDone> {
+    override val parts get() = listOf("todos", "toggle-done")
+    override val serializer: KSerializer<ToggleDone> get() = serializer()
 }
 
 /**
@@ -36,6 +66,13 @@ class FakeApi {
     )
 
     var failNextRequest: Boolean = false
+
+    /**
+     * Every delivered write appends a line here, so the screen can show that a
+     * write made while offline really did reach the "server" later, rather than
+     * asking the viewer to take it on trust.
+     */
+    val delivered = mutableListOf<String>()
 
     suspend fun todos(onlyOpen: Boolean): List<Todo> {
         delay(900)
@@ -58,5 +95,6 @@ class FakeApi {
         delay(400)
         val index = todos.indexOfFirst { it.id == id }
         if (index >= 0) todos[index] = todos[index].copy(done = done)
+        delivered += "#$id -> done=$done"
     }
 }
