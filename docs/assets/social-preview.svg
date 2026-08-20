@@ -40,19 +40,19 @@
   <!-- Tagline. The single sentence a stranger reads. -->
   <text x="88" y="306"
         font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-        font-size="46" font-weight="600" fill="#F6F7FB">Offline-first caching for Android</text>
+        font-size="46" font-weight="600" fill="#F6F7FB">Server state for Android</text>
 
   <!-- Three concrete behaviours, not feature words. Readable at Slack size. -->
   <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
      font-size="32" fill="#B9BEDA">
     <circle cx="102" cy="386" r="7" fill="#8B5CF6"/>
-    <text x="132" y="397">Rotate the screen. No refetch.</text>
+    <text x="132" y="397">Two screens. One request.</text>
 
     <circle cx="102" cy="450" r="7" fill="#C13FA6"/>
-    <text x="132" y="461">Two screens. One request.</text>
+    <text x="132" y="461">Refresh failed. Data stays.</text>
 
     <circle cx="102" cy="514" r="7" fill="#F0803C"/>
-    <text x="132" y="525">Process death. Cache survives.</text>
+    <text x="132" y="525">Offline write. Replayed on reconnect.</text>
   </g>
 
   <!-- Footer credibility strip -->

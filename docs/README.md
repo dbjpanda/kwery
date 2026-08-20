@@ -1,7 +1,9 @@
 # Kwery
 
-**Offline-first caching for Android.** Your screens ask for data. Kwery decides
-what to serve, what to refresh, and what to queue until the network returns.
+**Server state for Android.** Kwery decides when your app calls the network,
+what to show while it waits, and what to keep when it fails.
+
+Room stores data you own. Kwery manages data someone else owns.
 
 Built on coroutines and Flow. Works from a ViewModel or from Compose.
 
@@ -33,42 +35,43 @@ val state = rememberQuery(TodoKey(id)) {
 
 ## What problem does it actually solve?
 
-Here is a normal screen that loads a list. No library, just coroutines:
+Not persistence. Here is the version that already has persistence, a
+Room-backed repository, which is what most people reach for:
 
 ```kotlin
-class TodoViewModel(private val api: Api) : ViewModel() {
-    private val _state = MutableStateFlow(UiState())
-    val state = _state.asStateFlow()
-    private var job: Job? = null
+class TodoRepository(private val api: Api, private val dao: TodoDao) {
+    fun todos(): Flow<List<Todo>> = dao.observeAll()      // survives process death
 
-    fun load() {
-        job?.cancel()
-        job = viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-            try {
-                _state.update { it.copy(isLoading = false, todos = api.todos()) }
-            } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, error = e) }
-            }
-        }
+    suspend fun refresh() {
+        dao.replaceAll(api.todos())                        // network to database
     }
 }
 ```
 
-Most Android apps contain some version of this, once per screen. It works, and
-it still has all of these problems:
+That is a good pattern and it fixes the things people assume Kwery is for.
+Rotation does not refetch. A cold start after process death shows the last
+rows instead of a spinner. It works.
 
-- **Rotate the phone** and it fetches again, even though the data arrived a
-  second ago.
-- **Two screens showing the same list** make two identical requests at the same
-  moment.
-- **Reopen the app** after Android kills it and the user gets a blank screen and
-  a spinner, every time.
-- **Save something with no signal** and the write is simply lost.
-- **Pull to refresh** and you cannot tell "loading for the first time" from
-  "refreshing what is already on screen", so the whole list flashes a spinner.
-- Retry, backoff, and "stop polling when the app is in the background" are all
-  still yours to write.
+What is still yours to write, per endpoint:
+
+- **When does `refresh()` get called?** On every screen entry? Then you are
+  back to a request per launch. Only when the rows are old? You now own a
+  freshness policy and a timestamp column.
+- **Two screens observe the same list and both call `refresh()`.** Two
+  identical requests, in flight at the same moment. The DAO cannot see that;
+  it is a database.
+- **`refresh()` threw.** You have rows on screen and an error in hand. Is the
+  screen in an error state or a success state? One boolean cannot say
+  "showing data, and the refresh failed", so the whole list flashes a spinner.
+- **The user edited something with no signal.** `dao.update()` succeeded, the
+  server never heard about it. You now own a queue, a replay, a retry policy
+  and idempotency.
+- **The app was backgrounded for two hours.** Refetch on resume? Only if
+  stale? Only if the network came back? All yours.
+
+None of that is Room's job. Room is storage and it is good at storage. The
+part above it, deciding when to call the network and what the screen says
+while you wait, is what Kwery is.
 
 The same screen with Kwery:
 
@@ -76,50 +79,47 @@ The same screen with Kwery:
 val todos = client.query(TodoListKey) { api.todos() }
 ```
 
-Every item above is handled. Not because the library is clever, but because
-these are the same six problems in every app, and they have known answers.
+Every item above has an answer, not because the library is clever, but because
+these are the same five problems in every app and they have known answers.
 
-## What you would otherwise write by hand
+## What you still write by hand, with Room already in place
 
 | What the user notices | What it takes to fix yourself |
 |---|---|
-| Rotation refetches | keep a cache outside the ViewModel, track what is in flight |
-| Two screens, two requests | a registry of in-flight calls keyed by request |
-| Spinner on every cold start | a disk cache, plus deciding what is too old to show |
-| Lost write when offline | a durable queue, replay on reconnect, idempotency keys |
-| Full-screen spinner on refresh | two separate status flags, not one enum |
-| Refetch storms on reconnect | debounce, and knowing the network is *really* back |
+| A request on every screen entry | a freshness policy, and a timestamp column to drive it |
+| Two screens, two identical requests | a registry of calls already in flight, keyed by request |
+| Full-screen spinner on pull-to-refresh | two separate status flags, because one enum cannot say "showing data, refresh failed" |
+| Lost write when there was no signal | a durable queue, replay on reconnect, idempotency |
+| Refetch storms when wifi comes back | debounce, and knowing the network is *really* back |
+| Polling that keeps running in the background | tie the interval to process lifecycle |
+
+Kwery's answers to those are `staleTime`, in-flight deduplication, the two
+status axes, `OfflineQueue`, `refetchOnReconnect`, and
+`refetchIntervalInBackground`.
 
 ## Why not just use Room?
 
-Often you should, and Kwery does not replace it. `kwery-persist-room` stores
-Kwery's cache *in* Room.
+Often you should, and it is not either/or. `kwery-persist-room` stores Kwery's
+cache *in* Room.
 
-Room plus Flow already gives you a reactive local source of truth that survives
-process death, which covers one of the harder rows in the table above and is
-why this question comes up every time. If that is all you need, stop reading.
-You do not need Kwery.
+Room plus Flow gives you a reactive local source of truth that survives process
+death. If that is all you need, stop reading. You do not need Kwery.
 
-What Room does not decide for you:
+The difference is what each one decides. Room decides nothing about the
+network. It stores what you hand it, and every question in the section above,
+when to refresh, whether two callers become one request, what the screen says
+when a refresh fails while rows are on screen, is still yours to answer once
+per endpoint.
 
-| The question | Room's answer |
-|---|---|
-| Two screens ask for the same thing at once. One request, or two? | Not its problem. It is a database. |
-| These rows are 40 seconds old. Refetch, or show them? | You write that policy. |
-| The user edited something on a train. When does it reach the server? | You write the queue, the replay and the retry. |
-| The refetch failed but the cache is warm. Error, or stale rows? | You write that too. |
-
-Room is the storage. What you write by hand around it is the network-to-database
-sync, once per endpoint, coming out slightly different each time. That layer is
-what Kwery is.
+Room is the storage. Kwery is the policy above it.
 
 ## Do you need it?
 
 **Probably yes if** your app reads data from a server on more than one screen,
 or the same data appears in more than one place, or users use it on a train.
 
-**Probably not if** your app fetches once at startup and never again, or all
-your data is local.
+**Probably not if** your app fetches once at startup and never again, all your
+data is local, or a Room repository with a manual refresh is genuinely enough.
 
 ## Install
 
