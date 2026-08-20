@@ -234,13 +234,29 @@ Inspired by [TanStack Query](https://tanstack.com/query/latest), rebuilt for how
 Android behaves: process death, rotation, captive-portal wifi, and a process
 that lives for days.
 
-|  | Kwery | [Soil](https://github.com/soil-kt/soil) | [Store5](https://github.com/MobileNativeFoundation/Store) |
-|---|---|---|---|
-| Works in a ViewModel | yes | Compose only | yes |
-| Ad-hoc `query(key)` | yes | yes | stores declared up front |
-| Cache survives process death | built in | no | via `SourceOfTruth` |
-| Offline write queue | yes | no | partial |
-| Virtual-clock test client | yes | no | no |
+Two Kotlin libraries already cover part of this ground, and both do things
+Kwery does not.
+
+**[Store5](https://github.com/MobileNativeFoundation/Store)** is the mature
+option. Six years old, 3.4k stars, actively maintained, and Kotlin
+Multiplatform across JVM, iOS, Linux and JS. Kwery is Android and JVM only. If
+you need one cache shared with an iOS target, Store is the answer and Kwery is
+not. The difference that made me not use it: Store wants its stores declared up
+front, and I wanted `query(key)` on an arbitrary key at the call site.
+
+**[Soil](https://github.com/soil-kt/soil)** is Compose-Multiplatform-first and
+reaches further than queries, adding form and shared-state packs. Its
+`soil-query-core` depends on nothing but coroutines, so it works outside
+Compose too, and it publishes `soil-query-test`. Targets: Android, JVM, iOS,
+JS, WebAssembly. Again more than Kwery.
+
+What Kwery has that neither does, as far as I can tell from their sources: a
+durable offline write queue with replay, and two orthogonal status axes so
+`success` and `fetching` can be true at once.
+
+And the honest line: **Store has years of production use behind it. Kwery has
+four stars and no production users.** That is the strongest argument against
+picking Kwery today, and it should be.
 
 ## Docs
 
