@@ -96,6 +96,29 @@ these are the same six problems in every app, and they have known answers.
 | Full-screen spinner on refresh | two separate status flags, not one enum |
 | Refetch storms on reconnect | debounce, and knowing the network is *really* back |
 
+## Why not just use Room?
+
+Often you should, and Kwery does not replace it. `kwery-persist-room` stores
+Kwery's cache *in* Room.
+
+Room plus Flow already gives you a reactive local source of truth that survives
+process death, which covers one of the harder rows in the table above and is
+why this question comes up every time. If that is all you need, stop reading.
+You do not need Kwery.
+
+What Room does not decide for you:
+
+| The question | Room's answer |
+|---|---|
+| Two screens ask for the same thing at once. One request, or two? | Not its problem. It is a database. |
+| These rows are 40 seconds old. Refetch, or show them? | You write that policy. |
+| The user edited something on a train. When does it reach the server? | You write the queue, the replay and the retry. |
+| The refetch failed but the cache is warm. Error, or stale rows? | You write that too. |
+
+Room is the storage. What you write by hand around it is the network-to-database
+sync, once per endpoint, coming out slightly different each time. That layer is
+what Kwery is.
+
 ## Do you need it?
 
 **Probably yes if** your app reads data from a server on more than one screen,
