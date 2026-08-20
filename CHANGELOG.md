@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.3](https://github.com/dbjpanda/kwery/compare/v0.3.2...v0.3.3) (2026-08-20)
+
+
+### Documentation
+
+* add a social preview card ([3b7d9bc](https://github.com/dbjpanda/kwery/commit/3b7d9bccf0c4303d4234d8f36d671a8b8c1a210d))
+* answer "why not just use Room?" ([977142c](https://github.com/dbjpanda/kwery/commit/977142c9baec85b4467037624d73b5811743e4ff))
+* build the documentation site with MkDocs on Read the Docs ([f6e40d9](https://github.com/dbjpanda/kwery/commit/f6e40d9f3fb1e5070c0f3d01ce9cf3a0f61377b8))
+* Convex-style sidebar with per-item icons ([731bd79](https://github.com/dbjpanda/kwery/commit/731bd796e3830385b0473d39fe10dabad356a7b7))
+* dark theme and card grid for the documentation site ([b3eb1e9](https://github.com/dbjpanda/kwery/commit/b3eb1e98e208a87516ec630c2cc65aba6db4a404))
+* fix unreachable sidebar items and hover masquerading as selected ([404de4d](https://github.com/dbjpanda/kwery/commit/404de4d6bf19345f19759e818aa093f2c3af732a))
+* keep the sidebar still when you click a link in it ([8dc219c](https://github.com/dbjpanda/kwery/commit/8dc219cf64ef3b167ac52162dde187be767cb87d))
+* make the docs home a landing page, not a contributor briefing ([2366e45](https://github.com/dbjpanda/kwery/commit/2366e45db3745ef7471537d0767719a4abcc13ec))
+* quiet the sidebar scrollbar, and stop hover hiding the current page ([6019317](https://github.com/dbjpanda/kwery/commit/6019317487e5d2ca5af0150b562ac91fef4da707))
+* regenerate the social card, and make it reproducible ([5cf5384](https://github.com/dbjpanda/kwery/commit/5cf5384762081cc71ac3a3aa5d4c1f45b1f89260))
+* remove the last href-dependent sidebar selectors ([bab5660](https://github.com/dbjpanda/kwery/commit/bab5660666a093e8cb7d15f5b5f97d00be35eaea))
+* replace the competitor matrix with something checkable ([6602b74](https://github.com/dbjpanda/kwery/commit/6602b7438ed40c4625bfcc3b5341e4e7efcba73f))
+* reposition from "offline-first caching" to server state ([2896728](https://github.com/dbjpanda/kwery/commit/2896728e90b297e143594786e5eec881880d9b7e))
+* reposition the README hero banner too ([72a2f36](https://github.com/dbjpanda/kwery/commit/72a2f36cdaa6aa109c9f8380e6b87c6e9cd82acf))
+* say what Kwery is not, before saying what it is ([87ae58b](https://github.com/dbjpanda/kwery/commit/87ae58bf908afbed37a0d3a5812280da9de59e5d))
+
 ## [0.3.2](https://github.com/dbjpanda/kwery/compare/v0.3.1...v0.3.2) (2026-08-18)
 
 
